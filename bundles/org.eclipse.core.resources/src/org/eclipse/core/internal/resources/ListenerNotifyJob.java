@@ -12,17 +12,20 @@ package org.eclipse.core.internal.resources;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.jobs.*;
+import org.eclipse.core.runtime.jobs.IJobChangeListener;
 import org.eclipse.core.runtime.jobs.Job;
 
 /**
  * Job for performing POST_CHANGE notifications to workspace resource change listeners.
  */
-public class ListenerNotifyJob extends Job {
+public class ListenerNotifyJob extends Job implements IJobChangeListener {
 	private boolean isPending = false;
-	private long pendingStart;
 	private long lastFinished;
 	private long maxDelay;
 	private long minDelay;
+	private long pendingStart;
+	private boolean restartNeeded = false;
 	private Workspace workspace;
 
 	public ListenerNotifyJob(Workspace workspace) {
@@ -31,6 +34,7 @@ public class ListenerNotifyJob extends Job {
 		this.lastFinished = System.currentTimeMillis();
 		this.maxDelay = Policy.defaultMaxNotifyDelay;
 		this.minDelay = Policy.defaultMinNotifyDelay;
+		addJobChangeListener(this);
 	}
 	private void basicRun(IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
@@ -60,7 +64,7 @@ public class ListenerNotifyJob extends Job {
 	 * @param currentTime the time right now, in milliseconds
 	 */
 	private void doSchedule(long currentTime)  {
-		isPending = false;
+		isPending = restartNeeded = false;
 		schedule(Math.max(0L, (lastFinished + minDelay) - currentTime));
 	}
 	/**
@@ -83,10 +87,16 @@ public class ListenerNotifyJob extends Job {
 	/**
 	 * A top level workspace modifying operation has finished.
 	 */
-	public void endTopLevel() {
+	public void endTopLevel(boolean hasTreeChanges) {
 		//only schedule a job if there is not one already running, waiting, or sleeping
-		if (getState() == NONE)
-			doSchedule(System.currentTimeMillis());
+		switch (getState()) {
+			case NONE:
+				doSchedule(System.currentTimeMillis());
+				break;
+			case RUNNING:
+				restartNeeded = hasTreeChanges;
+				break;
+		}
 	}
 	/* (non-Javadoc)
 	 * @see Job#run
@@ -103,5 +113,19 @@ public class ListenerNotifyJob extends Job {
 		} finally {
 			lastFinished = System.currentTimeMillis();
 		}
+	}
+	public void aboutToRun(IJobChangeEvent event) {
+	}
+	public void awake(IJobChangeEvent event) {
+	}
+	public void done(IJobChangeEvent event) {
+		if (restartNeeded)
+			doSchedule(System.currentTimeMillis());
+	}
+	public void running(IJobChangeEvent event) {
+	}
+	public void scheduled(IJobChangeEvent event) {
+	}
+	public void sleeping(IJobChangeEvent event) {
 	}
 }

@@ -39,9 +39,7 @@ public class WorkManager implements IManager {
 			depth = 1;
 		}
 		int decrement() {
-			if (--depth == 0)
-				done(Status.OK_STATUS);
-			return depth;
+			return --depth;
 		}
 		void increment() {
 			depth++;
@@ -173,8 +171,10 @@ public class WorkManager implements IManager {
 	}
 	private void checkOutJob() {
 		ThreadJob running = (ThreadJob) jobs.get(Thread.currentThread());
-		if (running.decrement() == 0)
+		if (running.decrement() == 0) {
+			running.done(Status.OK_STATUS);
 			jobs.remove(Thread.currentThread());
+		}
 	}
 	/**
 	 * Inform that an operation has finished.

@@ -148,11 +148,10 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 			newWorkingTree();
 		return;
 	}
-	if (createNewTree) {
-		// stash the current tree as the basis for this operation.
-		operationTree = tree;
+	// stash the current tree as the basis for this operation.
+	operationTree = tree;
+	if (createNewTree && tree.isImmutable())
 		newWorkingTree();
-	}
 }
 protected void broadcastChanges(int type, boolean unlockTree, boolean updateState) throws CoreException {
 	notificationManager.broadcastChanges(tree, type, unlockTree, updateState);
@@ -879,7 +878,7 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 	}
 	//notify build and listener jobs after lock is released so there is no contention for the lock
 	autoBuildJob.endTopLevel(hasTreeChanges);
-	notifyJob.endTopLevel();
+	notifyJob.endTopLevel(hasTreeChanges);
 }
 
 /**
