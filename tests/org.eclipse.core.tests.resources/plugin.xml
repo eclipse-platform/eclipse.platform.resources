@@ -3,7 +3,7 @@
 <plugin
   name="Eclipse Core Tests Resources"
   id="org.eclipse.core.tests.resources"
-  version="3.0"
+  version="3.0.1"
   provider-name="Eclipse.org">
 
   <requires>
@@ -182,5 +182,10 @@
          id="anotherXML"
          base-type="org.eclipse.core.runtime.xml"          
          describer="org.eclipse.core.runtime.content.XMLRootElementContentDescriber:org.eclipse.core.tests.resources.anotherXML"/>
-</extension>
+   <content-type      
+         name="My Content Type"
+         id="myContent"
+         file-extensions="resources-mc"
+         default-charset="PROVIDER_CHARSET"/>         
+</extension>            
 </plugin>
