@@ -12,8 +12,11 @@ package org.eclipse.core.tests.resources.perf;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.eclipse.core.internal.localstore.HistoryStore;
+import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.tests.harness.PerformanceTestRunner;
 import org.eclipse.core.tests.internal.localstore.HistoryStoreTest;
 import org.eclipse.core.tests.resources.ResourceTest;
@@ -28,12 +31,10 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 	private IWorkspaceDescription original;
 
 	public static Test suite() {
-		//		TestSuite suite = new TestSuite(LocalHistoryPerformanceTest.class.getName());
-		//		suite.addTest(new LocalHistoryPerformanceTest("testCopyHistory100x4"));		
-		//		suite.addTest(new LocalHistoryPerformanceTest("testCopyHistory20x20"));
-		//		suite.addTest(new LocalHistoryPerformanceTest("testCopyHistory4x100"));
-		//		suite.addTest(new LocalHistoryPerformanceTest("testGetHistory"));
-		//		return suite;
+		//				TestSuite suite = new TestSuite(LocalHistoryPerformanceTest.class.getName());
+		//				suite.addTest(new LocalHistoryPerformanceTest("testHistoryCleanUp100x4"));			
+		//				suite.addTest(new LocalHistoryPerformanceTest("testHistoryCleanUp4x100"));
+		//				return suite;
 		return new TestSuite(LocalHistoryPerformanceTest.class);
 	}
 
@@ -41,28 +42,40 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 		super(name);
 	}
 
+	private void cleanHistory() {
+		((Workspace) getWorkspace()).getFileSystemManager().getHistoryStore().clean();
+	}
+
 	/**
 	 * Creates a tree of resources containing history. 
 	 */
-	private void createTree(IFolder base, int filesPerFolder, int statesPerFile) {
-		IFolder[] folders = new IFolder[5];
+	private void createTree(IFolder base, final int filesPerFolder, final int statesPerFile) {
+		final IFolder[] folders = new IFolder[5];
 		folders[0] = base.getFolder("folder1");
 		folders[1] = base.getFolder("folder2");
 		folders[2] = folders[0].getFolder("folder3");
 		folders[3] = folders[2].getFolder("folder4");
 		folders[4] = folders[3].getFolder("folder5");
-		ensureExistsInWorkspace(folders, true);
-		for (int i = 0; i < folders.length; i++) {
-			for (int j = 0; j < filesPerFolder; j++) {
-				IFile file = folders[i].getFile("file" + j);
-				ensureExistsInWorkspace(file, getRandomContents());
-				try {
-					for (int k = 0; k < statesPerFile; k++)
-						file.setContents(getRandomContents(), IResource.KEEP_HISTORY, getMonitor());
-				} catch (CoreException ce) {
-					fail("0.5", ce);
+		final IWorkspace workspace = getWorkspace();
+		try {
+			workspace.run(new IWorkspaceRunnable() {
+				public void run(org.eclipse.core.runtime.IProgressMonitor monitor) throws CoreException {
+					ensureExistsInWorkspace(folders, true);
+					for (int i = 0; i < folders.length; i++)
+						for (int j = 0; j < filesPerFolder; j++) {
+							IFile file = folders[i].getFile("file" + j);
+							ensureExistsInWorkspace(file, getRandomContents());
+							try {
+								for (int k = 0; k < statesPerFile; k++)
+									file.setContents(getRandomContents(), IResource.KEEP_HISTORY, getMonitor());
+							} catch (CoreException ce) {
+								fail("0.5", ce);
+							}
+						}
 				}
-			}
+			}, workspace.getRuleFactory().modifyRule(workspace.getRoot()), IWorkspace.AVOID_UPDATE, getMonitor());
+		} catch (CoreException e) {
+			fail("#createTree at : " + base.getFullPath(), e);
 		}
 	}
 
@@ -125,6 +138,7 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 		final IFile file2 = folder2.getFile(file1.getName());
 
 		new PerformanceTestRunner() {
+
 			protected void setUp() {
 				ensureExistsInWorkspace(new IResource[] {project, folder1, folder2}, true);
 				try {
@@ -162,10 +176,20 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 		final IFolder base = project.getFolder("base");
 		ensureDoesNotExistInWorkspace(base);
 		new PerformanceTestRunner() {
+			private IWorkspaceDescription original;
 
 			protected void setUp() {
+				original = setMaxFileStates("0.1", 1);
+				// make sure we start with no garbage
+				cleanHistory();
+				// create our own garbage				
 				createTree(base, filesPerFolder, statesPerFile);
 				ensureDoesNotExistInWorkspace(base);
+			}
+
+			protected void tearDown() throws CoreException {
+				if (original != null)
+					getWorkspace().setDescription(original);
 			}
 
 			protected void test() {
@@ -271,5 +295,45 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 				}
 			}
 		}.run(this, 1, 150);
+	}
+
+	private void testHistoryCleanUp(final int filesPerFolder, final int statesPerFile) {
+		IProject project = getWorkspace().getRoot().getProject("proj1");
+		final IFolder base = project.getFolder("base");
+		ensureDoesNotExistInWorkspace(base);
+		new PerformanceTestRunner() {
+			private IWorkspaceDescription original;
+
+			protected void setUp() {
+				original = setMaxFileStates("0.1", 1);
+				// make sure we start with no garbage
+				cleanHistory();
+				// create our own garbage
+				createTree(base, filesPerFolder, statesPerFile);
+				ensureDoesNotExistInWorkspace(base);
+			}
+
+			protected void tearDown() throws CoreException {
+				if (original != null)
+					getWorkspace().setDescription(original);
+			}
+
+			protected void test() {
+				cleanHistory();
+			}
+
+		}.run(this, 5, 1);
+	}
+
+	public void testHistoryCleanUp100x4() {
+		testHistoryCleanUp(100, 4);
+	}
+
+	public void testHistoryCleanUp20x20() {
+		testHistoryCleanUp(20, 20);
+	}
+
+	public void testHistoryCleanUp4x100() {
+		testHistoryCleanUp(4, 100);
 	}
 }
