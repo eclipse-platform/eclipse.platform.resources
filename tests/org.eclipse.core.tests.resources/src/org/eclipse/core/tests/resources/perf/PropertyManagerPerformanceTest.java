@@ -36,10 +36,6 @@ public class PropertyManagerPerformanceTest extends ResourceTest {
 		return new TestSuite(PropertyManagerPerformanceTest.class);
 	}
 
-	public PropertyManagerPerformanceTest() {
-		super(null);
-	}
-
 	public PropertyManagerPerformanceTest(String name) {
 		super(name);
 	}
