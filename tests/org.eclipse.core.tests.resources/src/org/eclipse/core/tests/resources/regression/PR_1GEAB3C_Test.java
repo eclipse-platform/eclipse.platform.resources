@@ -82,6 +82,7 @@ public void test_1GEAB3C() {
 	} catch (CoreException e) {
 		fail("1.1", e);
 	}
+	verifier.waitForDelta();
 	assertDelta();
 }
 }

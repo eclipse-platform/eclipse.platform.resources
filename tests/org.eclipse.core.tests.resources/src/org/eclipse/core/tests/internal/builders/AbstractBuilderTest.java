@@ -22,7 +22,7 @@ import org.eclipse.core.tests.harness.EclipseWorkspaceTest;
  * This class does not define any tests, just convenience methods for other builder tests.
  */
 public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
-	protected static final boolean DEBUG = true;
+	protected static final boolean DEBUG = false;
 	/**
 	 * Class used to wait for build completion in an asynchronous environment.
 	 */
