@@ -756,30 +756,4 @@ public class ResourceTest extends CoreTest {
 		ensureDoesNotExistInWorkspace(getWorkspace().getRoot());
 		getWorkspace().save(true, null);
 	}
-
-	/**
-	 * Blocks the calling thread until autobuild completes.
-	 */
-	protected void waitForBuild() {
-		try {
-			Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-		} catch (OperationCanceledException e) {
-			//ignore
-		} catch (InterruptedException e) {
-			//ignore
-		}
-	}
-
-	/**
-	 * Blocks the calling thread until autobuild completes.
-	 */
-	protected void waitForRefresh() {
-		try {
-			Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_REFRESH, null);
-		} catch (OperationCanceledException e) {
-			//ignore
-		} catch (InterruptedException e) {
-			//ignore
-		}
-	}
 }

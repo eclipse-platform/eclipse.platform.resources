@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2003 IBM Corporation and others.
+ * Copyright (c) 2000, 2004 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,13 +12,13 @@ package org.eclipse.core.tests.resources.perf;
 
 import java.io.ByteArrayInputStream;
 import java.util.Random;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.tests.harness.CorePerformanceTest;
+import org.eclipse.core.tests.harness.PerformanceTestRunner;
 
 /**
  * Basic performance calculations for standard workspace operations.
@@ -39,26 +39,31 @@ public class WorkspacePerformanceTest extends CorePerformanceTest {
 	}
 
 	private final Random random = new Random();
+
 	public WorkspacePerformanceTest() {
 		super();
 	}
+
 	public WorkspacePerformanceTest(String name) {
 		super(name);
 	}
+
 	private IFolder copyFolder(IFolder source) throws CoreException {
 		IFolder destination = source.getProject().getFolder("CopyDestination");
 		source.copy(destination.getFullPath(), IResource.NONE, getMonitor());
 		return destination;
 	}
+
 	private byte[] createBytes(int length) {
 		byte[] bytes = new byte[length];
 		random.nextBytes(bytes);
 		return bytes;
 	}
+
 	/**
 	 * Creates and returns a folder with lots of contents
 	 */
-	private IFolder createFolder(IFolder topFolder) throws CoreException {
+	IFolder createFolder(IFolder topFolder) throws CoreException {
 		topFolder.create(IResource.NONE, true, getMonitor());
 
 		//tree depth is log of total resource count with the width as the log base
@@ -66,6 +71,7 @@ public class WorkspacePerformanceTest extends CorePerformanceTest {
 		recursiveCreateChildren(topFolder, depth - 1);
 		return topFolder;
 	}
+
 	private String createString(int length) {
 		StringBuffer buf = new StringBuffer(length);
 		//fill the string with random characters up to the desired length
@@ -74,6 +80,10 @@ public class WorkspacePerformanceTest extends CorePerformanceTest {
 		}
 		return buf.toString();
 	}
+
+	/**
+	 * Obsolete
+	 */
 	public void doTestWorkspaceOperations() throws CoreException {
 		startTimer(OVERALL_TIMER);
 		final IProject project = getWorkspace().getRoot().getProject("Project");
@@ -119,11 +129,13 @@ public class WorkspacePerformanceTest extends CorePerformanceTest {
 
 		stopTimer(OVERALL_TIMER);
 	}
+
 	private IFolder moveFolder(IFolder source) throws CoreException {
 		IFolder destination = source.getProject().getFolder("MoveDestination");
 		source.move(destination.getFullPath(), IResource.NONE, getMonitor());
 		return destination;
 	}
+
 	/**
 	 * Create children of the given folder, and recurse to the given depth
 	 */
@@ -142,10 +154,29 @@ public class WorkspacePerformanceTest extends CorePerformanceTest {
 			recursiveCreateChildren(folder, depth - 1);
 		}
 	}
-	public void testPerformance() {
-//		String fileName = "c:\\temp\\" + getClassName() + "_" + System.currentTimeMillis() + ".html";
-//		java.io.File logFile = new java.io.File(fileName);
-//		LoggingPerformanceTestResult result = new LoggingPerformanceTestResult(logFile);
-//		new WorkspacePerformanceTest("doTestWorkspaceOperations").run(result);
+
+	public void testCreateWorkspace() {
+		final IProject project = getWorkspace().getRoot().getProject("Project");
+		final IFolder topFolder = project.getFolder("TopFolder");
+		//create the project contents
+		new PerformanceTestRunner() {
+			protected void test() {
+				try {
+					getWorkspace().run(new IWorkspaceRunnable() {
+						public void run(IProgressMonitor monitor) throws CoreException {
+							project.create(getMonitor());
+							project.open(getMonitor());
+							createFolder(topFolder);
+						}
+					}, getMonitor());
+				} catch (CoreException e) {
+					fail("4.99", e);
+				}
+			}
+
+			protected void tearDown() throws CoreException {
+				project.delete(IResource.FORCE, null);
+			}
+		}.run(this, 10, 1);
 	}
 }

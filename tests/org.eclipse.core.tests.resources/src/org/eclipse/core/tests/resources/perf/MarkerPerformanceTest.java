@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2003 IBM Corporation and others.
+ * Copyright (c) 2000, 2004 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,39 +10,45 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.perf;
 
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.tests.harness.CorePerformanceTest;
+import org.eclipse.core.tests.harness.PerformanceTestRunner;
+import org.eclipse.core.tests.resources.ResourceTest;
 
-public class MarkerPerformanceTest extends CorePerformanceTest {
+public class MarkerPerformanceTest extends ResourceTest {
 	IProject project;
 	IFile file;
 	IMarker[] markers;
 	final int NUM_MARKERS = 5000;
 	final int REPEAT = 100;
+
 	/**
 	 * No-arg constructor to satisfy test harness.
 	 */
 	public MarkerPerformanceTest() {
+		super();
 	}
+
 	/**
 	 * Standard test case constructor
 	 */
 	public MarkerPerformanceTest(String testName) {
 		super(testName);
 	}
-	public static Test suite() { 
-		TestSuite suite= new TestSuite();
-		suite.addTest(new MarkerPerformanceTest("benchSetAttributes1"));
-		suite.addTest(new MarkerPerformanceTest("benchSetAttributes2"));
-	 	return suite;
+
+	public static Test suite() {
+		return new TestSuite(MarkerPerformanceTest.class);
+		//		TestSuite suite = new TestSuite(MarkerPerformanceTest.class.getName());
+		//		suite.addTest(new MarkerPerformanceTest("benchSetAttributes1"));
+		//		suite.addTest(new MarkerPerformanceTest("benchSetAttributes2"));
+		//		return suite;
 	}
-	public void benchSetAttributes1() {
+
+	public void testSetAttributes1() {
 		//benchmark setting many attributes in a single operation
-		IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
+		final IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
 			public void run(IProgressMonitor monitor) throws CoreException {
 				//set all attributes for each marker
 				for (int i = 0; i < NUM_MARKERS; i++) {
@@ -52,18 +58,20 @@ public class MarkerPerformanceTest extends CorePerformanceTest {
 				}
 			}
 		};
-		System.out.println("Starting setAttributes1");
-		startBench();
-		try {
-			getWorkspace().run(runnable, null);
-		} catch (CoreException e) {
-			fail("2.0", e);
-		}
-		stopBench("benchSetAttributes1", REPEAT*NUM_MARKERS);
+		new PerformanceTestRunner() {
+			protected void test() {
+				try {
+					getWorkspace().run(runnable, null);
+				} catch (CoreException e) {
+					fail("2.0", e);
+				}
+			}
+		}.run(this, 1, 1);
 	}
-	public void benchSetAttributes2() {
+
+	public void testSetAttributes2() {
 		//benchmark setting many attributes in a single operation
-		IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
+		final IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
 			public void run(IProgressMonitor monitor) throws CoreException {
 				//set one attribute per marker, repeat for all attributes
 				for (int j = 0; j < REPEAT; j++) {
@@ -73,18 +81,19 @@ public class MarkerPerformanceTest extends CorePerformanceTest {
 				}
 			}
 		};
-		
-		System.out.println("Starting setAttributes2");
-		startBench();
-		try {
-			getWorkspace().run(runnable, null);
-		} catch (CoreException e) {
-			fail("2.0", e);
-		}
-		stopBench("benchSetAttributes2", REPEAT*NUM_MARKERS);
+		new PerformanceTestRunner() {
+			protected void test() {
+				try {
+					getWorkspace().run(runnable, null);
+				} catch (CoreException e) {
+					fail("2.0", e);
+				}
+			}
+		}.run(this, 1, 1);
 	}
+
 	/**
-	 * @see EclipseWorkspaceTest#setUp()
+	 * @see ResourceTest#setUp()
 	 */
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -112,6 +121,7 @@ public class MarkerPerformanceTest extends CorePerformanceTest {
 		}
 		markers = createdMarkers;
 	}
+
 	/**
 	 * @see TestCase#tearDown()
 	 */
