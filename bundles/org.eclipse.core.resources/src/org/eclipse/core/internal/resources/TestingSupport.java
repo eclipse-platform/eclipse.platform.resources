@@ -78,13 +78,6 @@ public class TestingSupport {
 			throw new RuntimeException("Interrupted while waiting for build"); //$NON-NLS-1$
 		}
 	}
-	/**
-	 * Blocks the calling thread until all resource change notifications have completed.
-	 * 
-	 * @ since 3.0 
-	 */
-	public static void waitForNotification() {
-	}
 	/* 
 	 * Class cannot be instantiated.
 	 */

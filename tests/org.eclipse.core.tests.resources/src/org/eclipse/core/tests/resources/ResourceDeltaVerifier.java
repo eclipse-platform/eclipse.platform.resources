@@ -730,8 +730,5 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 	 * Waits until a delta is received.
 	 */
 	public void waitForDelta() {
-		debug("waiting for notification to complete");
-		TestingSupport.waitForNotification();
-		debug("finished waiting");
 	}
 }
