@@ -120,13 +120,7 @@ public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
 	 */
 	protected void waitForBuild() {
 		debug("waiting for build to complete");
-		try {
-			//auto-build isn't scheduled until notification completes
-			TestingSupport.getListenerNotifyJob().join();
-			TestingSupport.getAutoBuildJob().join();
-		} catch (InterruptedException e) {
-			debug("Interrupted while waiting for auto-build");
-		}
+		TestingSupport.waitForAutoBuild();
 		debug("finished waiting");
 	}
 }

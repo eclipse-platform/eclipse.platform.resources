@@ -15,7 +15,6 @@ import java.util.Properties;
 
 import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
-import org.eclipse.core.runtime.jobs.Job;
 
 /**
  * Provides special internal access to the workspace resource implementation.
@@ -24,20 +23,6 @@ import org.eclipse.core.runtime.jobs.Job;
  * @since 2.0
  */
 public class TestingSupport {
-	/**
-	 * Returns the job that performs auto-build
-	 * @since 3.0
-	 */
-	public static Job getAutoBuildJob() {
-		return ((Workspace) ResourcesPlugin.getWorkspace()).autoBuildJob;
-	}
-	/**
-	 * Returns the listener notification job
-	 * @since 3.0
-	 */
-	public static Job getListenerNotifyJob() {
-		return ((Workspace) ResourcesPlugin.getWorkspace()).notifyJob;
-	}
 	/**
 	 * Returns the save manager's master table.
 	 */
@@ -80,7 +65,34 @@ public class TestingSupport {
 			ws.initializeMoveDeleteHook();
 		}
 	}
-
+	/**
+	 * Blocks the calling thread until auto-build completes.
+	 * For testing purposes only.
+	 * @since 3.0
+	 */
+	public static void waitForAutoBuild() {
+		//auto-build isn't scheduled until notification completes
+		waitForNotification();
+		try {
+			((Workspace) ResourcesPlugin.getWorkspace()).notifyJob.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Interrupted while waiting for build"); //$NON-NLS-1$
+		}
+	}
+	/**
+	 * Blocks the calling thread until all resource change notifications have completed.
+	 * * For testing purposes only.
+	 * * @ since 3.0 
+	 */
+	public static void waitForNotification() {
+		try {
+			((Workspace) ResourcesPlugin.getWorkspace()).notifyJob.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Interrupted while waiting for notification"); //$NON-NLS-1$
+		}
+	}
 	/* 
 	 * Class cannot be instantiated.
 	 */
