@@ -49,6 +49,8 @@ public AllTests(String name) {
 		suite.addTest(WorkspaceTest.suite());
 		suite.addTest(LinkedResourceTest.suite());
 		suite.addTest(LinkedResourceWithPathVariableTest.suite());
+		suite.addTest(WorkspaceJobTest.suite());
+		
 		return suite;
 	}
 }

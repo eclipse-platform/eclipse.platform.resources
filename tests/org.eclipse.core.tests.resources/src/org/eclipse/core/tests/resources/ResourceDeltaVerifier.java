@@ -43,6 +43,8 @@ import org.eclipse.core.runtime.Path;
  * </code>
  */
 public class ResourceDeltaVerifier extends Assert implements IResourceChangeListener{
+	public ResourceDeltaVerifier()  {
+	}
 	private class ExpectedChange {
 		IResource fResource;
 		IPath movedFromPath;
