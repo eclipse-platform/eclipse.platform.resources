@@ -149,8 +149,8 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 		newWorkingTree();
 	}
 }
-protected void broadcastChanges(int type, boolean lockTree, boolean updateState) throws CoreException {
-	notificationManager.broadcastChanges(tree, type, lockTree, updateState);
+protected void broadcastChanges(int type, boolean unlockTree, boolean updateState) throws CoreException {
+	notificationManager.broadcastChanges(tree, type, unlockTree, updateState);
 }
 /**
  * Broadcasts an internal workspace lifecycle event to interested
