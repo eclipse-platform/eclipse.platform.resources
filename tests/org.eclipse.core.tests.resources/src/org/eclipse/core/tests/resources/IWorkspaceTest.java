@@ -908,7 +908,7 @@ public void testValidateNatureSet() {
 	for (int i = 0; i < valid.length; i++) {
 		IStatus result = ws.validateNatureSet(valid[i]);
 		assertTrue("valid (severity): " + i, result.isOK());
-		assertTrue("valid (code): " + i, result.getCode() == IStatus.OK);
+		assertEquals("valid (code): " + i, IStatus.OK, result.getCode());
 	}
 }
 /**
