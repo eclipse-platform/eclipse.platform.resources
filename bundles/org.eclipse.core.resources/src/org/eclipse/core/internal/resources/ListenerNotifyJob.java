@@ -39,7 +39,7 @@ public class ListenerNotifyJob extends Job {
 	private void basicRun(IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
 		try {
-			monitor.beginTask(ICoreConstants.MSG_RESOURCES_UPDATING, Policy.totalWork);
+			monitor.beginTask(null, Policy.totalWork);
 			try {
 				workspace.prepareOperation();
 				workspace.beginOperation(false);
