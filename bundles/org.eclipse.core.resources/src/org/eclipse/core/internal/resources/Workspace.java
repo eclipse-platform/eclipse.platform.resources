@@ -390,7 +390,7 @@ public IStatus copy(IResource[] resources, IPath destination, boolean force, IPr
 		monitor.beginTask(message, totalWork);
 		Assert.isLegal(resources != null);
 		if (resources.length == 0)
-			return new ResourceStatus(IResourceStatus.OK, Policy.bind("ok"));
+			return ResourceStatus.OK_STATUS;
 		// to avoid concurrent changes to this array
 		resources = (IResource[]) resources.clone();
 		IPath parentPath = null;
@@ -441,7 +441,7 @@ public IStatus copy(IResource[] resources, IPath destination, boolean force, IPr
 		}
 		if (status.matches(IStatus.ERROR))
 			throw new ResourceException(status);
-		return status.isOK() ? new ResourceStatus(IResourceStatus.OK, Policy.bind("ok")) : (IStatus) status;
+		return status.isOK() ? ResourceStatus.OK_STATUS : (IStatus) status;
 	} finally {
 		monitor.done();
 	}
@@ -842,6 +842,8 @@ public ResourceInfo getResourceInfo(IPath path, boolean phantom, boolean mutable
 		if (path.equals(Path.ROOT))
 			return rootInfo;
 		ResourceInfo result = null;
+		if (!tree.includes(path))
+			return null;
 		if (mutable)
 			result = (ResourceInfo) tree.openElementData(path);
 		else
@@ -930,7 +932,7 @@ public IStatus move(IResource[] resources, IPath destination, boolean force, IPr
 		monitor.beginTask(message, totalWork);
 		Assert.isLegal(resources != null);
 		if (resources.length == 0)
-			return new ResourceStatus(IResourceStatus.OK, Policy.bind("ok"));
+			return ResourceStatus.OK_STATUS;
 		resources = (IResource[]) resources.clone(); // to avoid concurrent changes to this array
 		IPath parentPath = null;
 		message = Policy.bind("resources.moveProblem");
@@ -986,7 +988,7 @@ public IStatus move(IResource[] resources, IPath destination, boolean force, IPr
 		}
 		if (status.matches(IStatus.ERROR))
 			throw new ResourceException(status);
-		return status.isOK() ? (IStatus) new ResourceStatus(IResourceStatus.OK, Policy.bind("ok")) : (IStatus) status;
+		return status.isOK() ? (IStatus) ResourceStatus.OK_STATUS : (IStatus) status;
 	} finally {
 		monitor.done();
 	}
@@ -1369,7 +1371,7 @@ public IStatus validateName(String segment, int type) {
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
 
-	return new ResourceStatus(IResourceStatus.OK, Policy.bind("ok"));
+	return ResourceStatus.OK_STATUS;
 }
 /**
  * @see IWorkspace#validatePath
@@ -1421,15 +1423,14 @@ public IStatus validatePath(String path, int type) {
 			if (!status.isOK())
 				return status;
 			int fileFolderType = type &= ~IResource.PROJECT;
-			String[] segments = testPath.segments();
+			int segmentCount = testPath.segmentCount();
 			// ignore first segment (the project)
-			for (int i = 1; i < segments.length; i++) {
-				String segment = segments[i];
-				status = validateName(segment, fileFolderType);
+			for (int i = 1; i < segmentCount; i++) {
+				status = validateName(testPath.segment(i), fileFolderType);
 				if (!status.isOK())
 					return status;
 			}
-			return new ResourceStatus(IResourceStatus.OK, Policy.bind("ok"));
+			return ResourceStatus.OK_STATUS;
 		} else {
 			message = Policy.bind("resources.resourcePath");
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);

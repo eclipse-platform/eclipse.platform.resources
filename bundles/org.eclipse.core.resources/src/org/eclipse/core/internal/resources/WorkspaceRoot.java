@@ -105,10 +105,10 @@ public IProject getProject() {
  * @see IResource#getProject
  */
 public IProject getProject(String name) {
-	Path path = new Path(name);
+	IPath path = Path.ROOT.append(name);
 	String message = "resources.projectPath";
 	Assert.isLegal(path.segmentCount() == ICoreConstants.PROJECT_SEGMENT_LENGTH, message);
-	return new Project(Path.ROOT.append(name), workspace);
+	return new Project(path, workspace);
 }
 /**
  * @see IResource#getProjectRelativePath
