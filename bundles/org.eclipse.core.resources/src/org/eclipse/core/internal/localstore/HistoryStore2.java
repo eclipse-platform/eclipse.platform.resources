@@ -26,6 +26,7 @@ public class HistoryStore2 implements IHistoryStore {
 	private final static long SEGMENT_QUOTA = (long) Math.pow(2, 4 * SEGMENT_LENGTH); // 1 char = 2 ^ 4 = 0x10
 	private File baseLocation;
 	private BlobStore blobStore;
+	private Set blobsToRemove = new HashSet();
 	private BucketTable currentBucket;
 	private File indexLocation;
 	private Workspace workspace;
@@ -117,27 +118,30 @@ public class HistoryStore2 implements IHistoryStore {
 			IWorkspaceDescription description = workspace.internalGetDescription();
 			final long minimumTimestamp = System.currentTimeMillis() - description.getFileStateLongevity();
 			final int max = description.getMaxFileStates();
-			final BlobStore tmpBlobStore = this.blobStore;
+			final BlobStore tmpBlobStore = blobStore;
+			final Set tmpBlobsToRemove = blobsToRemove;			
 			accept(new Visitor() {
 				public int visit(IPath path, byte[][] uuids) {
 					int statesCounter = 0;
 					boolean changed = false;
 					for (int i = 0; i < uuids.length; i++) {
-						UniversalUniqueIdentifier uuidObject = new UniversalUniqueIdentifier(uuids[i]);
 						if (++statesCounter <= max) {
+							UniversalUniqueIdentifier uuidObject = new UniversalUniqueIdentifier(uuids[i]);							
 							File blobFile = tmpBlobStore.fileFor(uuidObject);
-							if (blobFile.lastModified() < minimumTimestamp) {
-								uuids[i] = null;
-								changed = true;								
-							}
-						} else {
-							uuids[i] = null;
-							changed = true;
+							if (blobFile.lastModified() >= minimumTimestamp)
+								continue;
 						}
+						// "delete" the current uuid
+						tmpBlobsToRemove.add(new UniversalUniqueIdentifier(uuids[i]));							
+						uuids[i] = null;
+						changed = true;
 					}
 					return changed ? UPDATE : CONTINUE;
 				}
 			}, root, IResource.DEPTH_INFINITE, true);
+			// remove unreferenced blobs
+			blobStore.deleteBlobs(blobsToRemove);
+			blobsToRemove = new HashSet();
 		} catch (Exception e) {
 			String message = Policy.bind("history.problemsCleaning"); //$NON-NLS-1$
 			ResourceStatus status = new ResourceStatus(IResourceStatus.FAILED_DELETE_LOCAL, null, message, e);
@@ -218,6 +222,7 @@ public class HistoryStore2 implements IHistoryStore {
 		} catch (CoreException e) {
 			ResourcesPlugin.getPlugin().getLog().log(e.getStatus());
 		}
+		//TODO should clean when visiting instead to avoid a second traversal 
 		clean(destinationResource.getFullPath());
 	}
 
@@ -254,13 +259,13 @@ public class HistoryStore2 implements IHistoryStore {
 				}
 			}, filePath, IResource.DEPTH_ZERO, true);
 			IFileState[] result = (IFileState[]) states.toArray(new IFileState[states.size()]);
+			// sort states based on modification time + uuid 
 			Arrays.sort(result, new Comparator() {
 				public int compare(Object o1, Object o2) {
 					FileState fs1 = (FileState) o1;
 					FileState fs2 = (FileState) o2;
-					if (fs1.getModificationTime() == fs1.getModificationTime()) {
+					if (fs1.getModificationTime() == fs1.getModificationTime())
 						return -UniversalUniqueIdentifier.compareTime(fs1.getUUID(), fs2.getUUID());
-					}
 					return (fs1.getModificationTime() < fs2.getModificationTime()) ? 1 : -1;
 				}
 			});
@@ -333,13 +338,40 @@ public class HistoryStore2 implements IHistoryStore {
 
 	public void remove(IPath root, IProgressMonitor monitor) {
 		try {
+			final Set tmpBlobsToRemove = blobsToRemove;
 			accept(new Visitor() {
-				public int visit(IPath path, byte[][] uuid) {
+				public int visit(IPath path, byte[][] uuids) {
+					for (int i = 0; i < uuids.length; i++)
+						// remember we need to delete the files later
+						tmpBlobsToRemove.add(new UniversalUniqueIdentifier(uuids[i]));
 					return DELETE;
 				}
 			}, root, IResource.DEPTH_INFINITE);
 		} catch (CoreException ce) {
 			ResourcesPlugin.getPlugin().getLog().log(ce.getStatus());
+		}
+	}
+
+	/**
+	 * @see IHistoryStore#removeGarbage()
+	 */
+	public void removeGarbage() {		
+		try {			
+			final Set tmpBlobsToRemove = blobsToRemove;
+			accept(new Visitor() {
+				public int visit(IPath path, byte[][] uuids) {
+					for (int i = 0; i < uuids.length; i++)
+						// remember we need to delete the files later
+						tmpBlobsToRemove.remove(new UniversalUniqueIdentifier(uuids[i]));
+					return CONTINUE;
+				}
+			}, Path.ROOT, IResource.DEPTH_INFINITE);
+			blobStore.deleteBlobs(blobsToRemove);
+			blobsToRemove = new HashSet();
+		} catch (Exception e) {
+			String message = Policy.bind("history.problemsCleaning"); //$NON-NLS-1$
+			ResourceStatus status = new ResourceStatus(IResourceStatus.FAILED_DELETE_LOCAL, null, message, e);
+			ResourcesPlugin.getPlugin().getLog().log(status);
 		}
 	}
 
@@ -357,13 +389,6 @@ public class HistoryStore2 implements IHistoryStore {
 		// TODO we have to provide a string hashcode ourselves 
 		// because it changes from VM to VM
 		return Long.toHexString(Math.abs(segment.hashCode()) % SEGMENT_QUOTA);
-	}
-
-	/**
-	 * @see IHistoryStore#removeGarbage()
-	 */
-	public void removeGarbage() {
-		//TODO implement this
 	}
 
 }
