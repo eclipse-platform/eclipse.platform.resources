@@ -30,7 +30,7 @@ public PropertyManager(Workspace workspace) {
 }
 public void closePropertyStore(IResource target) throws CoreException {
 	Resource host = (Resource) getPropertyHost(target);
-	ResourceInfo info = (ResourceInfo) host.getResourceInfo(false, false);
+	ResourceInfo info = host.getResourceInfo(false, false);
 	if (info == null)
 		return;
 	PropertyStore store = info.getPropertyStore();

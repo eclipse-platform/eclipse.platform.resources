@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.resources;
 
 import org.eclipse.core.internal.jobs.OrderedLock;
+import org.eclipse.core.internal.utils.Assert;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.runtime.*;
 /**
@@ -23,7 +24,7 @@ public class WorkManager implements IManager {
 	public static final int OPERATION_EMPTY = 0;
 	public static final int OPERATION_NONE = -1;
 
-	private final OrderedLock lock;
+	protected final OrderedLock lock;
 	private int nestedOperations = 0;
 	private boolean operationCanceled = false;
 	private int preparedOperations = 0;
@@ -117,6 +118,16 @@ public class WorkManager implements IManager {
 	public synchronized boolean isCurrentOperation() {
 		return lock.getCurrentOperationThread() == Thread.currentThread();
 	}
+	/**
+	 * Re-acquires the workspace lock that was temporarily released during an
+	 * operation.  
+	 * @see unlockTree
+	 */
+	public void lockTree() {
+		int depth = getPreparedOperationDepth();
+		for (int i = 0; i < depth; i++)
+			lock.acquire();
+	}
 
 	/**
 	 * This method can only be safelly called from inside a workspace
@@ -153,5 +164,16 @@ public class WorkManager implements IManager {
 	public void shutdown(IProgressMonitor monitor) {
 	}
 	public void startup(IProgressMonitor monitor) {
+	}
+	/**
+	 * Releases the workspace lock without changing the nested operation depth.
+	 * Must be followed eventually by lockTree.
+	 * @see lockTree
+	 */
+	public void unlockTree() {
+		int depth = lock.getDepth();
+		Assert.isTrue(depth == getPreparedOperationDepth(), "Lock depth does not match operation depth"); //$NON-NLS-1$
+		for (int i = 0; i < depth; i++)
+			lock.release();
 	}
 }

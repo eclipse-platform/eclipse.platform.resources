@@ -66,7 +66,7 @@ public class SavedState implements ISavedState {
 			}
 		} catch (CoreException e) {
 			// this is unlikelly to happen, so, just log it
-			ResourceStatus status = new ResourceStatus(IResourceStatus.WARNING, null, e.getMessage(), e);
+			ResourceStatus status = new ResourceStatus(IStatus.WARNING, null, e.getMessage(), e);
 			ResourcesPlugin.getPlugin().getLog().log(status);
 		}
 	}

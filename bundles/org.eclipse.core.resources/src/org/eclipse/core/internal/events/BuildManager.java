@@ -104,7 +104,7 @@ public BuildManager(Workspace workspace) {
 
 protected void basicBuild(int trigger, IncrementalProjectBuilder builder, Map args, MultiStatus status, IProgressMonitor monitor) {
 	try {
-		currentBuilder = (InternalBuilder) builder;
+		currentBuilder = builder;
 		//clear any old requests to forget built state
 		currentBuilder.clearForgetLastBuiltState();
 		// Figure out which trees are involved based on the trigger and tree availabilty.
