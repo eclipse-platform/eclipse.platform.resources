@@ -120,11 +120,10 @@ public class WorkManager implements IManager {
 	}
 	/**
 	 * Re-acquires the workspace lock that was temporarily released during an
-	 * operation.  
+	 * operation, and restores the old lock depth.
 	 * @see unlockTree
 	 */
-	public void lockTree() {
-		int depth = getPreparedOperationDepth();
+	public void lockTree(int depth) {
 		for (int i = 0; i < depth; i++)
 			lock.acquire();
 	}
@@ -167,13 +166,14 @@ public class WorkManager implements IManager {
 	}
 	/**
 	 * Releases the workspace lock without changing the nested operation depth.
-	 * Must be followed eventually by lockTree.
+	 * Must be followed eventually by lockTree.  Returns the old lock depth.
 	 * @see lockTree
 	 */
-	public void unlockTree() {
+	public int unlockTree() {
 		int depth = lock.getDepth();
 		Assert.isTrue(depth == getPreparedOperationDepth(), "Lock depth does not match operation depth"); //$NON-NLS-1$
 		for (int i = 0; i < depth; i++)
 			lock.release();
+		return depth;
 	}
 }

@@ -73,13 +73,14 @@ public void broadcastChanges(ElementTree lastState, int type, boolean unlockTree
 	// however pre and post build listeners must always be called
 	if ((delta == null || delta.getKind() == 0) && type == IResourceChangeEvent.POST_CHANGE)
 		return;
+	int depth = 0;
 	if (unlockTree)
-		workspace.getWorkManager().unlockTree();
+		depth = workspace.getWorkManager().unlockTree();
 	try {
 		notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
 	} finally {
 		if (unlockTree)
-			workspace.getWorkManager().lockTree();
+			workspace.getWorkManager().lockTree(depth);
 	}
 }
 
