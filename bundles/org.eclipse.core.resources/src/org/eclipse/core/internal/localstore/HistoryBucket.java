@@ -29,7 +29,7 @@ public class HistoryBucket extends Bucket {
 	 * </p>  
 	 */
 	public static final class HistoryEntry extends Bucket.Entry {
-		
+
 		final static Comparator COMPARATOR = new Comparator() {
 			public int compare(Object o1, Object o2) {
 				byte[] state1 = (byte[]) o1;
@@ -37,7 +37,6 @@ public class HistoryBucket extends Bucket {
 				return compareStates(state1, state2);
 			}
 		};
-		
 
 		private final static byte[][] EMPTY_DATA = new byte[0][];
 		// the length of a long in bytes
@@ -45,7 +44,7 @@ public class HistoryBucket extends Bucket {
 		// the length of a UUID in bytes
 		private final static int UUID_LENGTH = UniversalUniqueIdentifier.BYTES_SIZE;
 		// the length of each component of the data array
-		public final static int DATA_LENGTH = UUID_LENGTH + LONG_LENGTH;
+		public final static int DATA_LENGTH = UUID_LENGTH + LONG_LENGTH;		
 
 		/**
 		 * The history states. The first array dimension is the number of states. The
@@ -69,7 +68,7 @@ public class HistoryBucket extends Bucket {
 		/**
 		 * Returns the byte array representation of a (UUID, timestamp) pair. 
 		 */
-		static byte[] getState(UniversalUniqueIdentifier uuid, long timestamp) {
+		private static byte[] getState(UniversalUniqueIdentifier uuid, long timestamp) {
 			byte[] uuidBytes = uuid.toBytes();
 			byte[] state = new byte[DATA_LENGTH];
 			System.arraycopy(uuidBytes, 0, state, 0, uuidBytes.length);
@@ -86,21 +85,17 @@ public class HistoryBucket extends Bucket {
 				timestamp += (state[UUID_LENGTH + j] & 0xFFL) << j * 8;
 			return timestamp;
 		}
-		
-		private static int search(byte[][] existing, byte[] element) {
-			return Arrays.binarySearch(existing, element, COMPARATOR);		
-		}		
 
 		/** 
 		 * Inserts the given item into the given array at the right position. 
 		 * Returns the resulting array. Returns null if the item already exists. 
 		 */
-		static byte[][] insert(byte[][] existing, byte[] toAdd) {
+		private static byte[][] insert(byte[][] existing, byte[] toAdd) {
 			// look for the right spot where to insert the new guy
 			int index = search(existing, toAdd);
 			if (index >= 0)
 				// already there - nothing else to be done
-				return null;			
+				return null;
 			// not found - insert 
 			int insertPosition = -index - 1;
 			byte[][] newValue = new byte[existing.length + 1][];
@@ -115,7 +110,7 @@ public class HistoryBucket extends Bucket {
 		/**
 		 * Merges two entries (are always sorted). Duplicates are discarded.
 		 */
-		static byte[][] merge(byte[][] base, byte[][] additions) {
+		private static byte[][] merge(byte[][] base, byte[][] additions) {
 			int additionPointer = 0;
 			int basePointer = 0;
 			int added = 0;
@@ -146,6 +141,10 @@ public class HistoryBucket extends Bucket {
 			return finalResult;
 		}
 
+		private static int search(byte[][] existing, byte[] element) {
+			return Arrays.binarySearch(existing, element, COMPARATOR);
+		}
+
 		public HistoryEntry(IPath path, byte[][] data) {
 			super(path);
 			this.data = data;
@@ -161,7 +160,7 @@ public class HistoryBucket extends Bucket {
 		 * Compacts the data array removing any null slots. If non-null slots
 		 * are found, the entry is marked for removal. 
 		 */
-		void compact() {
+		private void compact() {
 			if (!isDirty())
 				return;
 			int occurrences = 0;
@@ -215,16 +214,10 @@ public class HistoryBucket extends Bucket {
 			compact();
 		}
 
-		public static void sort(byte[][] uuids) {
-			Arrays.sort(uuids, HistoryEntry.COMPARATOR);			
-		}
-
 	}
 
-	/** Version number for the current implementation file's format.
-	 * <p>
-	 * Version 2: same as version 1, but states for an entry are already sorted
-	 * </p>
+	/** 
+	 * Version number for the current implementation file's format.
 	 * <p>
 	 * Version 1:
 	 * <pre>
@@ -238,7 +231,7 @@ public class HistoryBucket extends Bucket {
 	 * </pre>
 	 * </p>
 	 */
-	public final static byte VERSION = 2;
+	public final static byte VERSION = 1;
 
 	public HistoryBucket(File root) {
 		super(root);
@@ -291,8 +284,6 @@ public class HistoryBucket extends Bucket {
 		byte[][] uuids = new byte[length][HistoryEntry.DATA_LENGTH];
 		for (int j = 0; j < uuids.length; j++)
 			source.read(uuids[j]);
-		// TODO drop this line when compatibility with version one is no longer needed
-		HistoryEntry.sort(uuids);
 		return uuids;
 	}
 

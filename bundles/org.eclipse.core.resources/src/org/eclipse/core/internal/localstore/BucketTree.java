@@ -10,8 +10,11 @@
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
-import java.io.File;
+import java.io.*;
 import org.eclipse.core.internal.localstore.Bucket.Visitor;
+import org.eclipse.core.internal.resources.ResourceException;
+import org.eclipse.core.internal.utils.Policy;
+import org.eclipse.core.resources.IResourceStatus;
 import org.eclipse.core.runtime.*;
 
 public class BucketTree {
@@ -22,6 +25,9 @@ public class BucketTree {
 
 	private final static int SEGMENT_LENGTH = 2;
 	private final static long SEGMENT_QUOTA = (long) Math.pow(2, 4 * SEGMENT_LENGTH); // 1 char = 2 ^ 4 = 0x10	
+
+	private final static String VERSION_FILE = "version"; //$NON-NLS-1$
+
 	private Bucket current;
 
 	private File rootLocation;
@@ -43,6 +49,7 @@ public class BucketTree {
 
 	public void close() throws CoreException {
 		current.save();
+		saveVersion();
 	}
 
 	public Bucket getCurrent() {
@@ -88,6 +95,35 @@ public class BucketTree {
 			// translate all segments except the first one (project name)
 			location = location.append(translateSegment(resourcePath.segment(i)));
 		return new File(rootLocation, location.toOSString());
+	}
+
+	/**
+	 * Writes the version tag to a file on disk.
+	 */
+	private void saveVersion() throws CoreException {
+		if (!this.rootLocation.isDirectory())
+			return;
+		File versionFile = new File(this.rootLocation, VERSION_FILE);
+		FileOutputStream stream = null;
+		boolean failed = false;
+		try {
+			stream = new FileOutputStream(versionFile);
+			stream.write(current.getVersion());
+		} catch (IOException e) {
+			failed = true;
+			String message = Policy.bind("resources.writeWorkspaceMeta", versionFile.getAbsolutePath()); //$NON-NLS-1$
+			throw new ResourceException(IResourceStatus.FAILED_WRITE_METADATA, null, message, e);
+		} finally {
+			try {
+				if (stream != null)
+					stream.close();
+			} catch (IOException e) {
+				if (!failed) {
+					String message = Policy.bind("resources.writeWorkspaceMeta", versionFile.getAbsolutePath()); //$NON-NLS-1$
+					throw new ResourceException(IResourceStatus.FAILED_WRITE_METADATA, null, message, e);
+				}
+			}
+		}
 	}
 
 	private String translateSegment(String segment) {

@@ -34,7 +34,7 @@ public class HistoryStore2 implements IHistoryStore {
 
 		public void afterSaving(Bucket bucket) throws CoreException {
 			saveChanges((HistoryBucket) bucket);
-			changes.clear();				
+			changes.clear();
 		}
 
 		private void saveChanges(HistoryBucket bucket) throws CoreException {
@@ -59,6 +59,7 @@ public class HistoryStore2 implements IHistoryStore {
 			return CONTINUE;
 		}
 	}
+
 	private static final String INDEX_STORE = ".buckets"; //$NON-NLS-1$
 	private BlobStore blobStore;
 	private Set blobsToRemove = new HashSet();

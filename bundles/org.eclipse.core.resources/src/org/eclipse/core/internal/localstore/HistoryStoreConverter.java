@@ -33,11 +33,11 @@ public class HistoryStoreConverter {
 		long start = System.currentTimeMillis();
 		final CoreException[] exception = new CoreException[1];
 		final BucketTree tree = destination.getTree();
-		final HistoryBucket currentBucket = (HistoryBucket) tree.getCurrent();		
+		final HistoryBucket currentBucket = (HistoryBucket) tree.getCurrent();
 		HistoryStore source = new HistoryStore(workspace, location, limit);
 		source.accept(Path.ROOT, new IHistoryStoreVisitor() {
 			public boolean visit(HistoryStoreEntry state) {
-				File bucketDir = tree.locationFor(state.getPath());				
+				File bucketDir = tree.locationFor(state.getPath());
 				try {
 					currentBucket.load(bucketDir);
 				} catch (CoreException e) {
@@ -51,7 +51,7 @@ public class HistoryStoreConverter {
 		}, true);
 		try {
 			// the last bucket changed will not have been saved
-			currentBucket.save();
+			tree.close();
 			// we are done using the old history store instance		
 			source.shutdown(null);
 		} catch (CoreException e) {
