@@ -30,22 +30,35 @@ public class IncrementalBuild extends Task {
 	private int kind = IncrementalProjectBuilder.INCREMENTAL_BUILD;
 
 	/**
-	 * Unique identifier constant (value <code>"KIND_INCREMENTAL"</code>)
+	 * Unique identifier constant (value <code>"incremental"</code>)
 	 * indicating that an incremental build should be performed.
 	 */
 	public final static String KIND_INCREMENTAL = "incremental"; //$NON-NLS-1$
 
 	/**
-	 * Unique identifier constant (value <code>"KIND_FULL"</code>)
+	 * Unique identifier constant (value <code>"full"</code>)
 	 * indicating that a full build should be performed.
 	 */
 	public final static String KIND_FULL = "full"; //$NON-NLS-1$
 
 	/**
-	 * Unique identifier constant (value <code>"KIND_AUTO"</code>)
+	 * Unique identifier constant (value <code>"auto"</code>)
 	 * indicating that an auto build should be performed.
 	 */
 	public final static String KIND_AUTO = "auto"; //$NON-NLS-1$
+
+	/**
+	 * Unique identifier constant (value <code>"clean"</code>)
+	 * indicating that a CLEAN build should be performed.
+	 * 
+	 * TODO: This constant was added in release 3.0.1. Since
+	 * we are not allowed to create new APIs in maintenance releases,
+	 * it will remain "private" visibility until the 3.1 release. It is still
+	 * important for us to add it to 3.0.1 because it is helpful in
+	 * work-around for bugs in-and-around projects with multiple
+	 * external tool builders.
+	 */
+	private final static String KIND_CLEAN = "clean"; //$NON-NLS-1$
 
 	/**
 	 * Constructs an <code>IncrementalBuild</code> instance.
@@ -90,8 +103,10 @@ public class IncrementalBuild extends Task {
 
 	/**
 	 * Sets the receiver's kind> attribute.  This value must be one
-	 * of <code>IncrementalBuild.KIND_FULL</code>, <code>IncrementalBuild.KIND_AUTO</code>,
-	 * <code>IncrementalBuild.KIND_INCR</code>.
+	 * of: <code>IncrementalBuild.KIND_FULL</code>, 
+	 * <code>IncrementalBuild.KIND_AUTO</code>,
+	 * <code>IncrementalBuild.KIND_INCREMENTAL</code>,
+	 * <code>IncrementalBuild.KIND_CLEAN</code>.
 	 * 
 	 * @param value the receiver's kind attribute
 	 */
@@ -100,6 +115,8 @@ public class IncrementalBuild extends Task {
 			kind = IncrementalProjectBuilder.FULL_BUILD;
 		else if (IncrementalBuild.KIND_AUTO.equalsIgnoreCase(value))
 			kind = IncrementalProjectBuilder.AUTO_BUILD;
+		else if (IncrementalBuild.KIND_CLEAN.equalsIgnoreCase(value))
+			kind = IncrementalProjectBuilder.CLEAN_BUILD;
 		else if (IncrementalBuild.KIND_INCREMENTAL.equalsIgnoreCase(value))
 			kind = IncrementalProjectBuilder.INCREMENTAL_BUILD;
 	}
