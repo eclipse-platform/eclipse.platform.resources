@@ -34,6 +34,8 @@ public class DelayedSnapshotRunnable implements Runnable {
 	 */
 	public void run() {
 		synchronized (this) {
+			if (canceled)
+				return;
 			try {
 				wait(delay);
 			} catch (InterruptedException e) {
@@ -56,7 +58,6 @@ public class DelayedSnapshotRunnable implements Runnable {
 				if (!canceled) {
 					Workspace workspace= (Workspace)ResourcesPlugin.getWorkspace();
 					if (workspace != null) {
-						workspace.getWorkManager().avoidAutoBuild();
 						saveManager.requestSnapshot();
 					}
 				}
