@@ -1805,8 +1805,6 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			_workManager.startup(null);
 			fileSystemManager = new FileSystemResourceManager(this);
 			fileSystemManager.startup(monitor);
-			propertyManager = PropertyManager.createPropertyManager(this);
-			propertyManager.startup(monitor);
 			pathVariableManager = new PathVariableManager();
 			pathVariableManager.startup(null);
 			natureManager = new NatureManager();
@@ -1819,16 +1817,18 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			markerManager.startup(null);
 			synchronizer = new Synchronizer(this);
 			saveManager = new SaveManager(this);
-			saveManager.startup(null);
+			saveManager.startup(null);			
 			//must start after save manager, because (read) access to tree is needed
 			aliasManager = new AliasManager(this);
 			aliasManager.startup(null);
 			refreshManager = new RefreshManager(this);
 			refreshManager.startup(null);
+			propertyManager = PropertyManager.createPropertyManager(this);
+			propertyManager.startup(monitor);			
 			charsetManager = new CharsetManager(this);
 			charsetManager.startup(null);
 			contentDescriptionManager = new ContentDescriptionManager();
-			contentDescriptionManager.startup(null);
+			contentDescriptionManager.startup(null);			
 		} finally {
 			//unlock tree even in case of failure, otherwise shutdown will also fail
 			treeLocked = null;
