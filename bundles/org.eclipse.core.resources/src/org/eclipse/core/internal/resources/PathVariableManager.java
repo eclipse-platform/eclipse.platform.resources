@@ -31,7 +31,7 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 	/**
 	 * Constructor for the class.
 	 */
-	public PathVariableManager(Workspace workspace) {
+	public PathVariableManager() {
 		this.listeners = Collections.synchronizedSet(new HashSet());
 		this.preferences = ResourcesPlugin.getPlugin().getPluginPreferences();
 	}
@@ -123,10 +123,10 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 			return;
 
 		// use a separate collection to avoid interference of simultaneous additions/removals 
-		Object[] listeners = this.listeners.toArray();
+		Object[] listenerArray = this.listeners.toArray();
 		PathVariableChangeEvent pve = new PathVariableChangeEvent(this, name, value, type);
-		for (int i = 0; i < listeners.length; ++i) {
-			IPathVariableChangeListener l = (IPathVariableChangeListener) listeners[i];
+		for (int i = 0; i < listenerArray.length; ++i) {
+			IPathVariableChangeListener l = (IPathVariableChangeListener) listenerArray[i];
 			l.pathVariableChanged(pve);
 		}
 	}
@@ -200,7 +200,7 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 				return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 			}
 		}
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	}
 	/**
 	 * @see IPathVariableManager#validateValue
@@ -210,7 +210,7 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 			String message = Policy.bind("pathvar.invalidValue"); //$NON-NLS-1$
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	}
 	/**
 	 * Throws a runtime exception if the given name is not valid as a path
