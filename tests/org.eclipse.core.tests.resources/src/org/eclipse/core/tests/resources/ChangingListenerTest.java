@@ -20,6 +20,8 @@ import org.eclipse.core.tests.harness.EclipseWorkspaceTest;
  * workspace.
  */
 public class ChangingListenerTest extends EclipseWorkspaceTest {
+	protected boolean wasAutoBuilding;
+
 	public static Test suite() {
 		return new TestSuite(ChangingListenerTest.class);
 	}
@@ -28,6 +30,25 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 	}
 	public ChangingListenerTest(String name) {
 		super(name);
+	}
+
+	protected void setUp() throws Exception {
+		super.setUp();
+		IWorkspaceDescription description = getWorkspace().getDescription();
+		wasAutoBuilding = description.isAutoBuilding();
+		if (wasAutoBuilding) {
+			description.setAutoBuilding(false);
+			getWorkspace().setDescription(description);
+		}
+	}
+
+	protected void tearDown() throws Exception {
+		super.tearDown();
+		if (wasAutoBuilding) {
+			IWorkspaceDescription description = getWorkspace().getDescription();
+			description.setAutoBuilding(true);
+			getWorkspace().setDescription(description);
+		}
 	}
 	public void testChangeInPreClose() {
 		final IProject project = getWorkspace().getRoot().getProject("Project");
@@ -97,7 +118,7 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		 * it receives its own delta.
 		 */
 		class Listener1 extends ResourceDeltaVerifier {
-			private int iteration = 0;
+			int iteration = 0;
 			public void resourceChanged(IResourceChangeEvent event) {
 				switch (iteration) {
 					case 0 :
@@ -127,11 +148,12 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		getWorkspace().addResourceChangeListener(listener);
 		try {
 			ensureExistsInWorkspace(project, true);
-			//wait for a couple of notifications to pass
+			//wait for a notification to pass
 			waitForNotify();
 			assertTrue("3.0", file.exists());
-			waitForNotify();
-			waitForNotify();
+			//wait for second notification
+			while (listener.iteration < 2)
+				waitForNotify();
 		} finally {
 			getWorkspace().removeResourceChangeListener(listener);
 		}
