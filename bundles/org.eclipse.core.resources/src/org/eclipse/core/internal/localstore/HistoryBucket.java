@@ -16,7 +16,7 @@ import java.util.Comparator;
 import org.eclipse.core.internal.utils.UniversalUniqueIdentifier;
 import org.eclipse.core.runtime.IPath;
 
-public class HistoryBucketIndex extends Bucket {
+public class HistoryBucket extends Bucket {
 
 	/**
 	 * A entry in the bucket index. Each entry has one path and a collection
@@ -240,7 +240,7 @@ public class HistoryBucketIndex extends Bucket {
 	 */
 	public final static byte VERSION = 2;
 
-	public HistoryBucketIndex(File root) {
+	public HistoryBucket(File root) {
 		super(root);
 	}
 

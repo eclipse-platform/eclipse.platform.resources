@@ -114,8 +114,8 @@ public abstract class Bucket {
 		/**
 		 * Called after the bucket has been visited (and saved). 
 		 */
-		public void bucketVisited(Bucket bucket) throws CoreException {
-			// empty implementation
+		public void afterSaving(Bucket bucket) throws CoreException {
+			// empty implementation, subclasses to override
 		}
 	}
 
@@ -150,7 +150,7 @@ public abstract class Bucket {
 	 * Applies the given visitor to this bucket index. 
 	 * @param visitor
 	 * @param filter
-	 * @param depth
+	 * @param depth the number of trailing segments that can differ from the filter 
 	 * @return one of STOP, RETURN or CONTINUE constants
 	 * @throws CoreException
 	 */
@@ -184,7 +184,7 @@ public abstract class Bucket {
 			return Visitor.CONTINUE;
 		} finally {
 			save();
-			visitor.bucketVisited(this);
+			visitor.afterSaving(this);
 		}
 	}
 

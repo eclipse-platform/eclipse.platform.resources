@@ -38,8 +38,6 @@ public interface IPropertyManager extends IManager {
 
 	/**
 	 * The resource is being deleted so permanently erase its properties.
-	 * In the case of projects, this means the property store will not be
-	 * accessible again.
 	 */
 	public void deleteResource(IResource target) throws CoreException;
 

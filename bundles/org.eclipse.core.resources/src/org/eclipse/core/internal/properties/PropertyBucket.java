@@ -17,13 +17,13 @@ import org.eclipse.core.internal.localstore.Bucket;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.QualifiedName;
 
-public class PropertyIndex extends Bucket {
+public class PropertyBucket extends Bucket {
 
 	public static class PropertyEntry extends Entry {
-		
+
 		private final static Comparator COMPARATOR = new Comparator() {
 			public int compare(Object o1, Object o2) {
-				return ((String[]) o1)[0].compareTo(((String[])o2)[0]);
+				return ((String[]) o1)[0].compareTo(((String[]) o2)[0]);
 			}
 		};
 		private static final String[][] EMPTY_DATA = new String[0][];
@@ -37,7 +37,7 @@ public class PropertyIndex extends Bucket {
 		public static String[][] delete(String[][] existing, String propertyName) {
 			// a size-1 array is a special case
 			if (existing.length == 1)
-				return (existing[0][0].equals(propertyName)) ?  null : existing;			
+				return (existing[0][0].equals(propertyName)) ? null : existing;
 			// find the guy to delete
 			int deletePosition = search(existing, propertyName);
 			if (deletePosition < 0)
@@ -59,8 +59,8 @@ public class PropertyIndex extends Bucket {
 			if (index >= 0) {
 				// found existing occurrence - just replace the value
 				existing[index][1] = propertyValue;
-				return existing;				
-			}			
+				return existing;
+			}
 			// not found - insert 
 			int insertPosition = -index - 1;
 			String[][] newValue = new String[existing.length + 1][];
@@ -71,9 +71,9 @@ public class PropertyIndex extends Bucket {
 				System.arraycopy(existing, insertPosition, newValue, insertPosition + 1, existing.length - insertPosition);
 			return newValue;
 		}
-		
+
 		private static int search(String[][] existing, String propertyName) {
-			return Arrays.binarySearch(existing, new String[] {propertyName, null}, COMPARATOR);		
+			return Arrays.binarySearch(existing, new String[] {propertyName, null}, COMPARATOR);
 		}
 
 		public PropertyEntry(IPath path, PropertyEntry base) {
@@ -86,6 +86,7 @@ public class PropertyIndex extends Bucket {
 			super(path);
 			this.value = value;
 		}
+
 		/**
 		 * Compacts the data array removing any null slots. If non-null slots
 		 * are found, the entry is marked for removal. 
@@ -114,11 +115,11 @@ public class PropertyIndex extends Bucket {
 		public int getOccurrences() {
 			return value == null ? 0 : value.length;
 		}
-		
+
 		public String getProperty(QualifiedName name) {
 			int index = search(value, name.toString());
-			return index < 0 ? null : value[index][1];  
-		} 
+			return index < 0 ? null : value[index][1];
+		}
 
 		public Object getPropertyName(int i) {
 			return this.value[i][0];
@@ -136,6 +137,39 @@ public class PropertyIndex extends Bucket {
 			compact();
 		}
 
+		/**
+		 * Merges two entries (are always sorted). Duplicated additions replace existing ones.
+		 */
+		static Object merge(String[][] base, String[][] additions) {
+			int additionPointer = 0;
+			int basePointer = 0;
+			int added = 0;
+			String[][] result = new String[base.length + additions.length][];
+			while (basePointer < base.length && additionPointer < additions.length) {
+				int comparison = base[basePointer][0].compareTo(additions[additionPointer][0]);
+				if (comparison == 0) {
+					result[added++] = additions[additionPointer++];
+					// duplicate, override
+					basePointer++;
+				} else if (comparison < 0)
+					result[added++] = base[basePointer++];
+				else
+					result[added++] = additions[additionPointer++];
+			}
+			// copy the remaining states from either additions or base arrays
+			String[][] remaining = basePointer == base.length ? additions : base;
+			int remainingPointer = basePointer == base.length ? additionPointer : basePointer;
+			int remainingCount = remaining.length - remainingPointer;
+			System.arraycopy(remaining, remainingPointer, result, added, remainingCount);
+			added += remainingCount;
+			if (added == base.length + additions.length)
+				// no collisions
+				return result;
+			// there were collisions, need to compact
+			String[][] finalResult = new String[added][];
+			System.arraycopy(result, 0, finalResult, 0, finalResult.length);
+			return finalResult;
+		}
 	}
 
 	/** Version number for the current implementation file's format.
@@ -155,7 +189,7 @@ public class PropertyIndex extends Bucket {
 	 */
 	private static final byte VERSION = 1;
 
-	public PropertyIndex(File root) {
+	public PropertyBucket(File root) {
 		super(root);
 	}
 
@@ -192,9 +226,16 @@ public class PropertyIndex extends Bucket {
 		return properties;
 	}
 
-	public void setProperties(PropertyEntry destinationEntry) {
-		// TODO Auto-generated method stub
-		
+	public void setProperties(PropertyEntry entry) {
+		IPath path = entry.getPath();
+		String[][] additions = (String[][]) entry.getValue();
+		String pathAsString = path.toString();
+		String[][] existing = (String[][]) getEntryValue(pathAsString);
+		if (existing == null) {
+			setEntryValue(pathAsString, additions);
+			return;
+		}
+		setEntryValue(pathAsString, PropertyEntry.merge(existing, additions));
 	}
 
 	public void setProperty(IPath path, QualifiedName name, String value) {
@@ -207,7 +248,7 @@ public class PropertyIndex extends Bucket {
 			return;
 		}
 		String[][] newValue;
-		if (value != null)		
+		if (value != null)
 			newValue = PropertyEntry.insert(existing, nameAsString, value);
 		else
 			newValue = PropertyEntry.delete(existing, nameAsString);

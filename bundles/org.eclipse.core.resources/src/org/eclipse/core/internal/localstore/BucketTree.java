@@ -11,7 +11,7 @@
 package org.eclipse.core.internal.localstore;
 
 import java.io.File;
-import org.eclipse.core.internal.localstore.BucketIndex.Visitor;
+import org.eclipse.core.internal.localstore.Bucket.Visitor;
 import org.eclipse.core.runtime.*;
 
 public class BucketTree {
