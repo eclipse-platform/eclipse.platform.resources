@@ -8,6 +8,10 @@ package org.eclipse.core.resources;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IStatus;
 /**
+ * NOTE: The following API is experimental, and has been exposed to allow certain clients
+ * to try it and provide feedback on the new feature.  This method must not be called by production
+ * code, and any callers must be aware that this API is subject to change or removal at any time.
+ * 
  * @since 2.0
  */
 public interface IFileModificationValidator {

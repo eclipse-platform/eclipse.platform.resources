@@ -32,6 +32,11 @@ public void appendContents(InputStream content, boolean force, boolean keepHisto
 			checkAccessible(getFlags(info));
 
 			workspace.beginOperation(true);
+			if (Workspace.shouldValidate) {
+				workspace.validateSave(this);
+				info = getResourceInfo(false, false);
+				checkAccessible(getFlags(info));
+			}
 			internalSetContents(content, getLocalManager().locationFor(this), force, keepHistory, true, Policy.subMonitorFor(monitor, Policy.opWork));
 		} catch (OperationCanceledException e) {
 			workspace.getWorkManager().operationCanceled();
@@ -196,6 +201,11 @@ public void setContents(InputStream content, boolean force, boolean keepHistory,
 			checkAccessible(getFlags(info));
 
 			workspace.beginOperation(true);
+			if (Workspace.shouldValidate) {
+				workspace.validateSave(this);
+				info = getResourceInfo(false, false);
+				checkAccessible(getFlags(info));
+			}
 			internalSetContents(content, getLocalManager().locationFor(this), force, keepHistory, false, Policy.subMonitorFor(monitor, Policy.opWork));
 		} catch (OperationCanceledException e) {
 			workspace.getWorkManager().operationCanceled();
