@@ -1350,7 +1350,7 @@ public IStatus save(int kind, Project project, IProgressMonitor monitor) throws 
 			workspace.getWorkManager().operationCanceled();
 			throw e;
 		} finally {
-			workspace.endOperation(false, null);
+			workspace.endOperation(false, Policy.monitorFor(null));
 		}
 	} finally {
 		monitor.done();

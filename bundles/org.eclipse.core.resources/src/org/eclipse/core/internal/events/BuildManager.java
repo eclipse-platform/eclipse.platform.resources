@@ -33,6 +33,9 @@ public class BuildManager implements ICoreConstants, IManager, ILifecycleListene
 	protected InternalBuilder currentBuilder;
 	protected DeltaDataTree currentDelta;
 	
+	//used for interrupting an auto-build when another operation starts
+	protected volatile boolean interrupted = false;
+	
 	//used for the build cycle looping mechanism
 	protected boolean rebuildRequested = false;
 	protected final ArrayList builtProjects = new ArrayList();
@@ -189,16 +192,25 @@ protected void basicBuild(IProject project, int trigger, ICommand[] commands, Mu
 			IProgressMonitor sub = Policy.subMonitorFor(monitor, 1);
 			BuildCommand command = (BuildCommand) commands[i];
 			basicBuild(project, trigger, command.getBuilderName(), command.getArguments(false), status, sub);
-			Policy.checkCanceled(monitor);
+			checkCanceled(trigger, monitor);
 		}
 	} finally {
 		monitor.done();
 	}
 }
+/**
+ * Cancel the build if the user has canceled or if an auto-build has been interrupted.
+ */
+private void checkCanceled(int trigger, IProgressMonitor monitor) {
+	Policy.checkCanceled(monitor);
+	if (trigger == IncrementalProjectBuilder.AUTO_BUILD && interrupted)
+		throw new OperationCanceledException();
+}
+
 public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 	monitor = Policy.monitorFor(monitor);
 	try {
-		monitor.beginTask(ICoreConstants.MSG_EVENTS_BUILDING_0, Policy.totalWork); //$NON-NLS-1$
+		monitor.beginTask(ICoreConstants.MSG_EVENTS_BUILDING_0, Policy.totalWork);
 		if (!canRun(trigger))
 			return;
 		try {
@@ -216,6 +228,7 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 				throw new ResourceException(status);
 		} finally {
 			building = false;
+			interrupted = false;
 			builtProjects.clear();
 			deltaCache.flush();
 		}
@@ -557,6 +570,13 @@ protected IncrementalProjectBuilder instantiateBuilder(String builderName) throw
 	builder.setLabel(extension.getLabel());
 	builder.setNatureId(natureId);
 	return (IncrementalProjectBuilder)builder;
+}
+/**
+ * Interrupts the autobuild that is currently executing or about to execute
+ */
+public void interrupt()  {
+	if (building)
+		interrupted = true;
 }
 /**
  * Returns true if the current builder is interested in changes

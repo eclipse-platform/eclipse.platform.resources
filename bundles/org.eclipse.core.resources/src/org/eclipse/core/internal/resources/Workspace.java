@@ -47,7 +47,6 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	protected long nextMarkerId = 0;
 	protected Synchronizer synchronizer;
 	protected IProject[] buildOrder = null;
-	protected boolean forceBuild = false;
 	protected IWorkspaceRoot defaultRoot = new WorkspaceRoot(Path.ROOT, this);
 	
 	//jobs
@@ -92,12 +91,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	protected boolean treeLocked;
 	
-	/**
-	 * We need to override the tree lock mechanism when synchronizing the tree
-	 * to create a workspace tree visitor.  In this case we need the tree to be
-	 * unlocked, but we know that nothing will modify the tree.
-	 */
-	protected volatile boolean overrideTreeLock = false;
+
 
 	/** indicates if the workspace crashed in a previous session */
 	protected boolean crashed = false;
@@ -144,10 +138,6 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 	workManager.incrementNestedOperations();
 	if (!workManager.isBalanced())
 		Assert.isTrue(false, "Operation was not prepared."); //$NON-NLS-1$
-	if (isTreeLocked() && createNewTree) {
-		String message = Policy.bind("resources.cannotModify"); //$NON-NLS-1$
-		throw new ResourceException(IResourceStatus.WORKSPACE_LOCKED, null, message, null);
-	}
 	if (workManager.getPreparedOperationDepth() > 1) {
 		if (createNewTree && tree.isImmutable())
 			newWorkingTree();
@@ -159,11 +149,8 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 		newWorkingTree();
 	}
 }
-protected void broadcastChanges(ElementTree currentTree, int type, boolean lockTree, boolean updateState, IProgressMonitor monitor) {
-	if (operationTree == null)
-		return;
-	monitor.subTask(MSG_RESOURCES_UPDATING); 
-	notificationManager.broadcastChanges(currentTree, type, lockTree, updateState);
+protected void broadcastChanges(int type, boolean updateState) {
+	notificationManager.broadcastChanges(tree, type, updateState);
 }
 /**
  * Broadcasts an internal workspace lifecycle event to interested
@@ -184,15 +171,15 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 			prepareOperation();
 			beginOperation(true);
 			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
+				broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
 			getBuildManager().build(trigger, Policy.subMonitorFor(monitor, Policy.opWork));
 			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
+				broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false);
 		} finally {
 			//building may close the tree, but we are still inside an operation so open it
 			if (tree.isImmutable())
 				newWorkingTree();
-			getWorkManager().avoidAutoBuild();
+			autoBuildJob.avoidBuild();
 			endOperation(false, Policy.subMonitorFor(monitor, Policy.buildWork));
 		}
 	} finally {
@@ -209,11 +196,11 @@ public void checkpoint(boolean build) {
 		if (!getWorkManager().isCurrentOperation())
 			return;
 		immutable = tree.isImmutable();
-		broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
+		broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
 		if (build && isAutoBuilding())
 			getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.monitorFor(null));
-		broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
-		broadcastChanges(tree, IResourceChangeEvent.POST_CHANGE, true, true, Policy.monitorFor(null));
+		broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false);
+		broadcastChanges(IResourceChangeEvent.POST_CHANGE, true);
 		getMarkerManager().resetMarkerDeltas();
 	} catch (CoreException e) {
 		// ignore any CoreException.  There shouldn't be any as the buildmanager and notification manager
@@ -848,58 +835,35 @@ public void dumpStats() {
  */
 public void endOperation(boolean build, IProgressMonitor monitor) throws CoreException {
 	WorkManager workManager = getWorkManager();
+	// This is done in a try finally to ensure that we always decrement the operation count
+	// and release the workspace lock.  This must be done at the end because snapshot
+	// and "hasChanges" comparison have to happen without interference from other threads.
+	boolean hasTreeChanges= false;
 	try {
 		workManager.setBuild(build);
 		// if we are not exiting a top level operation then just decrement the count and return
-		if (workManager.getPreparedOperationDepth() > 1) 
+		if (workManager.getPreparedOperationDepth() > 1) {
+			notifyJob.endNested();
 			return;
-			
+		}
 		// do the following in a try/finally to ensure that the operation tree is null'd at the end
 		// as we are completing a top level operation.
 		try {
-			// if the tree is locked we likely got here in some finally block after a failed begin.
-			// Since the tree is locked, nothing could have been done so there is nothing to do.
-			Assert.isTrue(!(isTreeLocked() && workManager.shouldBuild()), "The tree should not be locked."); //$NON-NLS-1$
 			// check for a programming error on using beginOperation/endOperation
 			Assert.isTrue(workManager.getPreparedOperationDepth() > 0, "Mismatched begin/endOperation"); //$NON-NLS-1$
-	
+
 			// At this time we need to rebalance the nested operations. It is necessary because
 			// build() and snapshot() should not fail if they are called.
 			workManager.rebalanceNestedOperations();
 
-			// If autobuild is on, give each open project a chance to build.  We have to tell each one
-			// because there is no way of knowing whether or not there is a relevant change
-			// for the project without computing the delta for each builder in each project relative
-			// to its last built state.  If we have guaranteed corelation between the notification delta
-			// and the last time autobuild was done, then we could look at the notification delta and
-			// see which projects had changed and only build them.  Currently there is no such
-			// guarantee.   
-			// Note that  building a project when there is actually nothing to do is not free but
-			// is should not be too expensive.  The computed delta will be empty and so the builder itself
-			// will not actually be run.  This does require however the delta computation.
-			//
-			// This is done in a try finally to ensure that we always decrement the operation count.
-			// The operationCount cannot be decremented before this as the build must be done
-			// inside an operation.  Note that we only ever get here if we are at a top level operation.
-			// As such, the operationCount will always be 0 (zero) after this.
-			OperationCanceledException cancel = null;
-			CoreException signal = null;
-			monitor = Policy.monitorFor(monitor);
-			monitor.subTask(MSG_RESOURCES_UPDATING); //$NON-NLS-1$
-			boolean hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
-			if (isAutoBuilding() && shouldBuild(hasTreeChanges)) {
-				autoBuildJob.schedule(500);
-			}
-			notifyJob.endTopLevel();
+			//find out if any operation has potentially modified the tree
+			hasTreeChanges = workManager.shouldBuild();
+			//double check if the tree has actually changed
+			if (hasTreeChanges)
+				hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
 			// Perform a snapshot if we are sufficiently out of date.  Be sure to make the tree immutable first
 			tree.immutable();
 			saveManager.snapshotIfNeeded(hasTreeChanges);
-			//make sure the monitor subtask message is cleared.
-			monitor.subTask(""); //$NON-NLS-1$
-			if (cancel != null)
-				throw cancel;
-			if (signal != null)
-				throw signal;
 		} finally {
 			// make sure that the tree is immutable.  Only do this if we are ending a top-level operation.
 			tree.immutable();
@@ -908,6 +872,9 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 	} finally {
 		workManager.checkOut();
 	}
+	//notify build and listener jobs after lock is released so there is no contention for the lock
+	autoBuildJob.endTopLevel(hasTreeChanges);
+	notifyJob.endTopLevel();
 }
 
 /**
@@ -1274,9 +1241,7 @@ protected boolean isOverlapping(IPath location1, IPath location2, boolean bothDi
 	return one.isPrefixOf(two) || (bothDirections && two.isPrefixOf(one));
 }
 public boolean isTreeLocked() {
-	if (overrideTreeLock)
-		return false;
-	return treeLocked;
+	return false;
 }
 /**
  * Link the given tree into the receiver's tree at the specified resource.
@@ -1617,7 +1582,7 @@ public IStatus save(boolean full, IProgressMonitor monitor) throws CoreException
 		// it is OK to start the save because it will wait until the other thread
 		// is finished. Otherwise, someone in this thread has tried to do a save
 		// inside of an operation (which is not allowed by the spec).
-		if (getWorkManager().getCurrentOperationThread() == Thread.currentThread()) {
+		if (getWorkManager().isCurrentOperation()) {
 			message = Policy.bind("resources.saveOp"); //$NON-NLS-1$
 			throw new ResourceException(IResourceStatus.OPERATION_FAILED, null, message, null);
 		} 
@@ -1651,7 +1616,7 @@ public void setDescription(IWorkspaceDescription value) throws CoreException {
 		buildOrder = null;
 	//if autobuild has just been turned on, indicate that a build is necessary
 	if (!description.isAutoBuilding() && newDescription.isAutoBuilding())
-		forceBuild = true;
+		autoBuildJob.forceBuild();
 	description.copyFrom(newDescription);
 	Policy.setupAutoBuildProgress(description.isAutoBuilding());
 	ResourcesPlugin.getPlugin().savePluginPreferences();
@@ -1660,17 +1625,9 @@ public void setTreeLocked(boolean locked) {
 	treeLocked = locked;
 }
 public void setWorkspaceLock(WorkspaceLock lock) {
-	workManager.setWorkspaceLock(lock);
+	//deprecated
 }
 
-private boolean shouldBuild(boolean hasTreeChanges) throws CoreException {
-	//check if workspace description changes necessitate a build
-	if (forceBuild) {
-		forceBuild = false;
-		return true;
-	}
-	return hasTreeChanges && getWorkManager().shouldBuild();
-}
 protected void shutdown(IProgressMonitor monitor) throws CoreException {
 	monitor = Policy.monitorFor(monitor);
 	try {
@@ -1715,7 +1672,7 @@ public String[] sortNatureSet(String[] natureIds) {
 }
 protected void startup(IProgressMonitor monitor) throws CoreException {
 	// ensure the tree is locked during the startup notification
-	workManager = new WorkManager(this);
+	workManager = new WorkManager();
 	workManager.startup(null);
 	fileSystemManager = new FileSystemResourceManager(this);
 	fileSystemManager.startup(monitor);
@@ -1737,7 +1694,6 @@ protected void startup(IProgressMonitor monitor) throws CoreException {
 	//must start after save manager, because (read) access to tree is needed
 	aliasManager = new AliasManager(this);
 	aliasManager.startup(null);
-	treeLocked = false; // unlock the tree.
 }
 /** 
  * Returns a string representation of this working state's

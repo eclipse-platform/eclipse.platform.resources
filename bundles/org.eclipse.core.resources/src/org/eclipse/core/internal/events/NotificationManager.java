@@ -41,43 +41,38 @@ public void addListener(IResourceChangeListener listener, int eventMask) {
 	}
 	EventStats.listenerAdded(listener);
 }
-
 /**
  * Helper method for the save participant lifecycle computation.  
  */
-public void broadcastChanges(IResourceChangeListener listener, int type, IResourceDelta delta, boolean lockTree) {
+public void broadcastChanges(IResourceChangeListener listener, int type, IResourceDelta delta) {
 	ResourceChangeListenerList.ListenerEntry[] listeners;
 	listeners = new ResourceChangeListenerList.ListenerEntry[] { new ResourceChangeListenerList.ListenerEntry(listener, type)};
-	notify(listeners, new ResourceChangeEvent(workspace, type, delta), lockTree);
+	notify(listeners, new ResourceChangeEvent(workspace, type, delta));
 }
-
 /**
  * The main broadcast point for notification deltas
  */
-public void broadcastChanges(ElementTree lastState, int type, boolean lockTree, boolean updateState) {
-	try {
-		// Do the notification if there are listeners for events of the given type.
-		// Be sure to do all of this inside the try/finally as the finally will update the state 
-		// if requested.  This needs to happen regardless of whether people are listening.
-		if (listeners.hasListenerFor(type)) {
-			IResourceDelta delta = getDelta(lastState);
-			// if the delta is empty the root's change is undefined, there is nothing to do
-			if (delta == null || delta.getKind() == 0)
-				return;
-			notify(getListeners(), new ResourceChangeEvent(workspace, type, delta), lockTree);
-		}
-	} finally {
-		// Remember the current state as the last notified state if requested.
-		// Even if there are problems during the notification there is no need to abort.
-		// Be sure to clear out the old delta
-		if (updateState) {
-			lastState.immutable();
-			oldState = lastState;
-			lastDelta = null;
-			lastDeltaState = lastState;
-			lastMarkerChangeId = 0;
-		}
+public void broadcastChanges(ElementTree lastState, int type, boolean updateState) {
+	// Do the notification if there are listeners for events of the given type.
+	// Be sure to update the state if requested.  This needs to happen regardless of 
+	// whether people are listening.
+	IResourceDelta delta = null;
+	if (listeners.hasListenerFor(type))
+		delta = getDelta(lastState);
+	// Remember the current state as the last notified state if requested.
+	// Be sure to clear out the old delta
+	if (updateState) {
+		workspace.getMarkerManager().resetMarkerDeltas();
+		lastState.immutable();
+		oldState = lastState;
+		lastDelta = null;
+		lastDeltaState = lastState;
+		lastMarkerChangeId = 0;
 	}
+	// if the delta is empty the root's change is undefined, there is nothing to do
+	if (delta == null || delta.getKind() == 0)
+		return;
+	notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
 }
 
 protected ResourceDelta getDelta(ElementTree tree) {
@@ -110,7 +105,7 @@ public void handleEvent(LifecycleEvent event) {
 			if (!listeners.hasListenerFor(IResourceChangeEvent.PRE_CLOSE))
 				return;
 			IProject project = (IProject)event.resource;
-			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_CLOSE, project), true);
+			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_CLOSE, project));
 			break;
 		case LifecycleEvent.PRE_PROJECT_MOVE:
 			//only notify deletion on move if old project handle is going away
@@ -121,18 +116,18 @@ public void handleEvent(LifecycleEvent event) {
 			if (!listeners.hasListenerFor(IResourceChangeEvent.PRE_DELETE))
 				return;
 			project = (IProject)event.resource;
-			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_DELETE, project), true);
+			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_DELETE, project));
 			break;
 	}
 }
-private void notify(ResourceChangeListenerList.ListenerEntry[] resourceListeners, final IResourceChangeEvent event, boolean lockTree) {
+private void notify(ResourceChangeListenerList.ListenerEntry[] resourceListeners, final IResourceChangeEvent event) {
 	int type = event.getType();
 	for (int i = 0; i < resourceListeners.length; i++) {
 		if ((type & resourceListeners[i].eventMask) != 0) {
 			final IResourceChangeListener listener = resourceListeners[i].listener;
 			if (Policy.MONITOR_LISTENERS)
 				EventStats.startNotify(listener);
-			ISafeRunnable code = new ISafeRunnable() {
+			Platform.run(new ISafeRunnable() {
 				public void run() throws Exception {
 					listener.resourceChanged(event);
 				}
@@ -140,23 +135,7 @@ private void notify(ResourceChangeListenerList.ListenerEntry[] resourceListeners
 					//ResourceStats.notifyException(e);
 					// don't log the exception....it is already being logged in Platform#run
 				}
-			};
-			boolean oldLock = workspace.isTreeLocked();
-			boolean immutable = workspace.getElementTree().isImmutable();
-			if (lockTree)
-				workspace.setTreeLocked(true);
-			else
-				if (immutable)
-					workspace.newWorkingTree();
-			try {
-				Platform.run(code);
-			} finally {
-				if (lockTree)
-					workspace.setTreeLocked(oldLock);
-				else
-					if (immutable)
-						workspace.getElementTree().immutable();
-			}
+			});
 			if (Policy.MONITOR_LISTENERS)
 				EventStats.endNotify();
 		}
@@ -177,6 +156,4 @@ public void startup(IProgressMonitor monitor) {
 	oldState = workspace.getElementTree();
 	workspace.addLifecycleListener(this);
 }
-
-
 }

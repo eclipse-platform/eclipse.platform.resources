@@ -10,9 +10,6 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
-import org.eclipse.core.internal.resources.WorkManager;
-import org.eclipse.core.internal.resources.Workspace;
-import org.eclipse.core.internal.utils.Semaphore;
 import org.eclipse.core.runtime.CoreException;
 
 /**
@@ -23,13 +20,11 @@ import org.eclipse.core.runtime.CoreException;
  */
 
 public class WorkspaceLock {
-	private WorkManager workManager;
 
 /**
  * Returns a new workspace lock.
  */
 public WorkspaceLock(IWorkspace workspace) throws CoreException {
-	this.workManager = ((Workspace) workspace).getWorkManager();
 }
 /**
  * Attempts to acquire this lock.  Callers will block indefinitely until this lock comes
@@ -40,28 +35,15 @@ public WorkspaceLock(IWorkspace workspace) throws CoreException {
  * @see #release
  */
 public boolean acquire() throws InterruptedException {
-	Semaphore semaphore = workManager.acquire();
-	if (semaphore == null)
-		return true;
-	if (Workspace.DEBUG)
-		System.out.println("[" + Thread.currentThread() + "] Operation waiting to be executed... :-/"); //$NON-NLS-1$ //$NON-NLS-2$
-	try {
-		semaphore.acquire();
-	} catch (InterruptedException e) {
-		if (Workspace.DEBUG)
-			System.out.println("[" + Thread.currentThread() + "] Operation interrupted while waiting... :-|"); //$NON-NLS-1$ //$NON-NLS-2$
-		throw e;
-	}	
-	workManager.updateCurrentOperation();
-	if (Workspace.DEBUG)
-		System.out.println("[" + Thread.currentThread() + "] Operation started... :-)"); //$NON-NLS-1$ //$NON-NLS-2$
-	return true;
+	//deprecated API
+	return false;
 }
 /**
  * Returns the thread that currently owns the workspace lock.
  */
 protected Thread getCurrentOperationThread() {
-	return workManager.getCurrentOperationThread();
+	//deprecated API
+	return null;
 }
 /**
  * Releases this lock allowing others to acquire it.
@@ -71,7 +53,7 @@ protected Thread getCurrentOperationThread() {
  * @see #acquire
  */
 public void release() {
-	workManager.release();
+	//deprecated API
 }
 /**
  * Returns whether the workspace tree is locked
@@ -81,6 +63,7 @@ public void release() {
  *    <code>false</code>
  */
 protected boolean isTreeLocked() {
-	return workManager.isTreeLocked();
+	//deprecated API
+	return true;
 }
 }

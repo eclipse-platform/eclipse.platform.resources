@@ -66,7 +66,7 @@ public void build(int kind, String builderName, Map args, IProgressMonitor monit
 		//building may close the tree, but we are still inside an operation so open it
 		if (workspace.getElementTree().isImmutable())
 			workspace.newWorkingTree();
-		workspace.getWorkManager().avoidAutoBuild();
+		workspace.autoBuildJob.avoidBuild();
 		workspace.endOperation(false, null);
 	}
 }
@@ -87,7 +87,7 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 		//building may close the tree, but we are still inside an operation so open it
 		if (workspace.getElementTree().isImmutable())
 			workspace.newWorkingTree();
-		workspace.getWorkManager().avoidAutoBuild();
+		workspace.autoBuildJob.avoidBuild();
 		workspace.endOperation(false, null);
 	}
 }
