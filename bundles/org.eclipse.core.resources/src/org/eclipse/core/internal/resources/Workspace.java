@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved.   This program and the accompanying materials
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,15 +18,14 @@ import org.eclipse.core.internal.localstore.FileSystemResourceManager;
 import org.eclipse.core.internal.properties.IPropertyManager;
 import org.eclipse.core.internal.properties.PropertyManager;
 import org.eclipse.core.internal.refresh.RefreshManager;
-import org.eclipse.core.internal.runtime.InternalPlatform;
-import org.eclipse.core.internal.utils.Assert;
-import org.eclipse.core.internal.utils.Policy;
+import org.eclipse.core.internal.utils.*;
 import org.eclipse.core.internal.watson.*;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.TeamHook;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.osgi.framework.Bundle;
 
 public class Workspace extends PlatformObject implements IWorkspace, ICoreConstants {
 	// whether the resources plugin is in debug mode.
@@ -99,6 +98,11 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	/** indicates if the workspace crashed in a previous session */
 	protected boolean crashed = false;
 
+	/**
+	 * Job that performs periodic string pool canonicalization.
+	 */
+	private StringPoolJob stringPoolJob;
+
 	public Workspace() {
 		super();
 		localMetaArea = new LocalMetaArea();
@@ -115,9 +119,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 * to be automatically done at the end of the operation in which
 	 * the build occurs.
 	 */
-	protected void aboutToBuild() throws CoreException {
-		//fire a POST_CHANGE first to ensure everyone is up to date
-		//before firing PRE_BUILD
+	protected void aboutToBuild() {
+		//fire a POST_CHANGE first to ensure everyone is up to date before firing PRE_BUILD
 		broadcastChanges(IResourceChangeEvent.POST_CHANGE, true);
 		broadcastChanges(IResourceChangeEvent.PRE_BUILD, false);
 	}
@@ -169,7 +172,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			newWorkingTree();
 	}
 
-	protected void broadcastChanges(int type, boolean lockTree) throws CoreException {
+	protected void broadcastChanges(int type, boolean lockTree) {
 		notificationManager.broadcastChanges(tree, type, lockTree);
 	}
 
@@ -209,6 +212,16 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		}
 	}
 
+	/**
+	 * Returns whether creating executable extensions is acceptable
+	 * at this point in time.  In particular, returns <code>false</code>
+	 * when the system bundle is shutting down, which only occurs
+	 * when the entire framework is exiting.
+	 */
+	private boolean canCreateExtensions() {
+		return Platform.getBundle("org.eclipse.osgi").getState() != Bundle.STOPPING; //$NON-NLS-1$
+	}
+	
 	/* (non-Javadoc)
 	 * @see IWorkspace#checkpoint(boolean)
 	 */
@@ -489,11 +502,11 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			// ignore projects that are not accessible
 			if (!project.isAccessible())
 				continue;
-			ProjectDescription description = project.internalGetDescription();
-			if (description == null)
+			ProjectDescription desc = project.internalGetDescription();
+			if (desc == null)
 				continue;
 			//obtain both static and dynamic project references
-			IProject[] refs = description.getAllReferences(false);
+			IProject[] refs = desc.getAllReferences(false);
 			allAccessibleProjects.add(project);
 			for (int j = 0; j < refs.length; j++) {
 				IProject ref = refs[j];
@@ -617,7 +630,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		// preserve local sync info
 		ResourceInfo oldInfo = ((Resource) source).getResourceInfo(true, false);
 		newInfo.setFlags(newInfo.getFlags() | (oldInfo.getFlags() & M_LOCAL_EXISTS));
-
+		
 		// forget content-related caching flags
 		newInfo.clear(M_CONTENT_CACHE);
 
@@ -896,7 +909,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 				// At this time we need to rebalance the nested operations. It is necessary because
 				// build() and snapshot() should not fail if they are called.
 				workManager.rebalanceNestedOperations();
-
+				
 				//find out if any operation has potentially modified the tree
 				hasTreeChanges = workManager.shouldBuild();
 				//double check if the tree has actually changed
@@ -995,14 +1008,15 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		}
 		return buildOrder;
 	}
-
+	
 	public CharsetManager getCharsetManager() {
 		return charsetManager;
 	}
-
+	
 	public ContentDescriptionManager getContentDescriptionManager() {
 		return contentDescriptionManager;
-	}
+	}	
+	
 
 	/* (non-Javadoc)
 	 * @see IWorkspace#getDanglingReferences()
@@ -1097,7 +1111,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	public IPropertyManager getPropertyManager() {
 		return (IPropertyManager) propertyManager;
 	}
-
+	
 	/**
 	 * Returns the refresh manager for this workspace
 	 */
@@ -1191,6 +1205,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	protected void initializeValidator() {
 		shouldValidate = false;
+		if (!canCreateExtensions())
+			return;
 		IConfigurationElement[] configs = Platform.getExtensionRegistry().getConfigurationElementsFor(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PT_FILE_MODIFICATION_VALIDATOR);
 		// no-one is plugged into the extension point so disable validation
 		if (configs == null || configs.length == 0) {
@@ -1211,9 +1227,12 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			validator = (IFileModificationValidator) config.createExecutableExtension("class"); //$NON-NLS-1$
 			shouldValidate = true;
 		} catch (CoreException e) {
-			//XXX: shoud provide a meaningful status code
-			IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initValidator"), e); //$NON-NLS-1$
-			ResourcesPlugin.getPlugin().getLog().log(status);
+			//ignore the failure if we are shutting down (expected since extension
+			//provider plugin has probably already shut down
+			if (canCreateExtensions()) {//$NON-NLS-1$
+				IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initValidator"), e); //$NON-NLS-1$
+				ResourcesPlugin.getPlugin().getLog().log(status);
+			}
 		}
 	}
 
@@ -1224,6 +1243,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	protected void initializeMoveDeleteHook() {
 		try {
+			if (!canCreateExtensions())
+				return;
 			IConfigurationElement[] configs = Platform.getExtensionRegistry().getConfigurationElementsFor(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PT_MOVE_DELETE_HOOK);
 			// no-one is plugged into the extension point so disable validation
 			if (configs == null || configs.length == 0) {
@@ -1242,9 +1263,12 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 				IConfigurationElement config = configs[0];
 				moveDeleteHook = (IMoveDeleteHook) config.createExecutableExtension("class"); //$NON-NLS-1$
 			} catch (CoreException e) {
-				//XXX: shoud provide a meaningful status code
-				IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initHook"), e); //$NON-NLS-1$
-				ResourcesPlugin.getPlugin().getLog().log(status);
+				//ignore the failure if we are shutting down (expected since extension
+				//provider plugin has probably already shut down
+				if (canCreateExtensions()) {//$NON-NLS-1$
+					IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initHook"), e); //$NON-NLS-1$
+					ResourcesPlugin.getPlugin().getLog().log(status);
+				}
 			}
 		} finally {
 			// for now just use Core's implementation
@@ -1260,6 +1284,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	protected void initializeTeamHook() {
 		try {
+			if (!canCreateExtensions())
+				return;
 			IConfigurationElement[] configs = Platform.getExtensionRegistry().getConfigurationElementsFor(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PT_TEAM_HOOK);
 			// no-one is plugged into the extension point so disable validation
 			if (configs == null || configs.length == 0) {
@@ -1278,9 +1304,12 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 				IConfigurationElement config = configs[0];
 				teamHook = (TeamHook) config.createExecutableExtension("class"); //$NON-NLS-1$
 			} catch (CoreException e) {
-				//XXX: shoud provide a meaningful status code
-				IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initTeamHook"), e); //$NON-NLS-1$
-				ResourcesPlugin.getPlugin().getLog().log(status);
+				//ignore the failure if we are shutting down (expected since extension
+				//provider plugin has probably already shut down
+				if (canCreateExtensions()) {//$NON-NLS-1$
+					IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initTeamHook"), e); //$NON-NLS-1$
+					ResourcesPlugin.getPlugin().getLog().log(status);
+				}
 			}
 		} finally {
 			// default to use Core's implementation
@@ -1611,7 +1640,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			}
 		}
 		//finally register a string pool participant
-		InternalPlatform.getDefault().addStringPoolParticipant(saveManager, getRoot());
+		stringPoolJob = new StringPoolJob();
+		stringPoolJob.addStringPoolParticipant(saveManager, getRoot());
 		return Status.OK_STATUS;
 	}
 
@@ -1727,7 +1757,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	/* (non-Javadoc)
 	 * @see IWorkspace#setDescription(IWorkspaceDescription)
 	 */
-	public void setDescription(IWorkspaceDescription value) throws CoreException {
+	public void setDescription(IWorkspaceDescription value) {
 		// if both the old and new description's build orders are null, leave the
 		// workspace's build order slot because it is caching the computed order.
 		// Otherwise, set the slot to null to force recomputation or building from the description.
@@ -1817,18 +1847,18 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			markerManager.startup(null);
 			synchronizer = new Synchronizer(this);
 			saveManager = new SaveManager(this);
-			saveManager.startup(null);			
+			saveManager.startup(null);
 			//must start after save manager, because (read) access to tree is needed
 			aliasManager = new AliasManager(this);
 			aliasManager.startup(null);
 			refreshManager = new RefreshManager(this);
 			refreshManager.startup(null);
 			propertyManager = PropertyManager.createPropertyManager(this);
-			propertyManager.startup(monitor);			
+			propertyManager.startup(monitor);
 			charsetManager = new CharsetManager(this);
 			charsetManager.startup(null);
 			contentDescriptionManager = new ContentDescriptionManager();
-			contentDescriptionManager.startup(null);			
+			contentDescriptionManager.startup(null);
 		} finally {
 			//unlock tree even in case of failure, otherwise shutdown will also fail
 			treeLocked = null;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -413,13 +413,7 @@ class ResourceTree implements IResourceTree {
 			}
 
 			// Clear the history store.
-			try {
-				project.clearHistory(null);
-			} catch (CoreException e) {
-				String message = Policy.bind("history.problemsRemoving", project.getFullPath().toString()); //$NON-NLS-1$
-				IStatus status = new ResourceStatus(IResourceStatus.FAILED_DELETE_LOCAL, project.getFullPath(), message, e);
-				failed(status);
-			}
+			project.clearHistory(null);
 		} finally {
 			lock.release();
 		}
@@ -488,11 +482,11 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardDeleteFile(IFile, int, IProgressMonitor)
 	 */
-	public void standardDeleteFile(IFile file, int updateFlags, IProgressMonitor monitor) {
+	public void standardDeleteFile(IFile file, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
-			internalDeleteFile(file, updateFlags, monitor);
+			internalDeleteFile(file, flags, monitor);
 		} finally {
 			lock.release();
 		}
@@ -502,7 +496,7 @@ class ResourceTree implements IResourceTree {
 	 * Helper method for #standardDeleteFile. Returns a boolean indicating whether or
 	 * not the delete was successful. 
 	 */
-	private boolean internalDeleteFile(IFile file, int updateFlags, IProgressMonitor monitor) {
+	private boolean internalDeleteFile(IFile file, int flags, IProgressMonitor monitor) {
 		try {
 			String message = Policy.bind("resources.deleting", file.getFullPath().toString()); //$NON-NLS-1$
 			monitor.beginTask(message, Policy.totalWork);
@@ -526,8 +520,8 @@ class ResourceTree implements IResourceTree {
 				return true;
 			}
 
-			boolean keepHistory = (updateFlags & IResource.KEEP_HISTORY) != 0;
-			boolean force = (updateFlags & IResource.FORCE) != 0;
+			boolean keepHistory = (flags & IResource.KEEP_HISTORY) != 0;
+			boolean force = (flags & IResource.FORCE) != 0;
 
 			// Add the file to the local history if requested by the user.
 			if (keepHistory)
@@ -574,7 +568,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardDeleteFolder(IFolder, int, IProgressMonitor)
 	 */
-	public void standardDeleteFolder(IFolder folder, int updateFlags, IProgressMonitor monitor) {
+	public void standardDeleteFolder(IFolder folder, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
@@ -602,22 +596,22 @@ class ResourceTree implements IResourceTree {
 			// we can short circuit this operation and delete all the files on disk, otherwise we have
 			// to recursively try and delete them doing best-effort, thus leaving only the ones which
 			// were out of sync.
-			boolean force = (updateFlags & IResource.FORCE) != 0;
+			boolean force = (flags & IResource.FORCE) != 0;
 			if (!force && !isSynchronized(folder, IResource.DEPTH_INFINITE)) {
 				// we are not in sync and force is false so delete via best effort
-				internalDeleteFolder(folder, updateFlags, monitor);
+				internalDeleteFolder(folder, flags, monitor);
 				return;
 			}
 
 			// Add the contents of the files to the local history if so requested by the user.
-			boolean keepHistory = (updateFlags & IResource.KEEP_HISTORY) != 0;
+			boolean keepHistory = (flags & IResource.KEEP_HISTORY) != 0;
 			if (keepHistory)
 				addToLocalHistory(folder, IResource.DEPTH_INFINITE);
 
 			boolean success;
 			try {
 				FileSystemResourceManager localManager = ((Folder) folder).getLocalManager();
-				localManager.delete(folder, force, true, false, monitor);
+				localManager.delete(folder, force, true, false, Policy.subMonitorFor(monitor, Policy.totalWork));
 				java.io.File folderLocation = folder.getLocation().toFile();
 				success = Workspace.clear(folderLocation);
 			} catch (CoreException ce) {
@@ -670,7 +664,7 @@ class ResourceTree implements IResourceTree {
 	 * whether or not the deletion of this folder was successful. Does a best effort
 	 * delete of this resource and its children.
 	 */
-	private boolean internalDeleteFolder(IFolder folder, int updateFlags, IProgressMonitor monitor) {
+	private boolean internalDeleteFolder(IFolder folder, int flags, IProgressMonitor monitor) {
 
 		// Recursively delete each member of the folder.
 		IResource[] members = null;
@@ -688,10 +682,10 @@ class ResourceTree implements IResourceTree {
 			IResource child = members[i];
 			switch (child.getType()) {
 				case IResource.FILE :
-					deletedChildren &= internalDeleteFile((IFile) child, updateFlags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
+					deletedChildren &= internalDeleteFile((IFile) child, flags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
 					break;
 				case IResource.FOLDER :
-					deletedChildren &= internalDeleteFolder((IFolder) child, updateFlags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
+					deletedChildren &= internalDeleteFolder((IFolder) child, flags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
 					break;
 			}
 		}
@@ -728,7 +722,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardDeleteProject(IProject, int, IProgressMonitor)
 	 */
-	public void standardDeleteProject(IProject project, int updateFlags, IProgressMonitor monitor) {
+	public void standardDeleteProject(IProject project, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
@@ -738,10 +732,10 @@ class ResourceTree implements IResourceTree {
 			if (!project.exists())
 				return;
 
-			boolean alwaysDeleteContent = (updateFlags & IResource.ALWAYS_DELETE_PROJECT_CONTENT) != 0;
+			boolean alwaysDeleteContent = (flags & IResource.ALWAYS_DELETE_PROJECT_CONTENT) != 0;
 			// don't take force into account if we are always deleting the content
-			boolean force = alwaysDeleteContent ? true : (updateFlags & IResource.FORCE) != 0;
-			boolean neverDeleteContent = (updateFlags & IResource.NEVER_DELETE_PROJECT_CONTENT) != 0;
+			boolean force = alwaysDeleteContent ? true : (flags & IResource.FORCE) != 0;
+			boolean neverDeleteContent = (flags & IResource.NEVER_DELETE_PROJECT_CONTENT) != 0;
 			boolean success = true;
 
 			// Delete project content.  Don't do anything if the user specified explicitly asked
@@ -754,7 +748,7 @@ class ResourceTree implements IResourceTree {
 				// were out of sync.
 				if (!force && !isSynchronized(project, IResource.DEPTH_INFINITE)) {
 					// we are not in sync and force is false so delete via best effort
-					success = internalDeleteProject(project, updateFlags, monitor);
+					success = internalDeleteProject(project, flags, monitor);
 					if (success) {
 						deletedProject(project);
 					} else {
@@ -811,7 +805,7 @@ class ResourceTree implements IResourceTree {
 	 * Helper method for moving the project content. Determines the content location
 	 * based on the project description. (default location or user defined?)
 	 */
-	private void moveProjectContent(IProject source, IProjectDescription destDescription, int updateFlags, IProgressMonitor monitor) throws CoreException {
+	private void moveProjectContent(IProject source, IProjectDescription destDescription, int flags, IProgressMonitor monitor) throws CoreException {
 		try {
 			String message = Policy.bind("resources.moving", source.getFullPath().toString()); //$NON-NLS-1$
 			monitor.beginTask(message, 10);
@@ -831,7 +825,7 @@ class ResourceTree implements IResourceTree {
 			java.io.File destinationFile = destLocation.toFile();
 			// Move the contents on disk.
 			try {
-				moveInFileSystem(srcLocation.toFile(), destinationFile, updateFlags, monitor);
+				moveInFileSystem(srcLocation.toFile(), destinationFile, flags, monitor);
 			} catch (CoreException ce) {
 				// did the fail occur after copying to the destination?
 				boolean failedDeletingSource = ce instanceof ResourceException && ce.getStatus().getCode() == IResourceStatus.FAILED_DELETE_LOCAL && destinationFile.exists();
@@ -844,7 +838,7 @@ class ResourceTree implements IResourceTree {
 			monitor.worked(9);
 
 			//if this is a deep move, move the contents of any linked resources
-			if ((updateFlags & IResource.SHALLOW) == 0) {
+			if ((flags & IResource.SHALLOW) == 0) {
 				IResource[] children = source.members();
 				for (int i = 0; i < children.length; i++) {
 					if (children[i].isLinked()) {
@@ -853,7 +847,7 @@ class ResourceTree implements IResourceTree {
 						java.io.File sourceFile = children[i].getLocation().toFile();
 						java.io.File destFile = destLocation.append(children[i].getName()).toFile();
 						try {
-							moveInFileSystem(sourceFile, destFile, updateFlags, Policy.monitorFor(null));
+							moveInFileSystem(sourceFile, destFile, flags, Policy.monitorFor(null));
 						} catch (CoreException ce) {
 							//log the failure, but keep trying on remaining links
 							failed(ce.getStatus());
@@ -870,7 +864,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardMoveFile(IFile, IFile, int, IProgressMonitor)
 	 */
-	public void standardMoveFile(IFile source, IFile destination, int updateFlags, IProgressMonitor monitor) {
+	public void standardMoveFile(IFile source, IFile destination, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
@@ -881,9 +875,9 @@ class ResourceTree implements IResourceTree {
 			if (!source.exists() || destination.exists() || !destination.getParent().isAccessible())
 				throw new IllegalArgumentException();
 
-			boolean force = (updateFlags & IResource.FORCE) != 0;
-			boolean keepHistory = (updateFlags & IResource.KEEP_HISTORY) != 0;
-			boolean isDeep = (updateFlags & IResource.SHALLOW) == 0;
+			boolean force = (flags & IResource.FORCE) != 0;
+			boolean keepHistory = (flags & IResource.KEEP_HISTORY) != 0;
+			boolean isDeep = (flags & IResource.SHALLOW) == 0;
 
 			// If the file is not in sync with the local file system and force is false,
 			// then signal that we have an error.
@@ -911,7 +905,7 @@ class ResourceTree implements IResourceTree {
 			// If the file was successfully moved in the file system then the workspace
 			// tree needs to be updated accordingly. Otherwise signal that we have an error.
 			try {
-				moveInFileSystem(sourceFile, destFile, updateFlags, monitor);
+				moveInFileSystem(sourceFile, destFile, flags, monitor);
 			} catch (CoreException e) {
 				failed(e.getStatus());
 				// did the fail occur after copying to the destination?									
@@ -933,7 +927,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardMoveFolder(IFolder, IFolder, int, IProgressMonitor)
 	 */
-	public void standardMoveFolder(IFolder source, IFolder destination, int updateFlags, IProgressMonitor monitor) {
+	public void standardMoveFolder(IFolder source, IFolder destination, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
@@ -947,7 +941,7 @@ class ResourceTree implements IResourceTree {
 			// Check to see if we are synchronized with the local file system. If we are in sync then we can
 			// short circuit this method and do a file system only move. Otherwise we have to recursively
 			// try and move all resources, doing it in a best-effort manner.
-			boolean force = (updateFlags & IResource.FORCE) != 0;
+			boolean force = (flags & IResource.FORCE) != 0;
 			if (!force && !isSynchronized(source, IResource.DEPTH_INFINITE)) {
 				message = Policy.bind("localstore.resourceIsOutOfSync", source.getFullPath().toString());//$NON-NLS-1$
 				IStatus status = new ResourceStatus(IStatus.ERROR, source.getFullPath(), message);
@@ -956,12 +950,12 @@ class ResourceTree implements IResourceTree {
 			}
 
 			// keep history
-			boolean keepHistory = (updateFlags & IResource.KEEP_HISTORY) != 0;
+			boolean keepHistory = (flags & IResource.KEEP_HISTORY) != 0;
 			if (keepHistory)
 				addToLocalHistory(source, IResource.DEPTH_INFINITE);
 
 			//for linked resources, nothing needs to be moved in the file system
-			boolean isDeep = (updateFlags & IResource.SHALLOW) == 0;
+			boolean isDeep = (flags & IResource.SHALLOW) == 0;
 			if (!isDeep && source.isLinked()) {
 				movedFolderSubtree(source, destination);
 				return;
@@ -972,7 +966,7 @@ class ResourceTree implements IResourceTree {
 			java.io.File sourceFile = source.getLocation().toFile();
 			java.io.File destinationFile = destination.getLocation().toFile();
 			try {
-				moveInFileSystem(sourceFile, destinationFile, updateFlags, monitor);
+				moveInFileSystem(sourceFile, destinationFile, flags, monitor);
 			} catch (CoreException e) {
 				failed(e.getStatus());
 				// did the fail occur after copying to the destination?
@@ -1030,7 +1024,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * Does a best-effort delete on this resource and all its children.
 	 */
-	private boolean internalDeleteProject(IProject project, int updateFlags, IProgressMonitor monitor) {
+	private boolean internalDeleteProject(IProject project, int flags, IProgressMonitor monitor) {
 
 		// Recursively delete each member of the project.
 		IResource[] members = null;
@@ -1051,11 +1045,11 @@ class ResourceTree implements IResourceTree {
 					if (child.getName().equals(IProjectDescription.DESCRIPTION_FILE_NAME)) {
 						// ignore the .project file for now and delete it last
 					} else {
-						deletedChildren &= internalDeleteFile((IFile) child, updateFlags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
+						deletedChildren &= internalDeleteFile((IFile) child, flags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
 					}
 					break;
 				case IResource.FOLDER :
-					deletedChildren &= internalDeleteFolder((IFolder) child, updateFlags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
+					deletedChildren &= internalDeleteFolder((IFolder) child, flags, Policy.subMonitorFor(monitor, Policy.totalWork / members.length));
 					break;
 			}
 		}
@@ -1079,7 +1073,7 @@ class ResourceTree implements IResourceTree {
 					// Indicate that the delete was unsuccessful.
 					return false;
 				}
-				boolean deletedProjectFile = internalDeleteFile((IFile) file, updateFlags, Policy.monitorFor(null));
+				boolean deletedProjectFile = internalDeleteFile((IFile) file, flags, Policy.monitorFor(null));
 				if (!deletedProjectFile) {
 					String message = Policy.bind("resources.couldnotDelete", file.getFullPath().toString()); //$NON-NLS-1$
 					IStatus status = new ResourceStatus(IResourceStatus.FAILED_DELETE_LOCAL, file.getFullPath(), message);
@@ -1126,7 +1120,7 @@ class ResourceTree implements IResourceTree {
 	/**
 	 * @see IResourceTree#standardMoveProject(IProject, IProjectDescription, int, IProgressMonitor)
 	 */
-	public void standardMoveProject(IProject source, IProjectDescription description, int updateFlags, IProgressMonitor monitor) {
+	public void standardMoveProject(IProject source, IProjectDescription description, int flags, IProgressMonitor monitor) {
 		Assert.isLegal(isValid);
 		try {
 			lock.acquire();
@@ -1145,7 +1139,7 @@ class ResourceTree implements IResourceTree {
 			}
 
 			// Check to see if we are synchronized with the local file system. 
-			boolean force = (updateFlags & IResource.FORCE) != 0;
+			boolean force = (flags & IResource.FORCE) != 0;
 			if (!force && !isSynchronized(source, IResource.DEPTH_INFINITE)) {
 				// FIXME: make this a best effort move?
 				message = Policy.bind("localstore.resourceIsOutOfSync", source.getFullPath().toString()); //$NON-NLS-1$
@@ -1156,7 +1150,7 @@ class ResourceTree implements IResourceTree {
 
 			// Move the project content in the local file system.
 			try {
-				moveProjectContent(source, description, updateFlags, Policy.subMonitorFor(monitor, Policy.totalWork * 3 / 4));
+				moveProjectContent(source, description, flags, Policy.subMonitorFor(monitor, Policy.totalWork * 3 / 4));
 			} catch (CoreException e) {
 				message = Policy.bind("localstore.couldNotMove", source.getFullPath().toString()); //$NON-NLS-1$
 				IStatus status = new ResourceStatus(IStatus.ERROR, source.getFullPath(), message, e);
@@ -1168,7 +1162,7 @@ class ResourceTree implements IResourceTree {
 			// and we need to update the workspace tree.
 			movedProjectSubtree(source, description);
 			monitor.worked(Policy.totalWork * 1 / 8);
-			boolean isDeep = (updateFlags & IResource.SHALLOW) == 0;
+			boolean isDeep = (flags & IResource.SHALLOW) == 0;
 			updateTimestamps(source.getWorkspace().getRoot().getProject(description.getName()), isDeep);
 			monitor.worked(Policy.totalWork * 1 / 8);
 		} finally {
@@ -1183,10 +1177,10 @@ class ResourceTree implements IResourceTree {
 	 * 
 	 * <code>IResource.FORCE</code> is the only valid flag.
 	 */
-	private void moveInFileSystem(java.io.File source, java.io.File destination, int updateFlags, IProgressMonitor monitor) throws CoreException {
+	private void moveInFileSystem(java.io.File source, java.io.File destination, int flags, IProgressMonitor monitor) throws CoreException {
 		Assert.isLegal(isValid);
 		FileSystemStore store = ((Resource) ResourcesPlugin.getWorkspace().getRoot()).getLocalManager().getStore();
-		boolean force = (updateFlags & IResource.FORCE) != 0;
+		boolean force = (flags & IResource.FORCE) != 0;
 		store.move(source, destination, force, monitor);
 	}
 

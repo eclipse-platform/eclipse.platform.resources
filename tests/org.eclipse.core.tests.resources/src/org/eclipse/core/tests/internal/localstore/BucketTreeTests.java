@@ -12,6 +12,8 @@ package org.eclipse.core.tests.internal.localstore;
 
 import java.io.*;
 import java.util.*;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.eclipse.core.internal.localstore.Bucket;
 import org.eclipse.core.internal.localstore.BucketTree;
 import org.eclipse.core.runtime.*;
@@ -96,6 +98,10 @@ public class BucketTreeTests extends ResourceTest {
 				destination.writeUTF((String) element.getValue());
 			}
 		}
+	}
+
+	public static Test suite() {
+		return new TestSuite(BucketTreeTests.class);
 	}
 
 	public BucketTreeTests(String name) {

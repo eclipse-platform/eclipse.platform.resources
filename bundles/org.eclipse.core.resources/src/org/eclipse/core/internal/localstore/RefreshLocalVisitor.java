@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -59,7 +59,7 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 	 * This method has the same implementation as resourceChanged but as they are different
 	 * cases, we prefer to use different methods.
 	 */
-	protected void contentAdded(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void contentAdded(UnifiedTreeNode node, Resource target) {
 		resourceChanged(node, target);
 	}
 
@@ -85,8 +85,14 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 		ResourceInfo info = target.getResourceInfo(false, false);
 		int flags = target.getFlags(info);
 		//don't delete linked resources
-		if (ResourceInfo.isSet(flags, ICoreConstants.M_LINK))
+		if (ResourceInfo.isSet(flags, ICoreConstants.M_LINK)) {
+			//just clear local sync info
+			info = target.getResourceInfo(false, true);
+			//handle concurrent deletion
+			if (info != null)
+				info.clearModificationStamp();
 			return;
+		}
 		if (target.exists(flags, false))
 			target.deleteResource(true, null);
 		node.setExistsWorkspace(false);
@@ -143,7 +149,7 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 		parent.getLocalManager().refresh(parent, IResource.DEPTH_ZERO, false, null);
 	}
 
-	protected void resourceChanged(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void resourceChanged(UnifiedTreeNode node, Resource target) {
 		ResourceInfo info = target.getResourceInfo(false, true);
 		if (info == null)
 			return;
@@ -238,7 +244,7 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 	/**
 	 * lastModified
 	 */
-	protected void synchronizeLastModified(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void synchronizeLastModified(UnifiedTreeNode node, Resource target) {
 		if (target.isLocal(IResource.DEPTH_ZERO))
 			resourceChanged(node, target);
 		else

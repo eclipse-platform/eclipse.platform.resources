@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -109,20 +109,20 @@ public class UnifiedTreeNode implements ILocalStoreConstants {
 		return "Node: " + s; //$NON-NLS-1$
 	}
 
-	public void removeChildrenFromTree() throws CoreException {
+	public void removeChildrenFromTree() {
 		tree.removeNodeChildrenFromQueue(this);
 	}
 
 	/**
 	 * Reuses this object by assigning all new values for the fields.
 	 */
-	public void reuse(UnifiedTree tree, IResource resource, long stat, String localLocation, String localName, boolean existsWorkspace) {
-		this.tree = tree;
+	public void reuse(UnifiedTree aTree, IResource aResource, long aStat, String aLocalLocation, String aLocalName, boolean existsInWorkspace) {
+		this.tree = aTree;
 		this.child = null;
-		this.resource = resource;
-		this.stat = stat;
-		this.existsWorkspace = existsWorkspace;
-		this.localLocation = localLocation;
-		this.localName = localName;
+		this.resource = aResource;
+		this.stat = aStat;
+		this.existsWorkspace = existsInWorkspace;
+		this.localLocation = aLocalLocation;
+		this.localName = aLocalName;
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -172,21 +172,27 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 		try {
 			Resource resource = (Resource) target;
 			int totalWork = resource.countResources(IResource.DEPTH_INFINITE, false);
-			totalWork *= 2;
+			if (!force)
+				totalWork *= 2;
 			String title = Policy.bind("localstore.deleting", resource.getFullPath().toString()); //$NON-NLS-1$
 			monitor.beginTask(title, totalWork);
+			monitor.subTask(""); //$NON-NLS-1$
 			MultiStatus status = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.FAILED_DELETE_LOCAL, Policy.bind("localstore.deleteProblem"), null); //$NON-NLS-1$
 			List skipList = null;
 			UnifiedTree tree = new UnifiedTree(target);
 			if (!force) {
-				IProgressMonitor sub = Policy.subMonitorFor(monitor, totalWork / 2);
-				sub.beginTask("", 10000); //$NON-NLS-1$
-				CollectSyncStatusVisitor refreshVisitor = new CollectSyncStatusVisitor(Policy.bind("localstore.deleteProblem"), sub); //$NON-NLS-1$
-				tree.accept(refreshVisitor, IResource.DEPTH_INFINITE);
-				status.merge(refreshVisitor.getSyncStatus());
-				skipList = refreshVisitor.getAffectedResources();
+				IProgressMonitor sub = Policy.subMonitorFor(monitor, totalWork/2);
+				sub.beginTask("", 1000); //$NON-NLS-1$
+				try {
+					CollectSyncStatusVisitor refreshVisitor = new CollectSyncStatusVisitor(Policy.bind("localstore.deleteProblem"), sub); //$NON-NLS-1$
+					tree.accept(refreshVisitor, IResource.DEPTH_INFINITE);
+					status.merge(refreshVisitor.getSyncStatus());
+					skipList = refreshVisitor.getAffectedResources();
+				} finally {
+					sub.done();
+				}
 			}
-			DeleteVisitor deleteVisitor = new DeleteVisitor(skipList, force, convertToPhantom, keepHistory, Policy.subMonitorFor(monitor, force ? totalWork : (totalWork / 2)));
+			DeleteVisitor deleteVisitor = new DeleteVisitor(skipList, force, convertToPhantom, keepHistory, monitor);
 			tree.accept(deleteVisitor, IResource.DEPTH_INFINITE);
 			status.merge(deleteVisitor.getStatus());
 			if (!status.isOK())
@@ -413,6 +419,9 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 		if (localLocation.isAbsolute())
 			lastModified = CoreFileSystemLibrary.getLastModified(localLocation.toFile().getAbsolutePath());
 		ResourceInfo info = target.getResourceInfo(false, true);
+		//clear modification stamp for resource whose local contents don't exist
+		if (lastModified == 0)
+			info.clearModificationStamp();
 		updateLocalSync(info, lastModified);
 	}
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -56,7 +56,7 @@ public abstract class OS {
 	 */
 	public static boolean isNameValid(String name) {
 		//. and .. have special meaning on all platforms
-		if (name.equals(".") || name.equals(".."))
+		if (name.equals(".") || name.equals("..")) //$NON-NLS-1$ //$NON-NLS-2$
 			return false;
 		if (INSTALLED_PLATFORM.equals(Constants.OS_WIN32)) {
 			//on windows, filename suffixes are not relevant to name validity

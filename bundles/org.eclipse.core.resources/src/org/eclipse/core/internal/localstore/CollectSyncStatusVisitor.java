@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -60,27 +60,27 @@ public class CollectSyncStatusVisitor extends RefreshLocalVisitor {
 		return status;
 	}
 
-	protected void refresh(Container parent) throws CoreException {
+	protected void refresh(Container parent) {
 		changed(parent);
 	}
 
-	protected void createResource(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void createResource(UnifiedTreeNode node, Resource target) {
 		changed(target);
 	}
 
-	protected void deleteResource(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void deleteResource(UnifiedTreeNode node, Resource target) {
 		changed(target);
 	}
 
-	protected void fileToFolder(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void fileToFolder(UnifiedTreeNode node, Resource target) {
 		changed(target);
 	}
 
-	protected void folderToFile(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void folderToFile(UnifiedTreeNode node, Resource target) {
 		changed(target);
 	}
 
-	protected void resourceChanged(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void resourceChanged(UnifiedTreeNode node, Resource target) {
 		changed(target);
 	}
 }

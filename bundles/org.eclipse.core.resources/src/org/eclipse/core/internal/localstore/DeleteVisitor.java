@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,6 +67,8 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 			delete(node.existsInWorkspace() ? target : null, localFile);
 		} catch (CoreException e) {
 			status.add(e.getStatus());
+		} finally {
+			monitor.worked(1);
 		}
 	}
 
@@ -84,7 +86,7 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 			localFile.delete();
 	}
 
-	protected boolean equals(IResource one, IResource another) throws CoreException {
+	protected boolean equals(IResource one, IResource another) {
 		return one.getFullPath().equals(another.getFullPath());
 	}
 
@@ -92,11 +94,11 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 		return status;
 	}
 
-	protected boolean isAncestor(IResource one, IResource another) throws CoreException {
+	protected boolean isAncestor(IResource one, IResource another) {
 		return one.getFullPath().isPrefixOf(another.getFullPath()) && !equals(one, another);
 	}
 
-	protected boolean isAncestorOfResourceToSkip(IResource resource) throws CoreException {
+	protected boolean isAncestorOfResourceToSkip(IResource resource) {
 		if (skipList == null)
 			return false;
 		for (int i = 0; i < skipList.size(); i++) {
@@ -112,7 +114,7 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 			skipList.remove(resource);
 	}
 
-	protected boolean shouldSkip(IResource resource) throws CoreException {
+	protected boolean shouldSkip(IResource resource) {
 		if (skipList == null)
 			return false;
 		for (int i = 0; i < skipList.size(); i++)
@@ -121,25 +123,21 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 		return false;
 	}
 
-	public boolean visit(UnifiedTreeNode node) throws CoreException {
+	public boolean visit(UnifiedTreeNode node) {
 		Policy.checkCanceled(monitor);
 		Resource target = (Resource) node.getResource();
-		try {
-			if (target.getType() == IResource.PROJECT)
-				return true;
-			if (shouldSkip(target)) {
-				removeFromSkipList(target);
-				int ticks = target.countResources(IResource.DEPTH_INFINITE, false);
-				monitor.worked(ticks);
-				return false;
-			}
-			if (isAncestorOfResourceToSkip(target))
-				return true;
-
-			delete(node, true, keepHistory);
+		if (target.getType() == IResource.PROJECT)
+			return true;
+		if (shouldSkip(target)) {
+			removeFromSkipList(target);
+			int ticks = target.countResources(IResource.DEPTH_INFINITE, false);
+			monitor.worked(ticks);
 			return false;
-		} finally {
-			monitor.worked(1);
 		}
+		if (isAncestorOfResourceToSkip(target))
+			return true;
+
+		delete(node, true, keepHistory);
+		return false;
 	}
 }

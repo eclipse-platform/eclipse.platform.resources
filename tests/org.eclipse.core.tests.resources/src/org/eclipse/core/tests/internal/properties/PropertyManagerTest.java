@@ -354,7 +354,7 @@ public class PropertyManagerTest extends LocalStoreTest {
 			manager.setProperty(target, prop.getName(), prop.getStringValue());
 			assertEquals("1.0." + prop.getName(), prop.getStringValue(), manager.getProperty(target, prop.getName()));
 		}
-		// check properties can be appropriately deleted (set to null)
+		// check properties are be appropriately deleted (when set to null)
 		for (Enumeration e = props.elements(); e.hasMoreElements();) {
 			StoredProperty prop = (StoredProperty) e.nextElement();
 			manager.setProperty(target, prop.getName(), null);

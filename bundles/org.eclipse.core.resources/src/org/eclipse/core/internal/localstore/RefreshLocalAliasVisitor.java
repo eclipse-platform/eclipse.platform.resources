@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -44,7 +44,7 @@ public class RefreshLocalAliasVisitor extends RefreshLocalVisitor {
 				super.deleteResource(node, (Resource) aliases[i]);
 	}
 
-	protected void resourceChanged(UnifiedTreeNode node, Resource target) throws CoreException {
+	protected void resourceChanged(UnifiedTreeNode node, Resource target) {
 		super.resourceChanged(node, target);
 		if (node.getLocalLocation() == null)
 			return;

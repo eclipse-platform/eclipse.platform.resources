@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2005 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -162,7 +162,7 @@ public class Project extends Container implements IProject {
 	public void close(IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
 		try {
-			String msg = Policy.bind("resources.closing.1", getFullPath().toString()); //$NON-NLS-1$
+			String msg = Policy.bind("resources.closing.1", getName()); //$NON-NLS-1$
 			monitor.beginTask(msg, Policy.totalWork);
 			final ISchedulingRule rule = workspace.getRuleFactory().modifyRule(this);
 			try {
@@ -344,7 +344,11 @@ public class Project extends Container implements IProject {
 	public IProjectDescription getDescription() throws CoreException {
 		ResourceInfo info = getResourceInfo(false, false);
 		checkAccessible(getFlags(info));
-		return (IProjectDescription) ((ProjectInfo) info).getDescription().clone();
+		ProjectDescription description = ((ProjectInfo)info).getDescription();
+		//if the project is currently in the middle of being created, the description might not be available yet
+		if (description == null)
+			checkAccessible(NULL_FLAG);
+		return (IProjectDescription) description.clone();
 	}
 
 	/* (non-Javadoc)
@@ -422,7 +426,11 @@ public class Project extends Container implements IProject {
 	public IProject[] getReferencedProjects() throws CoreException {
 		ResourceInfo info = getResourceInfo(false, false);
 		checkAccessible(getFlags(info));
-		return ((ProjectInfo) info).getDescription().getAllReferences(true);
+		ProjectDescription description = ((ProjectInfo)info).getDescription();
+		//if the project is currently in the middle of being created, the description might not be available yet
+		if (description == null)
+			checkAccessible(NULL_FLAG);
+		return description.getAllReferences(true);
 	}
 
 	/* (non-Javadoc)
@@ -760,7 +768,7 @@ public class Project extends Container implements IProject {
 	public void open(int updateFlags, IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
 		try {
-			String msg = Policy.bind("resources.opening.1", getFullPath().toString()); //$NON-NLS-1$
+			String msg = Policy.bind("resources.opening.1", getName()); //$NON-NLS-1$
 			monitor.beginTask(msg, Policy.totalWork);
 			monitor.subTask(msg);
 			final ISchedulingRule rule = workspace.getRuleFactory().modifyRule(this);
