@@ -14,6 +14,12 @@ import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 
 public class File extends Resource implements IFile {
+
+	// default is true so we try/initialize validator first time through
+	private static boolean validateSave = true;
+	private static IValidator validator = null;
+	private static final String PT_INTERNAL_FILE_VALIDATOR = "internalFileValidator";
+
 protected File(IPath path, Workspace container) {
 	super(path, container);
 }
@@ -32,6 +38,7 @@ public void appendContents(InputStream content, boolean force, boolean keepHisto
 			checkAccessible(getFlags(info));
 
 			workspace.beginOperation(true);
+			validateSave();
 			internalSetContents(content, force, keepHistory, true, Policy.subMonitorFor(monitor, Policy.opWork));
 		} catch (OperationCanceledException e) {
 			workspace.getWorkManager().operationCanceled();
@@ -174,6 +181,7 @@ public void setContents(InputStream content, boolean force, boolean keepHistory,
 			checkAccessible(getFlags(info));
 
 			workspace.beginOperation(true);
+			validateSave();
 			internalSetContents(content, force, keepHistory, false, Policy.subMonitorFor(monitor, Policy.opWork));
 		} catch (OperationCanceledException e) {
 			workspace.getWorkManager().operationCanceled();
@@ -190,5 +198,68 @@ public void setContents(InputStream content, boolean force, boolean keepHistory,
  */
 public void setContents(IFileState source, boolean force, boolean keepHistory, IProgressMonitor monitor) throws CoreException {
 	setContents(source.getContents(), force, keepHistory, monitor);
+}
+/**
+ * Internal method. To be called only from the following methods:
+ * <ul>
+ * <li><code>IFile#appendContents</code></li>
+ * <li><code>IFile#setContents(InputStream, boolean, boolean, IProgressMonitor)</code></li>
+ * <li><code>IFile#setContents(IFileState, boolean, boolean, IProgressMonitor)</code></li>
+ * </ul>
+ * 
+ * @see IValidator#validateSave
+ */
+private void validateSave() throws CoreException {
+	// if validation is turned off then just return
+	if (!validateSave)
+		return;
+	// first time through the validator hasn't been initialized so try and create it
+	if (validator == null) 
+		initializeValidator();
+	// we were unable to initialize the validator. Validation has been turned off and 
+	// a warning has already been logged so just return.
+	if (validator == null)
+		return;
+	// otherwise call the API and throw an exception if appropriate
+	final IStatus[] status = new IStatus[1];
+	ISafeRunnable body = new ISafeRunnable() {
+		public void run() throws Exception {
+			status[0] = validator.validateSave(File.this);
+		}
+		public void handleException(Throwable exception) {
+			status[0]  = new ResourceStatus(IResourceStatus.ERROR, null, Policy.bind("resources.errorValidator"), exception);
+		}
+	};
+	Platform.run(body);
+	if (!status[0].isOK())
+		throw new ResourceException(status[0]);
+}
+/**
+ * A validator hasn't been initialized. Check the extension point and try to create
+ * a new validator if a user has one defined as an extension.
+ */
+private void initializeValidator() throws CoreException {
+	IConfigurationElement[] configs = Platform.getPluginRegistry().getConfigurationElementsFor(ResourcesPlugin.PI_RESOURCES, PT_INTERNAL_FILE_VALIDATOR);
+	// no-one is plugged into the extension point so disable validation
+	if (configs == null || configs.length == 0) {
+		validateSave = false;
+		return;
+	}
+	// can only have one defined at a time. log a warning, disable validation, but continue with
+	// the #setContents (e.g. don't throw an exception)
+	if (configs.length > 1) {
+		validateSave = false;
+		IStatus status = new ResourceStatus(IResourceStatus.WARNING, Policy.bind("resources.oneValidator"));
+		ResourcesPlugin.getPlugin().getLog().log(status);
+		return;
+	}
+	// otherwise we have exactly one validator extension. Try to create a new instance 
+	// from the user-specified class.
+	try {
+		IConfigurationElement config = configs[0];
+		validator = (IValidator) config.createExecutableExtension("class");
+	} catch (CoreException e) {
+		throw new ResourceException(IResourceStatus.ERROR, null, Policy.bind("resources.initValidator"), e);
+	}
 }
 }
