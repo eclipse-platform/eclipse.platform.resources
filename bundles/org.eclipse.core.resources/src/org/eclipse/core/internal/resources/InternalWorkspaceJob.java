@@ -21,7 +21,7 @@ import org.eclipse.core.runtime.jobs.Job;
  * lock.
  */
 public abstract class InternalWorkspaceJob extends Job {
-	public static ISchedulingRule newSchedulingRule(IResource resource) {
+	protected static ISchedulingRule newSchedulingRule(IResource resource) {
 		return new ResourceSchedulingRule(resource);
 	}
 	public InternalWorkspaceJob(String name) {
