@@ -209,6 +209,7 @@ public class IResourceChangeListenerTest extends EclipseWorkspaceTest {
 		};
 		verifier = new ResourceDeltaVerifier();
 		getWorkspace().addResourceChangeListener(verifier, IResourceChangeEvent.POST_CHANGE);
+		verifier.waitForDelta();
 		try {
 			getWorkspace().run(body, getMonitor());
 		} catch (CoreException e) {
