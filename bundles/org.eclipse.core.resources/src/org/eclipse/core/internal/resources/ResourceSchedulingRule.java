@@ -29,4 +29,10 @@ public class ResourceSchedulingRule implements ISchedulingRule {
 		IPath otherPath = ((ResourceSchedulingRule)rule).resource.getFullPath();
 		return myPath.isPrefixOf(otherPath) || otherPath.isPrefixOf(myPath);
 	}
+	/*
+	 * For debugging purposes only.
+	 */
+	 public String toString()  {
+	 	return "ResourceRule(" + resource + ')'; //$NON-NLS-1$
+	 }
 }
