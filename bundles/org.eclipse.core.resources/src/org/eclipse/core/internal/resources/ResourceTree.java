@@ -11,7 +11,7 @@
 package org.eclipse.core.internal.resources;
 
 import org.eclipse.core.internal.localstore.*;
-import org.eclipse.core.internal.properties.PropertyManager;
+import org.eclipse.core.internal.properties.IPropertyManager;
 import org.eclipse.core.internal.utils.Assert;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.*;
@@ -105,7 +105,7 @@ class ResourceTree implements IResourceTree {
 			}
 
 			// Move the resource's persistent properties.
-			PropertyManager propertyManager = ((Resource) source).getPropertyManager();
+			IPropertyManager propertyManager = ((Resource) source).getPropertyManager();
 			try {
 				propertyManager.copy(source, destination, IResource.DEPTH_ZERO);
 				propertyManager.deleteProperties(source, IResource.DEPTH_ZERO);
@@ -163,7 +163,7 @@ class ResourceTree implements IResourceTree {
 
 			// Move the folder properties.
 			int depth = IResource.DEPTH_INFINITE;
-			PropertyManager propertyManager = ((Resource) source).getPropertyManager();
+			IPropertyManager propertyManager = ((Resource) source).getPropertyManager();
 			try {
 				propertyManager.copy(source, destination, depth);
 				propertyManager.deleteProperties(source, depth);

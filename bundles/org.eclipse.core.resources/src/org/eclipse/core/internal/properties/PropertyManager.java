@@ -10,8 +10,7 @@
  *******************************************************************************/
 package org.eclipse.core.internal.properties;
 
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 import org.eclipse.core.internal.events.ILifecycleListener;
 import org.eclipse.core.internal.events.LifecycleEvent;
 import org.eclipse.core.internal.resources.*;
@@ -24,11 +23,15 @@ import org.eclipse.core.runtime.*;
 /**
  *
  */
-public class PropertyManager implements IManager, ILifecycleListener {
+public class PropertyManager implements IManager, ILifecycleListener, IPropertyManager {
 	protected Workspace workspace;
 
-	public PropertyManager(Workspace workspace) {
+	private PropertyManager(Workspace workspace) {
 		this.workspace = workspace;
+	}
+	
+	public static IPropertyManager createPropertyManager(Workspace workspace) {
+		return new PropertyManager(workspace);
 	}
 
 	public void closePropertyStore(IResource target) throws CoreException {
@@ -72,7 +75,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 		}
 	}
 
-	protected void copyProperties(IResource source, IResource destination, int depth) throws CoreException {
+	private void copyProperties(IResource source, IResource destination, int depth) throws CoreException {
 		PropertyStore sourceStore = getPropertyStore(source);
 		PropertyStore destStore = getPropertyStore(destination);
 		ResourceName sourceName = getPropertyKey(source);
@@ -127,7 +130,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 		}
 	}
 
-	protected void deletePropertyStore(IResource target, boolean restart) throws CoreException {
+	private void deletePropertyStore(IResource target, boolean restart) throws CoreException {
 		PropertyStore store = getPropertyStoreOrNull(target);
 		if (store == null)
 			return;
@@ -160,7 +163,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 	 * Returns the resource which hosts the property store
 	 * for the given resource.
 	 */
-	protected Resource getPropertyHost(IResource target) {
+	private Resource getPropertyHost(IResource target) {
 		return (Resource) (target.getType() == IResource.ROOT ? target : target.getProject());
 	}
 
@@ -168,7 +171,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 	 * Returns the key to use in the property store when accessing
 	 * the properties of the given resource.
 	 */
-	protected ResourceName getPropertyKey(IResource target) {
+	private ResourceName getPropertyKey(IResource target) {
 		return new ResourceName("", target.getProjectRelativePath()); //$NON-NLS-1$
 	}
 
@@ -177,7 +180,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 	 * given resource.  
 	 * @throws CoreException if the store could not be obtained for any reason.
 	 */
-	protected PropertyStore getPropertyStore(IResource target) throws CoreException {
+	PropertyStore getPropertyStore(IResource target) throws CoreException {
 		try {
 			Resource host = getPropertyHost(target);
 			ResourceInfo info = host.getResourceInfo(false, false);
@@ -201,7 +204,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 	 * Returns the property store to use when storing a property for the 
 	 * given resource, or null if the store is not available.  
 	 */
-	protected PropertyStore getPropertyStoreOrNull(IResource target) {
+	private PropertyStore getPropertyStoreOrNull(IResource target) {
 		Resource host = getPropertyHost(target);
 		ResourceInfo info = host.getResourceInfo(false, false);
 		if (info != null) {
@@ -222,7 +225,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 			closePropertyStore(event.resource);
 	}
 
-	protected PropertyStore openPropertyStore(IResource target) {
+	private PropertyStore openPropertyStore(IResource target) {
 		int type = target.getType();
 		Assert.isTrue(type != IResource.FILE && type != IResource.FOLDER);
 		IPath location = workspace.getMetaArea().getPropertyStoreLocation(target);
@@ -247,7 +250,7 @@ public class PropertyManager implements IManager, ILifecycleListener {
 		}
 	}
 
-	protected void setPropertyStore(IResource target, PropertyStore value) {
+	private void setPropertyStore(IResource target, PropertyStore value) {
 		// fetch the info but don't bother making it mutable even though we are going
 		// to modify it.  We don't know whether or not the tree is open and it really doesn't
 		// matter as the change we are doing does not show up in deltas.
@@ -264,6 +267,34 @@ public class PropertyManager implements IManager, ILifecycleListener {
 
 	public void startup(IProgressMonitor monitor) throws CoreException {
 		workspace.addLifecycleListener(this);
+	}
+
+	private PropertyStore basicGetPropertyStore(IResource target) {
+		return null;
+	}
+	
+	private void basicSetPropertyStore(IResource target, PropertyStore store) {
+		
+	}
+	
+	public Map getProperties(IResource resource) throws CoreException {
+		PropertyStore store = getPropertyStore(resource);
+		if (store == null)
+			return Collections.EMPTY_MAP;
+		// retrieves the properties for the selected resource
+		IPath path = resource.getProjectRelativePath();
+		ResourceName resourceName = new ResourceName("", path); //$NON-NLS-1$
+		QueryResults results = store.getAll(resourceName, 1);
+		List projectProperties = results.getResults(resourceName);
+		int listSize = projectProperties.size();
+		if (listSize == 0)
+			return Collections.EMPTY_MAP;
+		Map properties = new HashMap();
+		for (int i = 0; i < listSize; i++) {
+			StoredProperty prop = (StoredProperty) projectProperties.get(i);
+			properties.put(prop.getName().toString(), prop.getStringValue());
+		}
+		return properties;
 	}
 
 }

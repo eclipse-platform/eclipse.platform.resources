@@ -17,7 +17,7 @@ import java.net.URL;
 import org.eclipse.core.internal.events.LifecycleEvent;
 import org.eclipse.core.internal.localstore.CoreFileSystemLibrary;
 import org.eclipse.core.internal.localstore.FileSystemResourceManager;
-import org.eclipse.core.internal.properties.PropertyManager;
+import org.eclipse.core.internal.properties.IPropertyManager;
 import org.eclipse.core.internal.utils.*;
 import org.eclipse.core.internal.watson.*;
 import org.eclipse.core.resources.*;
@@ -957,7 +957,7 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 		return getFullPath().removeFirstSegments(ICoreConstants.PROJECT_SEGMENT_LENGTH);
 	}
 
-	public PropertyManager getPropertyManager() {
+	public IPropertyManager getPropertyManager() {
 		return workspace.getPropertyManager();
 	}
 

@@ -150,7 +150,9 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 	/**
 	 * Factory method for creating history stores. 
 	 */
-	private static IHistoryStore createHistoryStore(Workspace workspace, IPath location, int limit) {		
+	private static IHistoryStore createHistoryStore(Workspace workspace, IPath location, int limit) {
+		if (true) return new HistoryStore3(workspace, location, limit);
+		// TODO disabled for testing purposes		
 		if (!Boolean.getBoolean(ENABLE_NEW_HISTORY_STORE))
 			// keep using the old history store
 			return new HistoryStore(workspace, location, limit);
