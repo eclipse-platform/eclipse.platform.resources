@@ -388,6 +388,10 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 			changeFlags ^= IResourceDelta.TYPE;
 			buf.append("TYPE | ");
 		}
+		if ((changeFlags & IResourceDelta.ENCODING) != 0) {
+			changeFlags ^= IResourceDelta.ENCODING;
+			buf.append("ENCODING | ");
+		}
 		if ((changeFlags & IResourceDelta.MARKERS) != 0) {
 			changeFlags ^= IResourceDelta.MARKERS;
 			buf.append("MARKERS | ");
