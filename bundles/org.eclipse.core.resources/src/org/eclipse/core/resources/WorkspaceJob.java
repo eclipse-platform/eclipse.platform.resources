@@ -33,10 +33,12 @@ import org.eclipse.core.runtime.*;
  * of a workspace job. Other threads can be modifying the workspace concurrently 
  * with a workspace job.  To obtain exclusive access to a portion of the workspace, 
  * set the scheduling rule on the job to be a resource scheduling rule.  The factory 
- * method <code>newSchedulingRule</code> is used to create a scheduling rule 
- * based on a particular resource.
+ * method <code>IWorkspace.newSchedulingRule</code> is used to create a 
+ * scheduling rule based on a particular resource.
  * </p>
  * @see IWorkspaceRunnable
+ * @see IWorkspace#run
+ * @since 3.0
  */
 public abstract class WorkspaceJob extends InternalWorkspaceJob {
 	/**

@@ -765,8 +765,15 @@ public IProjectDescription newProjectDescription(String projectName);
  * Returns a new scheduling rule on a resource.  Two resource scheduling rules
  * will be conflicting if and only if the resource of one rule is a child of, or equal to,
  *  the resource of the other rule.
+ * <p>
+ * Resource scheduling rules can be attached to <code>WorkspaceJob</code>
+ * subclasses, or can be used when batching changes with the method
+ * <code>Workspace.run</code>.
  * 
  * @return a resource scheduling rule
+ * @see WorkspaceJob
+ * @see #run
+ * @since 3.0
  */
 public ISchedulingRule newSchedulingRule(IResource resource);
 
@@ -817,7 +824,16 @@ public void removeSaveParticipant(Plugin plugin);
  * </p>
  * <p>
  * The supplied scheduling rule is used to determine whether this operation can be
- * run simultaneously with other workspace changes in other threads.
+ * run simultaneously with workspace changes in other threads.  Use the
+ * method <code>newSchedulingRule</code> to create a rule that specifies
+ * modification of a particular resource.  If the scheduling rule conflicts with another 
+ * workspace change that is currently running, the calling thread will be blocked until 
+ * that change completes.
+ * </p>
+ * <p>
+ * If the action attempts to make changes to the workspace that were not specified
+ * in the scheduling rule, it will fail.  If no scheduling rule is supplied, then any attempt
+ * to change the workspace will fail.
  * </p>
  * 
  * @param action the action to perform
@@ -826,6 +842,9 @@ public void removeSaveParticipant(Plugin plugin);
  * @param monitor a progress monitor, or <code>null</code> if progress
  *    reporting and cancellation are not desired
  * @exception CoreException if the operation failed.
+ * 
+ * @see #newSchedulingRule
+ * @since 3.0
  */
 public void run(IWorkspaceRunnable action, ISchedulingRule rule, IProgressMonitor monitor) throws CoreException;
 /**
