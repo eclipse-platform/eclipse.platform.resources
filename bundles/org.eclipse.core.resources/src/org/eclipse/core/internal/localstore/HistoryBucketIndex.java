@@ -16,7 +16,7 @@ import java.util.Comparator;
 import org.eclipse.core.internal.utils.UniversalUniqueIdentifier;
 import org.eclipse.core.runtime.IPath;
 
-public class HistoryBucketIndex extends AbstractBucketIndex {
+public class HistoryBucketIndex extends Bucket {
 
 	/**
 	 * A entry in the bucket index. Each entry has one path and a collection
@@ -28,7 +28,7 @@ public class HistoryBucketIndex extends AbstractBucketIndex {
 	 * is.  
 	 * </p>  
 	 */
-	public static final class HistoryEntry extends AbstractBucketIndex.Entry {
+	public static final class HistoryEntry extends Bucket.Entry {
 		
 		final static Comparator COMPARATOR = new Comparator() {
 			public int compare(Object o1, Object o2) {
@@ -270,7 +270,7 @@ public class HistoryBucketIndex extends AbstractBucketIndex {
 		setEntryValue(pathAsString, HistoryEntry.merge(existing, additions));
 	}
 
-	protected AbstractBucketIndex.Entry createEntry(IPath path, Object value) {
+	protected Bucket.Entry createEntry(IPath path, Object value) {
 		return new HistoryEntry(path, (byte[][]) value);
 	}
 

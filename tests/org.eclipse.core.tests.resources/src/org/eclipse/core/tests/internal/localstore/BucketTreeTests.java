@@ -12,14 +12,14 @@ package org.eclipse.core.tests.internal.localstore;
 
 import java.io.*;
 import java.util.*;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex;
+import org.eclipse.core.internal.localstore.Bucket;
 import org.eclipse.core.internal.localstore.BucketTree;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.tests.resources.ResourceTest;
 
 public class BucketTreeTests extends ResourceTest {
 
-	static class SimpleBucket extends AbstractBucketIndex {
+	static class SimpleBucket extends Bucket {
 
 		static class SimpleEntry extends Entry {
 			private Map value;
@@ -154,8 +154,8 @@ public class BucketTreeTests extends ResourceTest {
 
 	public void verify(BucketTree tree, final String tag, IPath root, int depth, final Collection expected) {
 		final Set visited = new HashSet();
-		SimpleBucket.IVisitor verifier = new SimpleBucket.IVisitor() {
-			public int visit(org.eclipse.core.internal.localstore.AbstractBucketIndex.Entry entry) {
+		SimpleBucket.Visitor verifier = new SimpleBucket.Visitor() {
+			public int visit(org.eclipse.core.internal.localstore.Bucket.Entry entry) {
 				SimpleBucket.SimpleEntry simple = (SimpleBucket.SimpleEntry) entry;
 				IPath path = simple.getPath();
 				assertTrue(tag + ".0 " + path, expected.contains(path));

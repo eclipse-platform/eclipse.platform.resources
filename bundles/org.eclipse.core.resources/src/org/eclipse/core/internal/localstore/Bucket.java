@@ -19,7 +19,7 @@ import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.IResourceStatus;
 import org.eclipse.core.runtime.*;
 
-public abstract class AbstractBucketIndex {
+public abstract class Bucket {
 
 	public static abstract class Entry {
 		/**
@@ -98,7 +98,7 @@ public abstract class AbstractBucketIndex {
 		}
 	}
 
-	public abstract static interface IVisitor {
+	public static abstract class Visitor {
 		// should continue the traversal
 		public final static int CONTINUE = 0;
 		// should stop looking at states for files in this container (or any of its children)	
@@ -109,7 +109,14 @@ public abstract class AbstractBucketIndex {
 		/** 
 		 * @return either STOP, CONTINUE or RETURN
 		 */
-		public int visit(Entry entry);
+		public abstract int visit(Entry entry);
+
+		/**
+		 * Called after the bucket has been visited (and saved). 
+		 */
+		public void bucketVisited(Bucket bucket) throws CoreException {
+			// empty implementation
+		}
 	}
 
 	private static final String BUCKET = "bucket.index"; //$NON-NLS-1$
@@ -134,7 +141,7 @@ public abstract class AbstractBucketIndex {
 	 */
 	private File root;
 
-	public AbstractBucketIndex(File root) {
+	public Bucket(File root) {
 		this.root = root;
 		this.entries = new HashMap();
 	}
@@ -147,9 +154,9 @@ public abstract class AbstractBucketIndex {
 	 * @return one of STOP, RETURN or CONTINUE constants
 	 * @throws CoreException
 	 */
-	public final int accept(IVisitor visitor, IPath filter, int depth) throws CoreException {		
+	public final int accept(Visitor visitor, IPath filter, int depth) throws CoreException {
 		if (entries.isEmpty())
-			return IVisitor.CONTINUE;
+			return Visitor.CONTINUE;
 		try {
 			for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
 				Map.Entry mapEntry = (Map.Entry) i.next();
@@ -171,18 +178,13 @@ public abstract class AbstractBucketIndex {
 					needSaving = true;
 					mapEntry.setValue(bucketEntry.getValue());
 				}
-				switch (outcome) {
-					case IVisitor.RETURN :
-						// skip any other buckets under this
-						return IVisitor.RETURN;
-					case IVisitor.STOP :
-						// stop looking
-						return IVisitor.STOP;
-				}
+				if (outcome != Visitor.CONTINUE)
+					return outcome;
 			}
-			return IVisitor.CONTINUE;
+			return Visitor.CONTINUE;
 		} finally {
 			save();
+			visitor.bucketVisited(this);
 		}
 	}
 

@@ -13,11 +13,11 @@ package org.eclipse.core.internal.properties;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Comparator;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex;
+import org.eclipse.core.internal.localstore.Bucket;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.QualifiedName;
 
-public class PropertyIndex extends AbstractBucketIndex {
+public class PropertyIndex extends Bucket {
 
 	public static class PropertyEntry extends Entry {
 		

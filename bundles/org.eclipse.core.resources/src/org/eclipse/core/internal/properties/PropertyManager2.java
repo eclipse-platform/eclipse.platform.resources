@@ -14,26 +14,23 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import org.eclipse.core.internal.localstore.BucketTree;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex.Entry;
+import org.eclipse.core.internal.localstore.Bucket.Entry;
 import org.eclipse.core.internal.properties.PropertyIndex.PropertyEntry;
 import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.internal.utils.Policy;
-import org.eclipse.core.resources.*;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceStatus;
 import org.eclipse.core.runtime.*;
 
 public class PropertyManager2 implements IPropertyManager {
+	private File baseLocation;
 
 	private BucketTree tree;
-	private File baseLocation;
 
 	public PropertyManager2(Workspace workspace) {
 		baseLocation = workspace.getMetaArea().getPropertyStoreLocation(workspace.getRoot()).toFile();
 		this.tree = new BucketTree(baseLocation, createPropertyIndex());
-	}
-
-	private PropertyIndex createPropertyIndex() {
-		return new PropertyIndex(baseLocation);
 	}
 
 	public void closePropertyStore(IResource target) throws CoreException {
@@ -43,50 +40,20 @@ public class PropertyManager2 implements IPropertyManager {
 	public void copy(IResource source, IResource destination, int depth) throws CoreException {
 		copyProperties(source.getFullPath(), destination.getFullPath(), depth);
 	}
+
 	/**
 	 * Copies all properties from the source path to the target path, to the given depth.
 	 */
 	private void copyProperties(final IPath source, final IPath destination, int depth) throws CoreException {
-		int segmentsToDrop = source.segmentCount();
-		final PropertyIndex destinationBucket = createPropertyIndex();		
-		tree.accept(new PropertyIndex.IVisitor() {
-			private IPath lastPath;
+		//TODO
+	}
 
-			private boolean ensureLoaded(IPath newPath) {
-				IPath tmpLastPath = lastPath;
-				lastPath = newPath;
-				if (tmpLastPath != null && tmpLastPath.removeLastSegments(1).equals(newPath.removeLastSegments(1)))
-					// still in the same source bucket, nothing to do
-					return true;
-				// need to load the destination bucket 
-				// figure out where we want to copy the states for this path with:
-				// destinationBucket = baseDestinationLocation + blob - filename - baseSourceLocation
-				IPath sourceDir = Path.fromOSString(sourceBucket.getLocation().toString());
-				IPath destinationDir = baseDestinationLocation.append(sourceDir.removeFirstSegments(baseSourceLocation.segmentCount()));
-				try {
-					destinationBucket.load(destinationDir.toFile());
-				} catch (CoreException e) {
-					ResourcesPlugin.getPlugin().getLog().log(e.getStatus());
-					// abort traversal
-					return false;
-				}
-				return true;
-			}
-			
-			public int visit(Entry entry) {
-				if (!ensureLoaded(sourceEntry.getPath()))
-					return STOP;				
-				PropertyEntry sourceEntry = (PropertyEntry) entry; 
-				IPath destinationPath = destination.append(sourceEntry.getPath().removeFirstSegments(source.segmentCount()));
-				PropertyEntry destinationEntry = new PropertyEntry(destinationPath, sourceEntry);
-				destinationBucket.setProperties(destinationEntry);
-				return CONTINUE;
-			}
-		}, target.getFullPath(), BucketTree.DEPTH_ZERO);		
+	private PropertyIndex createPropertyIndex() {
+		return new PropertyIndex(baseLocation);
 	}
 
 	public void deleteProperties(IResource target, int depth) throws CoreException {
-		tree.accept(new PropertyIndex.IVisitor() {
+		tree.accept(new PropertyIndex.Visitor() {
 			public int visit(PropertyIndex.Entry entry) {
 				entry.delete();
 				return CONTINUE;
@@ -100,10 +67,10 @@ public class PropertyManager2 implements IPropertyManager {
 	}
 
 	public Map getProperties(IResource target) throws CoreException {
-		final Map result = new HashMap();		
-		tree.accept(new PropertyIndex.IVisitor() {
+		final Map result = new HashMap();
+		tree.accept(new PropertyIndex.Visitor() {
 			public int visit(Entry entry) {
-				PropertyEntry propertyEntry = (PropertyEntry) entry; 
+				PropertyEntry propertyEntry = (PropertyEntry) entry;
 				int propertyCount = propertyEntry.getOccurrences();
 				for (int i = 0; i < propertyCount; i++)
 					result.put(propertyEntry.getPropertyName(i), propertyEntry.getPropertyValue(i));
@@ -138,7 +105,7 @@ public class PropertyManager2 implements IPropertyManager {
 		tree.close();
 	}
 
-	public void startup(IProgressMonitor monitor) throws CoreException {
+	public void startup(IProgressMonitor monitor) {
 		// TODO Auto-generated method stub
 	}
 

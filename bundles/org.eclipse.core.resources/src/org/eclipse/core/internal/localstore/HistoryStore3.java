@@ -13,10 +13,7 @@ package org.eclipse.core.internal.localstore;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
-import java.util.HashSet;
-import java.util.Set;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex.Entry;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex.IVisitor;
+import org.eclipse.core.internal.localstore.Bucket.Entry;
 import org.eclipse.core.internal.localstore.HistoryBucketIndex.HistoryEntry;
 import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.internal.utils.*;
@@ -64,7 +61,7 @@ public class HistoryStore3 implements IHistoryStore {
 	public Set allFiles(IPath root, int depth, IProgressMonitor monitor) {
 		final Set allFiles = new HashSet();
 		try {
-			tree.accept(new IVisitor() {
+			tree.accept(new Bucket.Visitor() {
 				public int visit(Entry fileEntry) {
 					allFiles.add(fileEntry.getPath());
 					return CONTINUE;
@@ -95,9 +92,9 @@ public class HistoryStore3 implements IHistoryStore {
 	private void applyPolicy(IPath root) throws CoreException {
 		IWorkspaceDescription description = workspace.internalGetDescription();
 		final long minimumTimestamp = System.currentTimeMillis() - description.getFileStateLongevity();
-		final int maxStates = description.getMaxFileStates();		
+		final int maxStates = description.getMaxFileStates();
 		// apply policy to the given tree		
-		tree.accept(new IVisitor() {
+		tree.accept(new Bucket.Visitor() {
 			public int visit(Entry entry) {
 				applyPolicy((HistoryEntry) entry, maxStates, minimumTimestamp);
 				return CONTINUE;
@@ -113,7 +110,7 @@ public class HistoryStore3 implements IHistoryStore {
 			final long minimumTimestamp = System.currentTimeMillis() - description.getFileStateLongevity();
 			final int maxStates = description.getMaxFileStates();
 			final int[] entryCount = new int[1];
-			tree.accept(new IVisitor() {
+			tree.accept(new Bucket.Visitor() {
 				public int visit(Entry fileEntry) {
 					entryCount[0] += fileEntry.getOccurrences();
 					applyPolicy((HistoryEntry) fileEntry, maxStates, minimumTimestamp);
@@ -137,68 +134,32 @@ public class HistoryStore3 implements IHistoryStore {
 		}
 	}
 
-	class HistoryCopyVisitor implements IVisitor {
-		private File lastSourceLocation;
+	class HistoryCopyVisitor extends Bucket.Visitor {
 		private List changes = new ArrayList();
 		private IPath source;
 		private IPath destination;
-		private IPath baseSourceLocation;
-		private IPath baseDestinationLocation;
-		private HistoryBucketIndex destinationBucket;
+		private boolean failed;
 
 		public HistoryCopyVisitor(IPath source, IPath destination) {
 			this.source = source;
 			this.destination = destination;
-			this.baseSourceLocation = Path.fromOSString(tree.locationFor(source).toString());
-			this.baseDestinationLocation = Path.fromOSString(tree.locationFor(destination).toString());
-			this.destinationBucket = createBucketTable();
 		}
 
-		/**
-		 * @return whether an error happened while saving changes
-		 */
-		private boolean saveIfNeeed(IPath newPath) {
-			File newSourceLocation = tree.locationFor(newPath);
-			if (newSourceLocation.equals(lastSourceLocation))
-				// still in the same source bucket, nothing to do
-				return true;
-			// first time we are called or no changes collected so far?
-			if (lastSourceLocation == null || changes.isEmpty()) {
-				// nothing to do other than remembering we were called
-				lastSourceLocation = newSourceLocation;
-				return true;
-			}
-			// save changes
-			try {
-				saveChanges();
-				// remember the new source location for next time this is called
-				lastSourceLocation = newSourceLocation;				
-			} catch (CoreException e) {
-				ResourcesPlugin.getPlugin().getLog().log(e.getStatus());
-				// abort traversal
-				return false;
-			}
-			return true;
-		}
-
-		public void saveChanges() throws CoreException {
+		private void saveChanges(HistoryBucketIndex bucket) throws CoreException {
 			if (changes.isEmpty())
 				return;
 			// make effective all changes collected
-			// need to load the destination bucket 
-			// we figure out where we want to copy the states for this path with:
-			// destinationBucket = baseDestinationLocation + blob - filename - baseSourceLocation
-			IPath sourceDir = Path.fromOSString(lastSourceLocation.toString());
-			IPath destinationDir = baseDestinationLocation.append(sourceDir.removeFirstSegments(baseSourceLocation.segmentCount()));
-			destinationBucket.load(destinationDir.toFile());
-			for (Iterator i = changes.iterator(); i.hasNext();)
-				destinationBucket.addBlobs((HistoryEntry) i.next());
-			destinationBucket.save();
-			changes.clear();
+			Iterator i = changes.iterator();
+			HistoryEntry entry = (HistoryEntry) i.next();
+			bucket.load(tree.locationFor(entry.getPath()));
+			bucket.addBlobs(entry);
+			while (i.hasNext())
+				bucket.addBlobs((HistoryEntry) i.next());
+			bucket.save();
 		}
 
 		public int visit(Entry sourceEntry) {
-			if (!saveIfNeeed(sourceEntry.getPath()))
+			if (failed)
 				return STOP;
 			IPath destinationPath = destination.append(sourceEntry.getPath().removeFirstSegments(source.segmentCount()));
 			HistoryEntry destinationEntry = new HistoryEntry(destinationPath, (HistoryEntry) sourceEntry);
@@ -208,6 +169,10 @@ public class HistoryStore3 implements IHistoryStore {
 			return CONTINUE;
 		}
 
+		public void bucketVisited(Bucket bucket) throws CoreException {
+			saveChanges((HistoryBucketIndex) bucket);
+			changes.clear();				
+		}
 	}
 
 	public void copyHistory(IResource sourceResource, IResource destinationResource) {
@@ -236,8 +201,6 @@ public class HistoryStore3 implements IHistoryStore {
 			// copy history by visiting the source tree
 			HistoryCopyVisitor copyVisitor = new HistoryCopyVisitor(source, destination);
 			tree.accept(copyVisitor, source, BucketTree.DEPTH_INFINITE);
-			// the last bucket visited will not have been automatically saved
-			copyVisitor.saveChanges();
 			// apply clean-up policy to the destination tree 
 			applyPolicy(destinationResource.getFullPath());
 		} catch (CoreException e) {
@@ -305,7 +268,7 @@ public class HistoryStore3 implements IHistoryStore {
 	public void remove(IPath root, IProgressMonitor monitor) {
 		try {
 			final Set tmpBlobsToRemove = blobsToRemove;
-			tree.accept(new IVisitor() {
+			tree.accept(new Bucket.Visitor() {
 				public int visit(Entry fileEntry) {
 					for (int i = 0; i < fileEntry.getOccurrences(); i++)
 						// remember we need to delete the files later
@@ -325,7 +288,7 @@ public class HistoryStore3 implements IHistoryStore {
 	public void removeGarbage() {
 		try {
 			final Set tmpBlobsToRemove = blobsToRemove;
-			tree.accept(new IVisitor() {
+			tree.accept(new Bucket.Visitor() {
 				public int visit(Entry fileEntry) {
 					for (int i = 0; i < fileEntry.getOccurrences(); i++)
 						// remember we need to delete the files later

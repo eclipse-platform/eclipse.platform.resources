@@ -11,24 +11,22 @@
 package org.eclipse.core.internal.localstore;
 
 import java.io.File;
-import org.eclipse.core.internal.localstore.AbstractBucketIndex.IVisitor;
 import org.eclipse.core.internal.localstore.BucketIndex.Visitor;
 import org.eclipse.core.runtime.*;
 
 public class BucketTree {
-	
-	public static final int DEPTH_ZERO = 0;
-	public static final int DEPTH_ONE = 1;
+
 	public static final int DEPTH_INFINITE = Integer.MAX_VALUE;
-	
-	
+	public static final int DEPTH_ONE = 1;
+	public static final int DEPTH_ZERO = 0;
+
 	private final static int SEGMENT_LENGTH = 2;
 	private final static long SEGMENT_QUOTA = (long) Math.pow(2, 4 * SEGMENT_LENGTH); // 1 char = 2 ^ 4 = 0x10	
-	private AbstractBucketIndex current;
+	private Bucket current;
 
 	private File rootLocation;
 
-	public BucketTree(File rootLocation, AbstractBucketIndex bucket) {
+	public BucketTree(File rootLocation, Bucket bucket) {
 		this.rootLocation = rootLocation;
 		this.current = bucket;
 	}
@@ -39,14 +37,22 @@ public class BucketTree {
 	 * @param root
 	 * @param depth
 	 */
-	public void accept(IVisitor visitor, IPath root, int depth) throws CoreException {
+	public void accept(Bucket.Visitor visitor, IPath root, int depth) throws CoreException {
 		internalAccept(visitor, root, locationFor(root), depth, 0);
+	}
+
+	public void close() throws CoreException {
+		current.save();
+	}
+
+	public Bucket getCurrent() {
+		return current;
 	}
 
 	/**
 	 * @return whether to continue visiting other branches 
 	 */
-	private boolean internalAccept(IVisitor visitor, IPath root, File bucketDir, int depthRequested, int currentDepth) throws CoreException {
+	private boolean internalAccept(Bucket.Visitor visitor, IPath root, File bucketDir, int depthRequested, int currentDepth) throws CoreException {
 		current.load(bucketDir);
 		int outcome = current.accept(visitor, root, depthRequested);
 		if (outcome != Visitor.CONTINUE)
@@ -61,6 +67,10 @@ public class BucketTree {
 				if (!internalAccept(visitor, root, subDirs[i], depthRequested, currentDepth + 1))
 					return false;
 		return true;
+	}
+
+	public void loadBucketFor(IPath path) throws CoreException {
+		current.load(locationFor(path));
 	}
 
 	public File locationFor(IPath resourcePath) {
@@ -83,17 +93,5 @@ public class BucketTree {
 	private String translateSegment(String segment) {
 		// String.hashCode algorithm is API
 		return Long.toHexString(Math.abs(segment.hashCode()) % SEGMENT_QUOTA);
-	}
-
-	public AbstractBucketIndex getCurrent() {
-		return current;
-	}
-
-	public void loadBucketFor(IPath path) throws CoreException {
-		current.load(locationFor(path));
-	}
-
-	public void close() throws CoreException {
-		current.save();
 	}
 }
