@@ -91,7 +91,6 @@ public abstract class Bucket {
 
 		/**
 		 * Called on the entry right after the visitor has visited it.
-		 *
 		 */
 		public void visited() {
 			// does not do anything by default
@@ -106,40 +105,20 @@ public abstract class Bucket {
 		// should stop the traversal	
 		public final static int STOP = 1;
 
+		/** 
+		 * @return either STOP, CONTINUE or RETURN
+		 */
+		public abstract int visit(Entry entry);
+
 		/**
 		 * Called after the bucket has been visited (and saved). 
 		 */
 		public void afterSaving(Bucket bucket) throws CoreException {
 			// empty implementation, subclasses to override
 		}
-
-		/** 
-		 * @return either STOP, CONTINUE or RETURN
-		 */
-		public abstract int visit(Entry entry);
 	}
 
 	private static final String BUCKET = "bucket.index"; //$NON-NLS-1$
-
-	private static final int CHANGES_THRESHOLD = 100;
-
-	private static final byte DELETE_CHANGE = 2;
-
-	private static final byte REPLACE_CHANGE = 1;
-
-	/**
-	 * The offset for the append area. -1 if unknown (no file has been loaded).
-	 */
-	private int appendAreaOffset = -1;
-
-	/**
-	 * Whether there are too many changes in the append area and it should be collapsed.
-	 */
-	private boolean appendAreaOverflow;
-	/**
-	 * List of changes since the last time this bucket was saved.
-	 */
-	private final List changes;
 
 	/**
 	 * Map of the history entries in this bucket. Maps (String -> byte[][]),
@@ -151,6 +130,10 @@ public abstract class Bucket {
 	 * The file system location of this bucket index file.
 	 */
 	private File location;
+	/**
+	 * Whether the in-memory bucket is dirty and needs saving
+	 */
+	private boolean needSaving = false;
 
 	/**
 	 * The root directory of the bucket indexes on disk.
@@ -160,7 +143,6 @@ public abstract class Bucket {
 	public Bucket(File root) {
 		this.root = root;
 		this.entries = new HashMap();
-		this.changes = new LinkedList();
 	}
 
 	/**
@@ -186,14 +168,14 @@ public abstract class Bucket {
 				Entry bucketEntry = createEntry(path, mapEntry.getValue());
 				// calls the visitor passing all uuids for the entry				
 				int outcome = visitor.visit(bucketEntry);
-				// compact the entry in case any changes have happened
+				// notify the entry it has been visited
 				bucketEntry.visited();
 				if (bucketEntry.isDeleted()) {
+					needSaving = true;
 					i.remove();
-					changes.add(mapEntry.getKey());
 				} else if (bucketEntry.isDirty()) {
+					needSaving = true;
 					mapEntry.setValue(bucketEntry.getValue());
-					changes.add(mapEntry.getKey());
 				}
 				if (outcome != Visitor.CONTINUE)
 					return outcome;
@@ -219,23 +201,6 @@ public abstract class Bucket {
 			delete(toDelete.getParentFile());
 	}
 
-	private void fullSave() throws IOException {
-		// ensure the parent location exists 
-		location.getParentFile().mkdirs();
-		DataOutputStream destination = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(location), 8192));
-		try {
-			destination.write(getVersion());
-			destination.writeInt(entries.size());
-			for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
-				Map.Entry entry = (Map.Entry) i.next();
-				destination.writeUTF((String) entry.getKey());
-				writeEntryValue(destination, entry.getValue());
-			}
-		} finally {
-			destination.close();
-		}
-	}
-
 	public final int getEntryCount() {
 		return entries.size();
 	}
@@ -249,23 +214,6 @@ public abstract class Bucket {
 	}
 
 	protected abstract byte getVersion();
-
-	private void incrementalSave() throws IOException {
-		DataOutputStream destination = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(location, true), 8192));
-		try {
-			for (Iterator i = changes.iterator(); i.hasNext();) {
-				String path = (String) i.next();
-				Object entryValue = getEntryValue(path);
-				byte changeTag = entryValue == null ? DELETE_CHANGE : REPLACE_CHANGE;
-				destination.writeByte(changeTag);
-				destination.writeUTF(path);
-				if (entryValue != null)
-					writeEntryValue(destination, entryValue);
-			}
-		} finally {
-			destination.close();
-		}
-	}
 
 	public final void load(File baseLocation) throws CoreException {
 		load(baseLocation, false);
@@ -294,18 +242,6 @@ public abstract class Bucket {
 				int entryCount = source.readInt();
 				for (int i = 0; i < entryCount; i++)
 					this.entries.put(source.readUTF(), readEntryValue(source));
-				// now read any remaining incremental changes
-				int changeTag;
-				int changeCount = 0;
-				while ((changeTag = source.read()) != -1) {
-					changeCount++;
-					if (changeTag == REPLACE_CHANGE)
-						this.entries.put(source.readUTF(), readEntryValue(source));
-					else
-						this.entries.remove(source.readUTF());
-				}
-				if (changeCount > CHANGES_THRESHOLD)
-					appendAreaOverflow = true;
 			} finally {
 				source.close();
 			}
@@ -319,19 +255,29 @@ public abstract class Bucket {
 	protected abstract Object readEntryValue(DataInputStream source) throws IOException;
 
 	public final void save() throws CoreException {
-		if (changes.isEmpty())
+		if (!needSaving)
 			return;
 		try {
 			if (entries.isEmpty()) {
-				changes.clear();
+				needSaving = false;
 				delete(location);
 				return;
 			}
-			if (appendAreaOverflow || changes.size() > CHANGES_THRESHOLD || !location.isFile())
-				fullSave();
-			else
-				incrementalSave();
-			changes.clear();
+			// ensure the parent location exists 
+			location.getParentFile().mkdirs();
+			DataOutputStream destination = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(location), 8192));
+			try {
+				destination.write(getVersion());
+				destination.writeInt(entries.size());
+				for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
+					Map.Entry entry = (Map.Entry) i.next();
+					destination.writeUTF((String) entry.getKey());
+					writeEntryValue(destination, entry.getValue());
+				}
+			} finally {
+				destination.close();
+			}
+			needSaving = false;
 		} catch (IOException ioe) {
 			String message = Policy.bind("resources.writeMeta", location.getAbsolutePath()); //$NON-NLS-1$
 			ResourceStatus status = new ResourceStatus(IResourceStatus.FAILED_WRITE_METADATA, null, message, ioe);
@@ -340,11 +286,11 @@ public abstract class Bucket {
 	}
 
 	public final void setEntryValue(String path, Object value) {
-		if (value == null) {
+		if (value == null)
 			entries.remove(path);
-		} else
+		else
 			entries.put(path, value);
-		changes.add(path);
+		needSaving = true;
 	}
 
 	protected abstract void writeEntryValue(DataOutputStream destination, Object entryValue) throws IOException;
