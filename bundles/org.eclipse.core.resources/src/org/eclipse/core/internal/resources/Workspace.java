@@ -153,8 +153,8 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 	if (createNewTree && tree.isImmutable())
 		newWorkingTree();
 }
-protected void broadcastChanges(int type, boolean unlockTree, boolean updateState) throws CoreException {
-	notificationManager.broadcastChanges(tree, type, unlockTree, updateState);
+protected void broadcastChanges(int type, boolean unlockTree) throws CoreException {
+	notificationManager.broadcastChanges(tree, type, unlockTree);
 }
 /**
  * Broadcasts an internal workspace lifecycle event to interested
@@ -174,11 +174,7 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 		try {
 			prepareOperation();
 			beginOperation(true);
-			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false, false);
 			getBuildManager().build(trigger, Policy.subMonitorFor(monitor, Policy.opWork));
-			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false, false);
 		} finally {
 			//building may close the tree, but we are still inside an operation so open it
 			if (tree.isImmutable())
@@ -200,11 +196,11 @@ public void checkpoint(boolean build) {
 		if (!getWorkManager().isCurrentOperation())
 			return;
 		immutable = tree.isImmutable();
-		broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false, false);
+		broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
 		if (build && isAutoBuilding())
 			getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.monitorFor(null));
-		broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false, false);
-		broadcastChanges(IResourceChangeEvent.POST_CHANGE, false, true);
+		broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false);
+		broadcastChanges(IResourceChangeEvent.POST_CHANGE, false);
 		getMarkerManager().resetMarkerDeltas();
 	} catch (CoreException e) {
 		// ignore any CoreException.  There shouldn't be any as the buildmanager and notification manager
@@ -848,7 +844,7 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 		// if we are not exiting a top level operation then just decrement the count and return
 		if (workManager.getPreparedOperationDepth() > 1) 
 			return;
-		// do the following in a try/finally to ensure that the operation tree is null'd at the end
+		// do the following in a try/finally to ensure that the operation tree is nulled at the end
 		// as we are completing a top level operation.
 		try {
 			// check for a programming error on using beginOperation/endOperation
@@ -858,15 +854,14 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 			// build() and snapshot() should not fail if they are called.
 			workManager.rebalanceNestedOperations();
 
-			broadcastChanges(IResourceChangeEvent.POST_CHANGE, true, true);
-
 			//find out if any operation has potentially modified the tree
 			hasTreeChanges = workManager.shouldBuild();
 			//double check if the tree has actually changed
 			if (hasTreeChanges)
 				hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
-			// Perform a snapshot if we are sufficiently out of date.  Be sure to make the tree immutable first
 			tree.immutable();
+			broadcastChanges(IResourceChangeEvent.POST_CHANGE, true);
+			// Perform a snapshot if we are sufficiently out of date.  Be sure to make the tree immutable first
 			saveManager.snapshotIfNeeded(hasTreeChanges);
 		} finally {
 			// make sure that the tree is immutable.  Only do this if we are ending a top-level operation.

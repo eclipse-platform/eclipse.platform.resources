@@ -10,6 +10,7 @@
 package org.eclipse.core.internal.resources;
 
 import org.eclipse.core.internal.utils.Policy;
+import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.Job;
@@ -44,6 +45,28 @@ class AutoBuildJob extends Job {
 		if (state == Job.RUNNING && Platform.getJobManager().currentJob() != this) 
 			workspace.getBuildManager().interrupt();
 	}
+	private void doBuild(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
+		monitor = Policy.monitorFor(monitor);
+		try {
+			monitor.beginTask(null, Policy.opWork);
+			try {
+				workspace.prepareOperation();
+				workspace.beginOperation(true);
+				workspace.broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
+				if (workspace.isAutoBuilding())
+					workspace.getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.subMonitorFor(monitor, Policy.opWork));
+				workspace.broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, true);
+			} finally {
+				//building may close the tree, but we are still inside an operation so open it
+				if (workspace.getElementTree().isImmutable())
+					workspace.newWorkingTree();
+				avoidBuild();
+				workspace.endOperation(false, Policy.subMonitorFor(monitor, Policy.buildWork));
+			}
+		} finally {
+			monitor.done();
+		}
+	}
 	public synchronized void endTopLevel(boolean needsBuild) {
 		buildNeeded |= needsBuild;
 		if (shouldBuild())
@@ -63,13 +86,10 @@ class AutoBuildJob extends Job {
 			if (monitor.isCanceled())
 				return Status.CANCEL_STATUS;
 		}
-		//don't run if autobuild has been turned off since job was scheduled
-		if (!workspace.isAutoBuilding())
-			return Status.OK_STATUS;
 		try {
 			//clear build flags
 			forceBuild = buildNeeded = false;
-			workspace.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
+			doBuild(monitor);
 			return Status.OK_STATUS;
 		} catch (OperationCanceledException e) {
 			buildNeeded = true;
@@ -79,9 +99,6 @@ class AutoBuildJob extends Job {
 		}
 	}
 	private synchronized boolean shouldBuild() {
-		//never build if autobuild is off
-		if (!workspace.isAutoBuilding())
-			return false;
 		//build if the workspace requires a build (description changes)
 		if (forceBuild)
 			return true;

@@ -20,8 +20,8 @@ public class Policy {
 	private static String bundleName = "org.eclipse.core.internal.utils.messages";//$NON-NLS-1$
 	private static ResourceBundle bundle = ResourceBundle.getBundle(bundleName, Locale.getDefault());
 	
-	private static final int autoBuildOpWork = 70;
-	private static final int autoBuildBuildWork = 30;
+	private static final int autoBuildOpWork = 99;
+	private static final int autoBuildBuildWork = 1;
 	private static final int manualBuildOpWork = 99;
 	private static final int manualBuildBuildWork = 1;
 
