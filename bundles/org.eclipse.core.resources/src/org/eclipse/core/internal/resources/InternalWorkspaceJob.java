@@ -10,10 +10,8 @@
 package org.eclipse.core.internal.resources;
 
 import org.eclipse.core.internal.utils.Policy;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 
 /**
@@ -21,21 +19,25 @@ import org.eclipse.core.runtime.jobs.Job;
  * lock.
  */
 public abstract class InternalWorkspaceJob extends Job {
-	protected static ISchedulingRule newSchedulingRule(IResource resource) {
-		return new ResourceSchedulingRule(resource);
-	}
+	private Workspace workspace;
+
 	public InternalWorkspaceJob(String name) {
 		super(name);
+		this.workspace = (Workspace)ResourcesPlugin.getWorkspace();
 	}
 	public IStatus run(IProgressMonitor monitor) {
 		monitor = Policy.monitorFor(monitor);
-		Workspace workspace = (Workspace)ResourcesPlugin.getWorkspace();
 		try {
 			monitor.beginTask(null, Policy.totalWork);
 			try {
 				workspace.prepareOperation();
 				workspace.beginOperation(true);
-				runInWorkspace(Policy.subMonitorFor(monitor, Policy.opWork, SubProgressMonitor.PREPEND_MAIN_LABEL_TO_SUBTASK));
+				int depth = workspace.getWorkManager().beginUnprotected();
+				try {
+					runInWorkspace(Policy.subMonitorFor(monitor, Policy.opWork, SubProgressMonitor.PREPEND_MAIN_LABEL_TO_SUBTASK));
+				} finally {
+					workspace.getWorkManager().endUnprotected(depth);
+				}
 				return Status.OK_STATUS;
 			} catch (OperationCanceledException e) {
 				workspace.getWorkManager().operationCanceled();

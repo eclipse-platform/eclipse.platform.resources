@@ -24,6 +24,7 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.TeamHook;
 import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
 
 
 public class Workspace extends PlatformObject implements IWorkspace, ICoreConstants {
@@ -40,7 +41,11 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	protected PathVariableManager pathVariableManager;
 	protected PropertyManager propertyManager;
 	protected MarkerManager markerManager;
-	protected WorkManager workManager;
+	/**
+	 * Work manager should never be accessed directly because accessor
+	 * asserts that workspace is still open.
+	 */
+	protected WorkManager _workManager;
 	protected AliasManager aliasManager;
 	protected long nextNodeId = 1;
 	protected long nextModificationStamp = 0;
@@ -643,7 +648,7 @@ public int countResources(IPath root, int depth, final boolean phantom) {
 		case IResource.DEPTH_INFINITE:
 			final int[] count = new int[1];
 			IElementContentVisitor visitor = new IElementContentVisitor() {
-				public boolean visitElement(ElementTree tree, IPathRequestor requestor, Object elementContents) {
+				public boolean visitElement(ElementTree aTree, IPathRequestor requestor, Object elementContents) {
 					if (phantom || !((ResourceInfo)elementContents).isSet(M_PHANTOM))
 						count[0]++;
 					return true;
@@ -1088,11 +1093,11 @@ protected TeamHook getTeamHook() {
  * this method.
  */
 public WorkManager getWorkManager() throws CoreException {
-	if (workManager == null) {
+	if (_workManager == null) {
 		String message = Policy.bind("resources.shutdown"); //$NON-NLS-1$
 		throw new ResourceException(new ResourceStatus(IResourceStatus.INTERNAL_ERROR, null, message));
 	}
-	return workManager;
+	return _workManager;
 }
 /**
  * A file modification validator hasn't been initialized. Check the extension point and 
@@ -1423,6 +1428,16 @@ public Resource newResource(IPath path, int type) {
 	return null;
 }
 /**
+ * Returns a new scheduling rule on a resource.  Two resource scheduling rules
+ * will be conflicting if and only if the resource of one rule is a child of, or equal to,
+ *  the resource of the other rule.
+ * 
+ * @return a resource scheduling rule
+ */
+public ISchedulingRule newSchedulingRule(IResource resource) {
+	return _workManager.newSchedulingRule(resource);
+}
+/**
  * Opens a new mutable element tree layer, thus allowing 
  * modifications to the tree.
  */
@@ -1519,14 +1534,17 @@ public IStatus open(IProgressMonitor monitor) throws CoreException {
 /**
  * Called before checking the pre-conditions of an operation.
  */
-public void prepareOperation() throws CoreException {
+public void prepareOperation(ISchedulingRule rule) throws CoreException {
 	//ask the autobuild to cancel, and it should quickly give up its lock
 	autoBuildJob.checkCancel();
-	getWorkManager().checkIn();
+	getWorkManager().checkIn(rule);
 	if (!isOpen()) {
 		String message = Policy.bind("resources.workspaceClosed"); //$NON-NLS-1$
 		throw new ResourceException(IResourceStatus.OPERATION_FAILED, null, message, null);
 	}
+}
+public void prepareOperation() throws CoreException {
+	prepareOperation(newSchedulingRule(getRoot()));
 }
 
 protected boolean refreshRequested() {
@@ -1549,17 +1567,14 @@ public void removeSaveParticipant(Plugin plugin) {
 	Assert.isNotNull(plugin, "Plugin must not be null"); //$NON-NLS-1$
 	saveManager.removeParticipant(plugin);
 }
-/**
- * @see IWorkspace#run
- */
-public void run(IWorkspaceRunnable job, IProgressMonitor monitor) throws CoreException {
+public void run(IWorkspaceRunnable action, ISchedulingRule rule, IProgressMonitor monitor) throws CoreException {
 	monitor = Policy.monitorFor(monitor);
 	try {
 		monitor.beginTask(null, Policy.totalWork);
 		try {
-			prepareOperation();
+			prepareOperation(rule);
 			beginOperation(true);
-			job.run(Policy.subMonitorFor(monitor, Policy.opWork, SubProgressMonitor.PREPEND_MAIN_LABEL_TO_SUBTASK));
+			action.run(Policy.subMonitorFor(monitor, Policy.opWork, SubProgressMonitor.PREPEND_MAIN_LABEL_TO_SUBTASK));
 		} catch (OperationCanceledException e) {
 			getWorkManager().operationCanceled();
 			throw e;
@@ -1569,6 +1584,12 @@ public void run(IWorkspaceRunnable job, IProgressMonitor monitor) throws CoreExc
 	} finally {
 		monitor.done();
 	}
+}
+/**
+ * @see IWorkspace#run
+ */
+public void run(IWorkspaceRunnable job, IProgressMonitor monitor) throws CoreException {
+	run(job, newSchedulingRule(getRoot()), monitor);
 }
 /** 
  * @see IWorkspace
@@ -1633,7 +1654,7 @@ public void setWorkspaceLock(WorkspaceLock lock) {
 protected void shutdown(IProgressMonitor monitor) throws CoreException {
 	monitor = Policy.monitorFor(monitor);
 	try {
-		IManager[] managers = { buildManager, notificationManager, propertyManager, pathVariableManager, fileSystemManager, markerManager, saveManager, workManager, aliasManager};
+		IManager[] managers = { buildManager, notificationManager, propertyManager, pathVariableManager, fileSystemManager, markerManager, saveManager, _workManager, aliasManager};
 		monitor.beginTask(null, managers.length);
 		String message = Policy.bind("resources.shutdownProblems"); //$NON-NLS-1$
 		MultiStatus status = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, null);
@@ -1659,7 +1680,7 @@ protected void shutdown(IProgressMonitor monitor) throws CoreException {
 		markerManager = null;
 		synchronizer = null;
 		saveManager = null;
-		workManager = null;
+		_workManager = null;
 		autoBuildJob.cancel();
 		notifyJob.cancel();
 		if (!status.isOK())
@@ -1676,8 +1697,8 @@ public String[] sortNatureSet(String[] natureIds) {
 }
 protected void startup(IProgressMonitor monitor) throws CoreException {
 	// ensure the tree is locked during the startup notification
-	workManager = new WorkManager();
-	workManager.startup(null);
+	_workManager = new WorkManager(this);
+	_workManager.startup(null);
 	fileSystemManager = new FileSystemResourceManager(this);
 	fileSystemManager.startup(monitor);
 	propertyManager = new PropertyManager(this);
@@ -1707,7 +1728,7 @@ public String toDebugString() {
 	final StringBuffer buffer = new StringBuffer("\nDump of " + toString() + ":\n"); //$NON-NLS-1$ //$NON-NLS-2$
 	buffer.append("  parent: " + tree.getParent()); //$NON-NLS-1$
 	IElementContentVisitor visitor = new IElementContentVisitor() {
-		public boolean visitElement(ElementTree tree, IPathRequestor requestor, Object elementContents) {
+		public boolean visitElement(ElementTree aTree, IPathRequestor requestor, Object elementContents) {
 			buffer.append("\n  " + requestor.requestPath() + ": " + elementContents); //$NON-NLS-1$ //$NON-NLS-2$
 			return true;
 		}

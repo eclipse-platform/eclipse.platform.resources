@@ -11,7 +11,6 @@ package org.eclipse.core.resources;
 
 import org.eclipse.core.internal.resources.InternalWorkspaceJob;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.jobs.ISchedulingRule;
 
 /**
  * A job that makes an atomic modification to the workspace.  Clients must
@@ -40,16 +39,6 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
  * @see IWorkspaceRunnable
  */
 public abstract class WorkspaceJob extends InternalWorkspaceJob {
-	/**
-	 * Returns a new scheduling rule on a resource.  Two resource scheduling rules
-	 * will be conflicting if and only if the resource of one rule is a child of, or equal to,
-	 *  the resource of the other rule.
-	 * 
-	 * @return a resource scheduling rule
-	 */
-	public static final ISchedulingRule newSchedulingRule(IResource resource) {
-		return InternalWorkspaceJob.newSchedulingRule(resource);
-	}
 	/**
 	 * Creates a new workspace job.
 	 * @param name the name of the job

@@ -75,12 +75,12 @@ public void broadcastChanges(ElementTree lastState, int type, boolean unlockTree
 		return;
 	int depth = 0;
 	if (unlockTree)
-		depth = workspace.getWorkManager().unlockTree();
+		depth = workspace.getWorkManager().beginUnprotected();
 	try {
 		notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
 	} finally {
 		if (unlockTree)
-			workspace.getWorkManager().lockTree(depth);
+			workspace.getWorkManager().endUnprotected(depth);
 	}
 }
 

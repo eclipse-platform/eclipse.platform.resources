@@ -13,6 +13,7 @@ package org.eclipse.core.resources;
 import java.util.Map;
 
 import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
 
 /**
  * Workspaces are the basis for Eclipse Platform resource management.  There 
@@ -760,6 +761,15 @@ public IStatus move(IResource[] resources, IPath destination, int updateFlags, I
  * @see IProject#move
  */
 public IProjectDescription newProjectDescription(String projectName);
+/**
+ * Returns a new scheduling rule on a resource.  Two resource scheduling rules
+ * will be conflicting if and only if the resource of one rule is a child of, or equal to,
+ *  the resource of the other rule.
+ * 
+ * @return a resource scheduling rule
+ */
+public ISchedulingRule newSchedulingRule(IResource resource);
+
 
 /** 
  * Removes the given resource change listener from this workspace.
@@ -805,10 +815,31 @@ public void removeSaveParticipant(Plugin plugin);
  * If this method is called in the dynamic scope of another such
  * call, this method simply runs the action.
  * </p>
+ * <p>
+ * The supplied scheduling rule is used to determine whether this operation can be
+ * run simultaneously with other workspace changes in other threads.
+ * </p>
+ * 
+ * @param action the action to perform
+ * @param rule the scheduling rule to use when running this operation, or
+ * <code>null</code> if there are no scheduling restrictions for this operation.
+ * @param monitor a progress monitor, or <code>null</code> if progress
+ *    reporting and cancellation are not desired
+ * @exception CoreException if the operation failed.
+ */
+public void run(IWorkspaceRunnable action, ISchedulingRule rule, IProgressMonitor monitor) throws CoreException;
+/**
+ * Runs the given action as an atomic workspace operation.
+ * <p>
+ * This is a convenience method, fully equivalent to:
+ * <pre>
+ *   workspace.run(action, workspace.newSchedulingRule(workspace.getRoot()), monitor);
+ * </pre>
+ * </p>
  *
  * @param action the action to perform
  * @param monitor a progress monitor, or <code>null</code> if progress
- *    reporting and cancellation are not desired
+ *    reporting and cancelation are not desired
  * @exception CoreException if the operation failed.
  */
 public void run(IWorkspaceRunnable action, IProgressMonitor monitor) throws CoreException;

@@ -66,6 +66,9 @@ class AutoBuildJob extends Job {
 			if (monitor.isCanceled())
 				return Status.CANCEL_STATUS;
 		}
+		//don't run if autobuild has been turned off since job was scheduled
+		if (!workspace.isAutoBuilding())
+			return Status.OK_STATUS;
 		try {
 			//clear build flags
 			forceBuild = buildNeeded = false;

@@ -19,8 +19,11 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
  */
 public class ResourceSchedulingRule implements ISchedulingRule {
 	private final IResource resource;
-	public ResourceSchedulingRule(IResource resource) {
+	ResourceSchedulingRule(IResource resource) {
 		this.resource = resource;
+	}
+	IResource getResource() {
+		return resource;
 	}
 	public boolean isConflicting(ISchedulingRule rule) {
 		if (rule.getClass() != ResourceSchedulingRule.class)
