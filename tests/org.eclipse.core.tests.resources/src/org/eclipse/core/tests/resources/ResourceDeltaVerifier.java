@@ -14,6 +14,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import junit.framework.Assert;
+import org.eclipse.core.internal.jobs.JobManager;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.IPath;
@@ -43,6 +44,7 @@ import org.eclipse.core.runtime.Path;
  * </code>
  */
 public class ResourceDeltaVerifier extends Assert implements IResourceChangeListener{
+	private static final boolean DEBUG = false;
 	public ResourceDeltaVerifier()  {
 	}
 	private class ExpectedChange {
@@ -418,6 +420,10 @@ String convertKind(int kind){
 		default: return "Unknown(" + kind + ")";
 	}
 }
+public static void debug(String msg)  {
+	if (DEBUG)
+		JobManager.debug(msg);
+}
 /**
  * Called to cleanup internal state and make sure expectations
  * are met after iterating over a resource delta.
@@ -755,5 +761,24 @@ public void resourceChanged(IResourceChangeEvent e){
 public void verifyDelta(IResourceDelta delta){
 	internalVerifyDelta(delta);
 	fState = DELTA_VERIFIED;
+	//wake up any threads waiting for a delta
+	synchronized (this) {
+		notifyAll();
+	}
+}
+/**
+ * Waits until a delta is received.
+ */
+public void waitForDelta() {
+	debug("waiting for notification to complete");
+	synchronized (this) {
+		while (!hasBeenNotified()) {
+			try {
+				wait(3000);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
+	debug("finished waiting");
 }
 }
