@@ -253,6 +253,12 @@ public void testLargeProperty() {
 		fail("1.0");
 	} catch (CoreException e) {
 	}
+	//should be able to add a small value after failure
+	try {
+		target.setPersistentProperty(name, "small");
+	} catch (CoreException e) {
+		fail("2.0");
+	}
 
 	// remove trash
 	try {
