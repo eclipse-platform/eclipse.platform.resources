@@ -3,7 +3,7 @@
 <plugin
    id="org.eclipse.core.resources"
    name="%pluginName"
-   version="0.9"
+   version="1.0"
    provider-name="Object Technology International, Inc."
    class="org.eclipse.core.resources.ResourcesPlugin">
 <requires>
