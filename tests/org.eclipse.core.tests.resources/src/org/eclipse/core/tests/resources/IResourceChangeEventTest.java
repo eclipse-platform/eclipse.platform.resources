@@ -13,7 +13,8 @@ package org.eclipse.core.tests.resources;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.tests.harness.EclipseWorkspaceTest;
 
 /**
@@ -68,6 +69,7 @@ protected void setUp() throws Exception {
 	};
 	try {
 		getWorkspace().run(body, getMonitor());
+		waitForNotify();
 	} catch (CoreException e) {
 		fail("1.0", e);
 	}
@@ -93,7 +95,7 @@ public void testFindMarkerDeltas() {
 	 * - remove marker2
 	 * - change marker3
 	 */
-	IResourceChangeListener listener = new IResourceChangeListener() {
+	class Listener implements IResourceChangeListener {
 		public void resourceChanged(IResourceChangeEvent event) {
 			//bookmark type, no subtypes
 			IMarkerDelta[] deltas = event.findMarkerDeltas(IMarker.BOOKMARK, false);
@@ -126,6 +128,7 @@ public void testFindMarkerDeltas() {
 			verifyDeltas(deltas);
 		}
 	};
+	final Listener listener = new Listener();
 	getWorkspace().addResourceChangeListener(listener);
 
 	//do the work	
@@ -138,6 +141,7 @@ public void testFindMarkerDeltas() {
 	};
 	try {
 		getWorkspace().run(body, getMonitor());
+		waitForNotify();
 	} catch (CoreException e) {
 		fail("Exception1", e);
 	} finally {
@@ -149,7 +153,7 @@ public void testFindMarkerDeltasInEmptyDelta() {
 	 * The following changes will occur:
 	 * - change file1
 	 */
-	IResourceChangeListener listener = new IResourceChangeListener() {
+	class Listener implements IResourceChangeListener {
 		public void resourceChanged(IResourceChangeEvent event) {
 			//bookmark type, no subtypes
 			IMarkerDelta[] deltas = event.findMarkerDeltas(IMarker.BOOKMARK, false);
@@ -187,11 +191,13 @@ public void testFindMarkerDeltasInEmptyDelta() {
 			assertTrue("7.1", deltas.length == 0);
 		}
 	};
+	final Listener listener = new Listener();
 	getWorkspace().addResourceChangeListener(listener);
 
 	//do the work	
 	try {
 		file1.setContents(getRandomContents(), true, true, getMonitor());
+		waitForNotify();
 	} catch (CoreException e) {
 		fail("Exception2", e);
 	} finally {
@@ -203,7 +209,7 @@ public void testFindMarkerDeltasInEmptyDelta() {
  */
 protected void verifyDeltas(IMarkerDelta[] deltas) {
 	assertNotNull("1.0", deltas);
-	assertTrue("1.1", deltas.length == 3);
+	assertEquals("1.1", 3, deltas.length);
 	//delta order is not defined..
 	boolean found1 = false, found2 = false, found3 = false;
 	for (int i = 0; i < deltas.length; i++) {

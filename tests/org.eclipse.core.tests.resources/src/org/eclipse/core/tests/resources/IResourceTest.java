@@ -15,7 +15,6 @@ import java.util.*;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
 import org.eclipse.core.internal.localstore.CoreFileSystemLibrary;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
@@ -145,11 +144,11 @@ public class IResourceTest extends EclipseWorkspaceTest {
 		return result;
 	}
 	public static Test suite() {
-		//	return new TestSuite(IResourceTest.class);
+			return new TestSuite(IResourceTest.class);
 
-		TestSuite suite = new TestSuite();
-		suite.addTest(new IResourceTest("testRefreshLocal"));
-		return suite;
+//		TestSuite suite = new TestSuite();
+//		suite.addTest(new IResourceTest("testRefreshLocal"));
+//		return suite;
 	}
 	public IResourceTest() {
 	}
@@ -373,14 +372,7 @@ public class IResourceTest extends EclipseWorkspaceTest {
 		return true;
 	}
 	private void resetVerifier() {
-		try {
-			verifier.reset();
-			//touch a resource so we know a notification is in progress
-			interestingResources[0].getProject().touch(null);
-			verifier.waitForDelta();
-		} catch (CoreException e) {
-			fail("failed to reset verifier", e);
-		}
+		waitForNotify();
 		verifier.reset();
 	}
 	protected void setUp() throws Exception {

@@ -12,7 +12,6 @@ package org.eclipse.core.tests.resources;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -365,6 +364,8 @@ public class TeamPrivateMemberTest extends EclipseWorkspaceTest {
 		final IResource[] resources = new IResource[] { project, folder, file, subFile };
 
 		final ResourceDeltaVerifier listener = new ResourceDeltaVerifier();
+		//make sure a notification isn't already scheduled before we add listener
+		waitForNotify();
 		getWorkspace().addResourceChangeListener(listener);
 		try {
 			IWorkspaceRunnable body = new IWorkspaceRunnable() {
@@ -379,7 +380,9 @@ public class TeamPrivateMemberTest extends EclipseWorkspaceTest {
 				getWorkspace().run(body, getMonitor());
 				listener.waitForDelta();
 				assertTrue("1.0." + listener.getMessage(), listener.isDeltaValid());
+				listener.reset();
 				ensureDoesNotExistInWorkspace(resources);
+				listener.waitForDelta();
 			} catch (CoreException e) {
 				fail("1.1", e);
 			}
@@ -402,8 +405,11 @@ public class TeamPrivateMemberTest extends EclipseWorkspaceTest {
 				listener.addExpectedChange(project, IResourceDelta.ADDED, IResourceDelta.OPEN);
 				listener.addExpectedChange(description, IResourceDelta.ADDED, IResource.NONE);
 				getWorkspace().run(body, getMonitor());
+				listener.waitForDelta();
 				assertTrue("2.1." + listener.getMessage(), listener.isDeltaValid());
+				listener.reset();
 				ensureDoesNotExistInWorkspace(resources);
+				listener.waitForDelta();
 			} catch (CoreException e) {
 				fail("2.2", e);
 			}
@@ -426,6 +432,7 @@ public class TeamPrivateMemberTest extends EclipseWorkspaceTest {
 				listener.addExpectedChange(project, IResourceDelta.ADDED, IResourceDelta.OPEN);
 				listener.addExpectedChange(description, IResourceDelta.ADDED, IResource.NONE);
 				getWorkspace().run(body, getMonitor());
+				listener.waitForDelta();
 				assertTrue("3.1." + listener.getMessage(), listener.isDeltaValid());
 				ensureDoesNotExistInWorkspace(resources);
 			} catch (CoreException e) {

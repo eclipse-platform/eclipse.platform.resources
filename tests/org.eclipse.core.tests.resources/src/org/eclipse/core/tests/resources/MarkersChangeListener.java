@@ -10,24 +10,18 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Vector;
 
-import org.eclipse.core.internal.jobs.JobManager;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 
 /**
  * A support class for the marker tests.
  */
-public class MarkersChangeListener implements IResourceChangeListener {
-	private static final boolean DEBUG = false;
+public class MarkersChangeListener extends ResourceDeltaVerifier {
 	protected HashMap changes;
-	private boolean wasNotified = false;
-
-	public static void debug(String msg) {
-		if (DEBUG)
-			JobManager.debug(msg);
-	}
 
 	public MarkersChangeListener() {
 		reset();
@@ -84,20 +78,15 @@ public class MarkersChangeListener implements IResourceChangeListener {
 		return changes.size();
 	}
 	public void reset() {
+		super.reset();
 		changes = new HashMap(11);
-		synchronized (this) {
-			wasNotified = false;
-		}
 	}
 	/**
 	 * Notification from the workspace.  Extract the marker changes.
 	 */
 	public void resourceChanged(IResourceChangeEvent event) {
+		super.resourceChanged(event);
 		resourceChanged(event.getDelta());
-		synchronized (this) {
-			wasNotified = true;
-			notifyAll();
-		}
 	}
 	/**
 	 * Recurse over the delta, extracting marker changes.
@@ -121,26 +110,5 @@ public class MarkersChangeListener implements IResourceChangeListener {
 		for (int i = 0; i < children.length; ++i) {
 			resourceChanged(children[i]);
 		}
-	}
-	/**
-	 * Waits until a delta is received.
-	 */
-	public void waitForDelta() {
-		debug("waiting for notification to complete");
-		synchronized (this) {
-			while (!wasNotified) {
-				try {
-					wait(200);
-				} catch (InterruptedException e) {
-				}
-			}
-		}
-		//make sure no notification jobs are still running
-		try {
-			Platform.getJobManager().join(null, null);
-		} catch (OperationCanceledException e) {
-		} catch (InterruptedException e) {
-		}
-		debug("finished waiting");
 	}
 }

@@ -13,18 +13,16 @@ package org.eclipse.core.tests.resources;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.CoreException;
 
 /**
  * This class works by recording the current state of given markers,
  * then verifying that the marker deltas accurately reflect the old
  * marker state.
  */
-public class MarkerAttributeChangeListener extends Assert implements IResourceChangeListener {
-	private boolean wasNotified = false;
+public class MarkerAttributeChangeListener extends ResourceDeltaVerifier {
 	//Map of (Long(id) -> Map of (String(attribute key) -> Object(attribute value)))
 	private Map attributeMap = new HashMap();
 	
@@ -36,7 +34,7 @@ public class MarkerAttributeChangeListener extends Assert implements IResourceCh
 	}
 	public void expectChanges(IMarker[] markers) throws CoreException {
 		error = null;
-		wasNotified = false;
+		super.reset();
 		attributeMap.clear();
 		
 		for (int i = 0; i < markers.length; i++) {
@@ -47,13 +45,13 @@ public class MarkerAttributeChangeListener extends Assert implements IResourceCh
 	 * @see IResourceChangeListener#resourceChanged(IResourceChangeEvent)
 	 */
 	public void resourceChanged(IResourceChangeEvent event) {
+		super.resourceChanged(event);
 		IMarkerDelta[] deltas = event.findMarkerDeltas(null, true);
 		try {
 			checkDelta(deltas);
 		} catch (AssertionFailedError e) {
 			error = e;
 		}
-		wasNotified = true;
 	}
 	private void checkDelta(IMarkerDelta[] deltas) throws AssertionFailedError {
 		assertEquals("wrong number of changes", deltas.length, attributeMap.size());
@@ -70,25 +68,6 @@ public class MarkerAttributeChangeListener extends Assert implements IResourceCh
 		waitForDelta();
 		if (error != null) {
 			throw error;
-		}
-	}
-	/**
-	 * Waits until a delta is received.
-	 */
-	public void waitForDelta() {
-		synchronized (this) {
-			while (!wasNotified) {
-				try {
-					wait(200);
-				} catch (InterruptedException e) {
-				}
-			}
-		}
-		//make sure no notification jobs are still running
-		try {
-			Platform.getJobManager().join(null, null);
-		} catch (OperationCanceledException e) {
-		} catch (InterruptedException e) {
 		}
 	}
 }

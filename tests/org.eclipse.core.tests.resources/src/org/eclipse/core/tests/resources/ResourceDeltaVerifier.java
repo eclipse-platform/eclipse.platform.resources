@@ -15,8 +15,8 @@ import java.util.Hashtable;
 
 import junit.framework.Assert;
 import org.eclipse.core.internal.jobs.JobManager;
+import org.eclipse.core.internal.resources.TestingSupport;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 
@@ -739,11 +739,10 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 				}
 			}
 		}
-		//make sure no notification jobs are still running
 		try {
-			Platform.getJobManager().join(null, null);
-		} catch (OperationCanceledException e) {
+			TestingSupport.getListenerNotifyJob().join();
 		} catch (InterruptedException e) {
+			Assert.fail("Unable to join listener job: " + e);
 		}
 		debug("finished waiting");
 	}
