@@ -15,7 +15,6 @@ import java.util.Hashtable;
 
 import junit.framework.Assert;
 import org.eclipse.core.internal.jobs.JobManager;
-import org.eclipse.core.internal.resources.TestingSupport;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
