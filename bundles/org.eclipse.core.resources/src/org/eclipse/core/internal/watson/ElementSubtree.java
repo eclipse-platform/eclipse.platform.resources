@@ -10,8 +10,7 @@
  *******************************************************************************/
 package org.eclipse.core.internal.watson;
 
-import org.eclipse.core.internal.dtree.AbstractDataTreeNode;
-import org.eclipse.core.internal.dtree.DataTreeNode;
+import org.eclipse.core.internal.dtree.*;
 
 /**
  * An <code>ElementSubtree</code> is a simple datastructure representing the 

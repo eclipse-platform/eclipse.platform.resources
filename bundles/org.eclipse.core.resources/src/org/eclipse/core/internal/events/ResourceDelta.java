@@ -12,6 +12,7 @@ package org.eclipse.core.internal.events;
 
 import java.util.Iterator;
 import java.util.Map;
+
 import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.internal.utils.Assert;
 import org.eclipse.core.internal.watson.ElementTree;

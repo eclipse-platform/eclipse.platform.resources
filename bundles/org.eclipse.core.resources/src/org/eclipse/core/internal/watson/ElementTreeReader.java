@@ -10,13 +10,12 @@
  *******************************************************************************/
 package org.eclipse.core.internal.watson;
 
-import java.io.*;
-import org.eclipse.core.internal.dtree.DataTreeReader;
-import org.eclipse.core.internal.dtree.IDataFlattener;
-import org.eclipse.core.internal.utils.Assert;
-import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.internal.dtree.*;
+import org.eclipse.core.internal.utils.Assert;
+import org.eclipse.core.internal.utils.Policy;
+import java.io.*;
 
 /** <code>ElementTreeReader</code> is the standard implementation
  * of an element tree serialization reader.

@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.core.internal.dtree;
 
-import java.security.InvalidParameterException;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;

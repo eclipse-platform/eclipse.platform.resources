@@ -10,8 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
-import java.io.InputStream;
 import org.eclipse.core.runtime.*;
+import java.io.InputStream;
 
 /**
  * A previous state of a file stored in the workspace's local history. 

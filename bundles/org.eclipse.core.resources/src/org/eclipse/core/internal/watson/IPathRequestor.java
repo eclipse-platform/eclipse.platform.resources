@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.core.internal.watson;
 
+import java.lang.String;
 import org.eclipse.core.runtime.IPath;
 
 /**

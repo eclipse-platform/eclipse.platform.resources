@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.resources;
 
 import java.util.ArrayList;
+
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.IProjectNatureDescriptor;
 import org.eclipse.core.resources.ResourcesPlugin;

@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.properties;
 
+import org.eclipse.core.runtime.*;
 import org.eclipse.core.internal.indexing.IndexCursor;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.QualifiedName;
 
 /* package */interface IVisitor {
 	/**

@@ -10,8 +10,7 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.core.runtime.*;
 
 /**
  * A callback for requesting information about a resource when using a fast

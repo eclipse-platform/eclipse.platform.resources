@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.eclipse.core.internal.indexing;
 
-import java.util.Observable;
+import java.util.*;
 
 public abstract class Page extends Observable implements Referable {
 

@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.resources;
 
 import java.util.Map;
+
 import org.eclipse.core.internal.utils.Assert;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.*;

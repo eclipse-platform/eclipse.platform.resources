@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.resources;
 
 import java.util.*;
+
 import org.eclipse.core.internal.events.ILifecycleListener;
 import org.eclipse.core.internal.events.LifecycleEvent;
 import org.eclipse.core.internal.utils.Policy;

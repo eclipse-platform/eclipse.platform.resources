@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.watson;
 
 import java.util.HashMap;
+
 import org.eclipse.core.internal.dtree.*;
 import org.eclipse.core.internal.utils.Assert;
 import org.eclipse.core.internal.utils.Policy;

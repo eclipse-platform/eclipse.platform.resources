@@ -10,8 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.watson;
 
-import java.io.*;
 import org.eclipse.core.runtime.IPath;
+import java.io.*;
 
 /** 
  * The <code>IElementInfoFlattener</code> interface supports

@@ -12,6 +12,7 @@ package org.eclipse.core.internal.resources;
 
 import java.util.Map;
 import java.util.Properties;
+
 import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 

@@ -13,6 +13,7 @@ package org.eclipse.core.internal.resources;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
+
 import org.eclipse.core.internal.events.BuildCommand;
 import org.eclipse.core.internal.localstore.SafeFileOutputStream;
 import org.eclipse.core.resources.IProject;
