@@ -149,8 +149,8 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 		newWorkingTree();
 	}
 }
-protected void broadcastChanges(int type, boolean updateState) {
-	notificationManager.broadcastChanges(tree, type, updateState);
+protected void broadcastChanges(int type, boolean lockTree, boolean updateState) throws CoreException {
+	notificationManager.broadcastChanges(tree, type, lockTree, updateState);
 }
 /**
  * Broadcasts an internal workspace lifecycle event to interested
@@ -171,10 +171,10 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 			prepareOperation();
 			beginOperation(true);
 			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
+				broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false, false);
 			getBuildManager().build(trigger, Policy.subMonitorFor(monitor, Policy.opWork));
 			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
-				broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false);
+				broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false, false);
 		} finally {
 			//building may close the tree, but we are still inside an operation so open it
 			if (tree.isImmutable())
@@ -196,11 +196,11 @@ public void checkpoint(boolean build) {
 		if (!getWorkManager().isCurrentOperation())
 			return;
 		immutable = tree.isImmutable();
-		broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false);
+		broadcastChanges(IResourceChangeEvent.PRE_AUTO_BUILD, false, false);
 		if (build && isAutoBuilding())
 			getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.monitorFor(null));
-		broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false);
-		broadcastChanges(IResourceChangeEvent.POST_CHANGE, true);
+		broadcastChanges(IResourceChangeEvent.POST_AUTO_BUILD, false, false);
+		broadcastChanges(IResourceChangeEvent.POST_CHANGE, false, true);
 		getMarkerManager().resetMarkerDeltas();
 	} catch (CoreException e) {
 		// ignore any CoreException.  There shouldn't be any as the buildmanager and notification manager
@@ -496,7 +496,7 @@ public IStatus copy(IResource[] resources, IPath destination, int updateFlags, I
 		monitor.beginTask(message, totalWork);
 		Assert.isLegal(resources != null);
 		if (resources.length == 0)
-			return ResourceStatus.OK_STATUS;
+			return Status.OK_STATUS;
 		// to avoid concurrent changes to this array
 		resources = (IResource[]) resources.clone();
 		IPath parentPath = null;
@@ -548,7 +548,7 @@ public IStatus copy(IResource[] resources, IPath destination, int updateFlags, I
 		}
 		if (status.matches(IStatus.ERROR))
 			throw new ResourceException(status);
-		return status.isOK() ? ResourceStatus.OK_STATUS : (IStatus) status;
+		return status.isOK() ? Status.OK_STATUS : (IStatus) status;
 	} finally {
 		monitor.done();
 	}
@@ -1109,7 +1109,7 @@ protected void initializeValidator() {
 	// the #setContents (e.g. don't throw an exception)
 	if (configs.length > 1) {
 		//XXX: shoud provide a meaningful status code
-		IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.oneValidator"), null); //$NON-NLS-1$
+		IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.oneValidator"), null); //$NON-NLS-1$
 		ResourcesPlugin.getPlugin().getLog().log(status);
 		return;
 	}
@@ -1121,7 +1121,7 @@ protected void initializeValidator() {
 		shouldValidate = true;
 	} catch (CoreException e) {
 		//XXX: shoud provide a meaningful status code
-		IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.initValidator"), e); //$NON-NLS-1$
+		IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initValidator"), e); //$NON-NLS-1$
 		ResourcesPlugin.getPlugin().getLog().log(status);
 	}
 }
@@ -1140,7 +1140,7 @@ protected void initializeMoveDeleteHook() {
 		// can only have one defined at a time. log a warning
 		if (configs.length > 1) {
 			//XXX: shoud provide a meaningful status code
-			IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.oneHook"), null); //$NON-NLS-1$
+			IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.oneHook"), null); //$NON-NLS-1$
 			ResourcesPlugin.getPlugin().getLog().log(status);
 			return;
 		}
@@ -1151,7 +1151,7 @@ protected void initializeMoveDeleteHook() {
 			moveDeleteHook = (IMoveDeleteHook) config.createExecutableExtension("class"); //$NON-NLS-1$
 		} catch (CoreException e) {
 			//XXX: shoud provide a meaningful status code
-			IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.initHook"), e); //$NON-NLS-1$
+			IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initHook"), e); //$NON-NLS-1$
 			ResourcesPlugin.getPlugin().getLog().log(status);
 		}
 	} finally {
@@ -1175,7 +1175,7 @@ protected void initializeTeamHook() {
 		// can only have one defined at a time. log a warning
 		if (configs.length > 1) {
 			//XXX: shoud provide a meaningful status code
-			IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.oneTeamHook"), null); //$NON-NLS-1$
+			IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.oneTeamHook"), null); //$NON-NLS-1$
 			ResourcesPlugin.getPlugin().getLog().log(status);
 			return;
 		}
@@ -1186,7 +1186,7 @@ protected void initializeTeamHook() {
 			teamHook = (TeamHook) config.createExecutableExtension("class"); //$NON-NLS-1$
 		} catch (CoreException e) {
 			//XXX: shoud provide a meaningful status code
-			IStatus status = new ResourceStatus(IResourceStatus.ERROR, 1, null, Policy.bind("resources.initTeamHook"), e); //$NON-NLS-1$
+			IStatus status = new ResourceStatus(IStatus.ERROR, 1, null, Policy.bind("resources.initTeamHook"), e); //$NON-NLS-1$
 			ResourcesPlugin.getPlugin().getLog().log(status);
 		}
 	} finally {
@@ -1290,7 +1290,7 @@ public IStatus move(IResource[] resources, IPath destination, int updateFlags, I
 		monitor.beginTask(message, totalWork);
 		Assert.isLegal(resources != null);
 		if (resources.length == 0)
-			return ResourceStatus.OK_STATUS;
+			return Status.OK_STATUS;
 		resources = (IResource[]) resources.clone(); // to avoid concurrent changes to this array
 		IPath parentPath = null;
 		message = Policy.bind("resources.moveProblem"); //$NON-NLS-1$
@@ -1340,7 +1340,7 @@ public IStatus move(IResource[] resources, IPath destination, int updateFlags, I
 		}
 		if (status.matches(IStatus.ERROR))
 			throw new ResourceException(status);
-		return status.isOK() ? (IStatus) ResourceStatus.OK_STATUS : (IStatus) status;
+		return status.isOK() ? (IStatus) Status.OK_STATUS : (IStatus) status;
 	} finally {
 		monitor.done();
 	}
@@ -1511,7 +1511,7 @@ public IStatus open(IProgressMonitor monitor) throws CoreException {
 				return e.getStatus();
 			}
 		}
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	} finally {
 		description.setAutoBuilding(oldBuildFlag);
 	}
@@ -1595,7 +1595,7 @@ public IStatus save(boolean full, IProgressMonitor monitor) throws CoreException
 		beginOperation(false);
 		saveManager.requestSnapshot();
 		message = Policy.bind("resources.snapRequest"); //$NON-NLS-1$
-		return new ResourceStatus(IResourceStatus.OK, message);
+		return new ResourceStatus(IStatus.OK, message);
 	} finally {
 		endOperation(false, null);
 	}
@@ -1647,7 +1647,7 @@ protected void shutdown(IProgressMonitor monitor) throws CoreException {
 					manager.shutdown(Policy.subMonitorFor(monitor, 1));
 				} catch (Exception e) {
 					message = Policy.bind("resources.shutdownProblems"); //$NON-NLS-1$
-					status.add(new Status(Status.ERROR, ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, e));
+					status.add(new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, e));
 				}
 			}
 		}
@@ -1660,6 +1660,8 @@ protected void shutdown(IProgressMonitor monitor) throws CoreException {
 		synchronizer = null;
 		saveManager = null;
 		workManager = null;
+		autoBuildJob.cancel();
+		notifyJob.cancel();
 		if (!status.isOK())
 			throw new CoreException(status);
 	} finally {
@@ -1731,7 +1733,7 @@ public IStatus validateEdit(final IFile[] files, final Object context) {
 				result.add(new ResourceStatus(IResourceStatus.FAILED_WRITE_LOCAL, filePath, message));
 			}
 		}
-		return result.isOK() ? ResourceStatus.OK_STATUS : (IStatus) result;
+		return result.isOK() ? Status.OK_STATUS : (IStatus) result;
 	}
 	// first time through the validator hasn't been initialized so try and create it
 	if (validator == null) 
@@ -1739,7 +1741,7 @@ public IStatus validateEdit(final IFile[] files, final Object context) {
 	// we were unable to initialize the validator. Validation has been turned off and 
 	// a warning has already been logged so just return.
 	if (validator == null)
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	// otherwise call the API and throw an exception if appropriate
 	final IStatus[] status = new IStatus[1];
 	ISafeRunnable body = new ISafeRunnable() {
@@ -1747,7 +1749,7 @@ public IStatus validateEdit(final IFile[] files, final Object context) {
 			status[0] = validator.validateEdit(files, context);
 		}
 		public void handleException(Throwable exception) {
-			status[0]  = new ResourceStatus(IResourceStatus.ERROR, null, Policy.bind("resources.errorValidator"), exception); //$NON-NLS-1$
+			status[0]  = new ResourceStatus(IStatus.ERROR, null, Policy.bind("resources.errorValidator"), exception); //$NON-NLS-1$
 		}
 	};
 	Platform.run(body);
@@ -1824,7 +1826,7 @@ public IStatus validateLinkLocation(IResource resource, IPath unresolvedLocation
 	// conflict with any project locations or linked resource locations
 	IProject[] projects = getRoot().getProjects();
 	for (int i = 0; i < projects.length; i++) {
-		IProject project = (IProject) projects[i];
+		IProject project = projects[i];
 		// since we are iterating over the project in the workspace, we
 		// know that they have been created before and must have a description
 		IProjectDescription desc  = ((Project) project).internalGetDescription();
@@ -1854,7 +1856,7 @@ public IStatus validateLinkLocation(IResource resource, IPath unresolvedLocation
 			}				
 		}
 	}
-	return ResourceStatus.OK_STATUS;
+	return Status.OK_STATUS;
 }
 /**
  * @see IWorkspace#validateName
@@ -1899,7 +1901,7 @@ public IStatus validateName(String segment, int type) {
 		message = Policy.bind("resources.invalidName", segment); //$NON-NLS-1$
 		return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 	}
-	return ResourceStatus.OK_STATUS;
+	return Status.OK_STATUS;
 }
 /**
  * @see IWorkspace#validateNatureSet(String[])
@@ -1981,7 +1983,7 @@ public IStatus validatePath(IPath path, int type, boolean lastSegmentOnly) {
 			if (!status.isOK())
 				return status;
 		}
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	}
 	message = Policy.bind("resources.invalidPath", path.toString()); //$NON-NLS-1$
 	return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
@@ -1993,7 +1995,7 @@ public IStatus validateProjectLocation(IProject context, IPath unresolvedLocatio
 	String message;
 	// the default default is ok for all projects
 	if (unresolvedLocation == null) {
-		return ResourceStatus.OK_STATUS;
+		return Status.OK_STATUS;
 	}
 	//check the standard path name restrictions
 	IPath location = getPathVariableManager().resolvePath(unresolvedLocation);
@@ -2024,7 +2026,7 @@ public IStatus validateProjectLocation(IProject context, IPath unresolvedLocatio
 	// conflict with any of their already defined locations.
 	IProject[] projects = getRoot().getProjects();
 	for (int j = 0; j < projects.length; j++) {
-		IProject project = (IProject) projects[j];
+		IProject project = projects[j];
 		// since we are iterating over the project in the workspace, we
 		// know that they have been created before and must have a description
 		IProjectDescription desc  = ((Project) project).internalGetDescription();
@@ -2061,7 +2063,7 @@ public IStatus validateProjectLocation(IProject context, IPath unresolvedLocatio
 			}
 		}
 	}
-	return ResourceStatus.OK_STATUS;
+	return Status.OK_STATUS;
 }
 /**
  * Internal method. To be called only from the following methods:
@@ -2091,7 +2093,7 @@ protected void validateSave(final IFile file) throws CoreException {
 			status[0] = validator.validateSave(file);
 		}
 		public void handleException(Throwable exception) {
-			status[0]  = new ResourceStatus(IResourceStatus.ERROR, null, Policy.bind("resources.errorValidator"), exception); //$NON-NLS-1$
+			status[0]  = new ResourceStatus(IStatus.ERROR, null, Policy.bind("resources.errorValidator"), exception); //$NON-NLS-1$
 		}
 	};
 	Platform.run(body);

@@ -52,7 +52,7 @@ public void broadcastChanges(IResourceChangeListener listener, int type, IResour
 /**
  * The main broadcast point for notification deltas
  */
-public void broadcastChanges(ElementTree lastState, int type, boolean updateState) {
+public void broadcastChanges(ElementTree lastState, int type, boolean unlockTree, boolean updateState) throws CoreException {
 	// Do the notification if there are listeners for events of the given type.
 	// Be sure to update the state if requested.  This needs to happen regardless of 
 	// whether people are listening.
@@ -73,7 +73,14 @@ public void broadcastChanges(ElementTree lastState, int type, boolean updateStat
 	// however pre and post build listeners must always be called
 	if ((delta == null || delta.getKind() == 0) && type == IResourceChangeEvent.POST_CHANGE)
 		return;
-	notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
+	if (unlockTree)
+		workspace.getWorkManager().unlockTree();
+	try {
+		notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
+	} finally {
+		if (unlockTree)
+			workspace.getWorkManager().lockTree();
+	}
 }
 
 protected ResourceDelta getDelta(ElementTree tree) {

@@ -39,7 +39,7 @@ public class ListenerNotifyJob extends Job {
 			try {
 				workspace.prepareOperation();
 				workspace.beginOperation(false);
-				workspace.broadcastChanges(IResourceChangeEvent.POST_CHANGE, true);
+				workspace.broadcastChanges(IResourceChangeEvent.POST_CHANGE, true, true);
 				monitor.worked(Policy.opWork);
 			} finally {
 				workspace.endOperation(false, Policy.subMonitorFor(monitor, Policy.buildWork));
