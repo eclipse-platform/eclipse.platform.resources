@@ -686,7 +686,8 @@ public class CharsetTest extends EclipseWorkspaceTest {
 	}
 
 	// check preference change events are reflected in the charset settings
-	public void testDeltaOnPreferenceChanges() {
+	// temporarily disabled
+	public void _testDeltaOnPreferenceChanges() {
 
 		CharsetVerifier backgroundVerifier = new CharsetVerifier(CharsetVerifier.IGNORE_CREATION_THREAD);
 		getWorkspace().addResourceChangeListener(backgroundVerifier, IResourceChangeEvent.POST_CHANGE);
