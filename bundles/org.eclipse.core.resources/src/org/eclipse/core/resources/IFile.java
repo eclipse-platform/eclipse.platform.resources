@@ -234,7 +234,7 @@ public String getName();
 /**
  * Returns whether this file is read-only.
  * This refinement of the corresponding <code>IStorage</code> and <code>IResource</code>
- * methods links the semantics of read-only resourcea and read-only storage objects.
+ * methods links the semantics of read-only resources and read-only storage objects.
  *
  * @see IResource#isReadOnly
  * @see IStorage#isReadOnly
