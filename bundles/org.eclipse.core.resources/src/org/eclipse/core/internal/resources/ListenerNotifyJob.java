@@ -50,6 +50,9 @@ public class ListenerNotifyJob extends Job {
 			monitor.done();
 		}
 	}
+	public boolean belongsTo(Object family) {
+		return family == this;
+	}
 	/**
 	 * Performs scheduling, and ensures that notification doesn't happen too often.
 	 * There must be at least MIN_DELAY ms between end of last notification and
