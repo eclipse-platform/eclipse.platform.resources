@@ -736,7 +736,7 @@ public class TeamPrivateMemberTest extends EclipseWorkspaceTest {
 		listener.reset();
 		ensureExistsInWorkspace(resources, true);
 		listener.waitForDelta();
-
+		listener.reset();
 		listener.addExpectedChange(subFile, IResourceDelta.CHANGED, IResourceDelta.CONTENT);
 		try {
 			setTeamPrivateMember("3.0", folder, true, IResource.DEPTH_ZERO);

@@ -62,6 +62,7 @@ public class PR_1GEAB3C_Test extends EclipseWorkspaceTest {
 	 * a project in a workspace runnable.
 	 */
 	public void test_1GEAB3C() {
+		waitForNotify();
 		verifier.reset();
 		final IProject project = getWorkspace().getRoot().getProject("MyAddedAndOpenedProject");
 		verifier.addExpectedChange(project, IResourceDelta.ADDED, IResourceDelta.OPEN);
