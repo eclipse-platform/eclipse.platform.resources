@@ -149,7 +149,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 	 * Factory method for creating history stores. 
 	 */
 	private static IHistoryStore createHistoryStore(Workspace workspace, IPath location, int limit) {
-		return new HistoryStore(workspace, location, limit);
+		return new HistoryStore2(workspace, location, limit);
 	}	
 
 	public void delete(IResource target, boolean force, boolean convertToPhantom, boolean keepHistory, IProgressMonitor monitor) throws CoreException {

@@ -16,15 +16,23 @@ import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.internal.utils.UniversalUniqueIdentifier;
 import org.eclipse.core.runtime.*;
 
-public class BucketIndex3 {
+public class BucketTable {
 
-	public abstract static class BatchVisitor extends Visitor {
-		public void newBucket(BucketIndex3 newBucket) {
+	public abstract static class Visitor {
+
+		// should stop the traversal
+		public final static int CONTINUE = 0;
+		// should delete this entry (can be combined with the other constants except for UPDATE)
+		public final static int DELETE = 0x100;
+		// should stop looking at states for files in this container (or any of its children)	
+		public final static int RETURN = 2;
+		// keep visiting, still happy	
+		public final static int STOP = 1;
+		// should update this entry (can be combined with the other constants except for DELETE)		
+		public final static int UPDATE = 0x200;
+
+		public void newBucket() {
 			// don't do anything
-		}
-
-		public final int visit(IPath path, byte[] uuid) {
-			throw new UnsupportedOperationException();
 		}
 
 		/** 
@@ -33,99 +41,9 @@ public class BucketIndex3 {
 		public abstract int visit(IPath path, byte[][] uuids);
 	}
 
-	public class Entry implements Comparable {
-		IPath filePath;
-		byte[] uuid;
-
-		Entry(IPath path, byte[] uuid) {
-			this.filePath = path;
-			this.uuid = uuid;
-		}
-
-		public int compareTo(Object o) {
-			return -UniversalUniqueIdentifier.compareTime(new UniversalUniqueIdentifier(this.uuid), new UniversalUniqueIdentifier(((Entry) o).uuid));
-		}
-	}
-
-	//	private static class RecyclableBufferedInputStream extends BufferedInputStream {
-	//		private byte[] savedBuffer;
-	//		private final static int BUFFER_SIZE = 8 * 1024;
-	//		private boolean closed = false;
-	//
-	//		public RecyclableBufferedInputStream() {
-	//			super(new ByteArrayInputStream(new byte[0]), BUFFER_SIZE);
-	//			savedBuffer = this.buf;
-	//			try {
-	//				this.close();
-	//			} catch (IOException e) {
-	//				// never gonna happen with these type of streams
-	//			}
-	//		}
-	//
-	//		public void reload(InputStream stream) {
-	//			if (!closed)
-	//				throw new IllegalStateException();
-	//			this.buf = savedBuffer;
-	//			this.count = 0;
-	//			this.in = stream;
-	//			this.marklimit = 0;
-	//			this.markpos = -1;
-	//			this.closed = false;
-	//		}
-	//
-	//		public void close() throws IOException {
-	//			this.closed = true;
-	//			super.close();
-	//		}
-	//	}
-	//
-	//	private static class RecyclableBufferedOutputStream extends BufferedOutputStream {
-	//		private byte[] savedBuffer;
-	//		private boolean closed;
-	//
-	//		public RecyclableBufferedOutputStream() {
-	//			super(new ByteArrayOutputStream(0), RecyclableBufferedInputStream.BUFFER_SIZE);
-	//			savedBuffer = this.buf;
-	//			try {
-	//				this.close();
-	//			} catch (IOException e) {
-	//				// never gonna happen with these type of streams
-	//			}
-	//		}
-	//
-	//		public void reload(OutputStream stream) {
-	//			if (!closed)
-	//				throw new IllegalStateException();
-	//			this.buf = savedBuffer;
-	//			this.count = 0;
-	//			this.out = stream;
-	//		}
-	//
-	//		public void close() throws IOException {
-	//			this.closed = true;
-	//			super.close();
-	//		}
-	//	}
-
-	public abstract static class Visitor {
-		// should stop the traversal
-		public final static int CONTINUE = 0;
-		// should delete this entry (can be combined with the other constants)
-		public final static int DELETE = 0x100;
-		// should stop looking at states for files in this container (or any of its children)	
-		public final static int RETURN = 2;
-		// should stop looking at states for this file		
-		public final static int SKIP_FILE = 3;
-		// keep visiting, still happy	
-		public final static int STOP = 1;
-
-		/** 
-		 * @return either STOP, CONTINUE, RETURN or SKIP_FILE and optionally DELETE
-		 */
-		public abstract int visit(IPath path, byte[] uuid);
-	}
-
 	private static final String BUCKET = ".bucket"; //$NON-NLS-1$
+
+	private final static byte VERSION = 1;
 
 	//	private static final int UUID_LENGTH = new UniversalUniqueIdentifier().toString().length();
 
@@ -146,7 +64,7 @@ public class BucketIndex3 {
 		return -1;
 	}
 
-	public BucketIndex3(File root) {
+	public BucketTable(File root) {
 		this.root = root;
 		this.entries = new HashMap();
 	}
@@ -162,39 +80,33 @@ public class BucketIndex3 {
 		if (entries.isEmpty())
 			return Visitor.CONTINUE;
 		try {
-			if (visitor instanceof BatchVisitor)
-				return batchAccept((BatchVisitor) visitor, filter, exactMatch, sorted);
+			visitor.newBucket();
 			for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
 				Map.Entry entry = (Map.Entry) i.next();
 				IPath path = new Path((String) entry.getKey());
 				// check whether the filter applies
 				if (!filter.isPrefixOf(path) || (exactMatch && !filter.equals(path)))
 					continue;
-				// calls the visitor for every uuid in the entry
+				// calls the visitor passing all uuids for the entry
 				byte[][] uuids = (byte[][]) entry.getValue();
-				int deleted = 0;
-				for (int j = 0; j < uuids.length; j++) {
-					int outcome = visitor.visit(path, uuids[j]);
-					if ((outcome & Visitor.DELETE) != 0) {
-						needSaving = true;
-						// mark that uuid as deleted
-						uuids[j] = null;
-						byte[][]newValue = concatUUIDs(uuids);
-						if (newValue == null)
-							i.remove();
-						else
-							entry.setValue(newValue);
-					}
-					if ((outcome & Visitor.SKIP_FILE) != 0)
-						// skip the remaining states for this file
-						break;
-					if ((outcome & Visitor.RETURN) != 0)
-						// skip any other buckets under this
-						return Visitor.RETURN;
-					if ((outcome & Visitor.STOP) != 0)
-						// stop looking					
-						return Visitor.STOP;
+				int outcome = visitor.visit(path, uuids);
+				if ((outcome & Visitor.UPDATE) != 0) {
+					needSaving = true;
+					uuids = compact(uuids);
+					if (uuids == null)
+						i.remove();
+					else
+						entry.setValue(uuids);
+				} else if ((outcome & Visitor.DELETE) != 0) {
+					needSaving = true;
+					i.remove();
 				}
+				if ((outcome & Visitor.RETURN) != 0)
+					// skip any other buckets under this
+					return Visitor.RETURN;
+				if ((outcome & Visitor.STOP) != 0)
+					// stop looking
+					return Visitor.STOP;
 			}
 			return Visitor.CONTINUE;
 		} finally {
@@ -249,45 +161,22 @@ public class BucketIndex3 {
 		needSaving = true;
 	}
 
-	private int batchAccept(BatchVisitor visitor, IPath filter, boolean exactMatch, boolean sorted) throws CoreException {
-		visitor.newBucket(this);
-		for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
-			Map.Entry entry = (Map.Entry) i.next();
-			IPath path = new Path((String) entry.getKey());
-			// check whether the filter applies
-			if (!filter.isPrefixOf(path) || (exactMatch && !filter.equals(path)))
-				continue;
-			// calls the visitor passing all uuids for the entry
-			byte[][] uuids = (byte[][]) entry.getValue();
-			int outcome = visitor.visit(path, uuids);
-			if ((outcome & Visitor.DELETE) != 0) {
-				needSaving = true;
-				i.remove();
-			}
-			if ((outcome & Visitor.RETURN) != 0)
-				// skip any other buckets under this
-				return Visitor.RETURN;
-			if ((outcome & Visitor.STOP) != 0)
-				// stop looking
-				return Visitor.STOP;
-		}
-		return Visitor.CONTINUE;
-	}
-
-	private byte[][] concatUUIDs(byte[][] uuids) {
-		int found = 0;
-		for (int i = 0; i < uuids.length; i++)
-			if (uuids[i] != null)
-				found++;
-		if (found == 0)
+	/**
+	 * Compacts the given array removing any null slots.
+	 */
+	private byte[][] compact(byte[][] array) {
+		int occurrences = 0;
+		for (int i = 0; i < array.length; i++)
+			if (array[i] != null)
+				array[occurrences++] = array[i];
+		if (occurrences == array.length)
+			// no items deleted
+			return array;
+		if (occurrences == 0)
+			// no items remaining
 			return null;
-		if (found == uuids.length)
-			return uuids;
-		byte[][] result = new byte[found][];
-		int copied = 0;
-		for (int i = 0; i < uuids.length; i++)
-			if (uuids[i] != null)
-				result[copied++] = uuids[i];
+		byte[][] result = new byte[occurrences][];
+		System.arraycopy(array, 0, result, 0, occurrences);
 		return result;
 	}
 
@@ -331,10 +220,11 @@ public class BucketIndex3 {
 			this.entries.clear();
 			if (!this.location.isFile())
 				return;
-			//bufferedInputStream.reload(new FileInputStream(location));
-			//DataInputStream source = new DataInputStream(bufferedInputStream);
 			DataInputStream source = new DataInputStream(new BufferedInputStream(new FileInputStream(location), 8192));
 			try {
+				if (source.readByte() != VERSION)
+					// TODO proper error handling here
+					throw new IOException("Wrong version");
 				int entryCount = source.readInt();
 				for (int i = 0; i < entryCount; i++) {
 					String key = source.readUTF();
@@ -364,10 +254,9 @@ public class BucketIndex3 {
 			}
 			// ensure the parent location exists 
 			location.getParentFile().mkdirs();
-			//			bufferedOutputStream.reload(new FileOutputStream(location));
-			//			DataOutputStream destination = new DataOutputStream(bufferedOutputStream);
 			DataOutputStream destination = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(location), 8192));
 			try {
+				destination.write(VERSION);
 				destination.writeInt(entries.size());
 				for (Iterator i = entries.entrySet().iterator(); i.hasNext();) {
 					Map.Entry entry = (Map.Entry) i.next();

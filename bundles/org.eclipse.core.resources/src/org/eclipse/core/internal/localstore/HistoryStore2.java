@@ -13,32 +13,31 @@ package org.eclipse.core.internal.localstore;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
-import org.eclipse.core.internal.localstore.BucketIndex3.BatchVisitor;
-import org.eclipse.core.internal.localstore.BucketIndex3.Visitor;
+import org.eclipse.core.internal.localstore.BucketTable.Visitor;
 import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.internal.utils.*;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
-public class NewHistoryStore3 implements IHistoryStore {
+public class HistoryStore2 implements IHistoryStore {
 	private static final String BLOB_STORE = ".blobs"; //$NON-NLS-1$
 	private static final String INDEX_STORE = ".index"; //$NON-NLS-1$
 	private final static int SEGMENT_LENGTH = 2;
 	private final static long SEGMENT_QUOTA = (long) Math.pow(2, 4 * SEGMENT_LENGTH); // 1 char = 2 ^ 4 = 0x10
 	private File baseLocation;
 	private BlobStore blobStore;
-	private BucketIndex3 currentBucket;
+	private BucketTable currentBucket;
 	private File indexLocation;
 	private Workspace workspace;
 
-	public NewHistoryStore3(Workspace workspace, IPath location, int limit) {
+	public HistoryStore2(Workspace workspace, IPath location, int limit) {
 		this.workspace = workspace;
 		this.baseLocation = location.toFile();
 		IPath blobStoreLocation = location.append(BLOB_STORE);
 		blobStoreLocation.toFile().mkdirs();
 		this.blobStore = new BlobStore(blobStoreLocation, limit);
 		this.indexLocation = location.append(INDEX_STORE).toFile();
-		this.currentBucket = new BucketIndex3(indexLocation);
+		this.currentBucket = new BucketTable(indexLocation);
 	}
 
 	public void accept(Visitor visitor, IPath root, int depth) throws CoreException {
@@ -71,7 +70,7 @@ public class NewHistoryStore3 implements IHistoryStore {
 		// handles the case the starting point is a file path
 		if (root.segmentCount() > 1) {
 			currentBucket.load(locationFor(root.removeLastSegments(1)));
-			if (currentBucket.accept(visitor, root, true, sorted) != BucketIndex3.Visitor.CONTINUE || depth == IResource.DEPTH_ZERO)
+			if (currentBucket.accept(visitor, root, true, sorted) != Visitor.CONTINUE || depth == IResource.DEPTH_ZERO)
 				return;
 		}
 		internalAccept(visitor, root, locationFor(root), depth, sorted);
@@ -101,7 +100,7 @@ public class NewHistoryStore3 implements IHistoryStore {
 	public Set allFiles(IPath root, int depth, IProgressMonitor monitor) {
 		final Set allFiles = new HashSet();
 		try {
-			accept(new BatchVisitor() {
+			accept(new Visitor() {
 				public int visit(IPath path, byte[][] uuids) {
 					allFiles.add(path);
 					return CONTINUE;
@@ -120,21 +119,23 @@ public class NewHistoryStore3 implements IHistoryStore {
 			final int max = description.getMaxFileStates();
 			final BlobStore tmpBlobStore = this.blobStore;
 			accept(new Visitor() {
-				IPath lastVisited;
-				int statesCounter;
-
-				public int visit(IPath path, byte[] uuid) {
-					if (!path.equals(lastVisited)) {
-						lastVisited = path;
-						statesCounter = 0;
+				public int visit(IPath path, byte[][] uuids) {
+					int statesCounter = 0;
+					boolean changed = false;
+					for (int i = 0; i < uuids.length; i++) {
+						UniversalUniqueIdentifier uuidObject = new UniversalUniqueIdentifier(uuids[i]);
+						if (++statesCounter <= max) {
+							File blobFile = tmpBlobStore.fileFor(uuidObject);
+							if (blobFile.lastModified() < minimumTimestamp) {
+								uuids[i] = null;
+								changed = true;								
+							}
+						} else {
+							uuids[i] = null;
+							changed = true;
+						}
 					}
-					UniversalUniqueIdentifier uuidObject = new UniversalUniqueIdentifier(uuid);
-					if (++statesCounter <= max) {
-						File blobFile = tmpBlobStore.fileFor(uuidObject);
-						if (blobFile.lastModified() >= minimumTimestamp)
-							return CONTINUE;
-					}
-					return DELETE;
+					return changed ? UPDATE : CONTINUE;
 				}
 			}, root, IResource.DEPTH_INFINITE, true);
 		} catch (Exception e) {
@@ -187,14 +188,14 @@ public class NewHistoryStore3 implements IHistoryStore {
 				clean(destinationResource.getFullPath());
 				return;
 			}
-			final BucketIndex3 sourceBucket = currentBucket;
-			final BucketIndex3 destinationBucket = new BucketIndex3(indexLocation);
+			final BucketTable sourceBucket = currentBucket;
+			final BucketTable destinationBucket = new BucketTable(indexLocation);
 
 			final IPath[] sourceDir = new IPath[1];
 			final IPath[] destinationDir = new IPath[1];
 
-			accept(new BatchVisitor() {
-				public void newBucket(BucketIndex3 newBucket) {
+			accept(new Visitor() {
+				public void newBucket() {
 					// figure out where we want to copy the states for this path to by:
 					// destinationBucket = baseDestinationLocation + blob - filename - baseSourceLocation
 					sourceDir[0] = Path.fromOSString(sourceBucket.getLocation().toString());
@@ -242,12 +243,12 @@ public class NewHistoryStore3 implements IHistoryStore {
 			currentBucket.load(bucketDir);
 			final List states = new ArrayList();
 			final BlobStore tmpBlobStore = blobStore;
-			accept(new BatchVisitor() {
+			accept(new Visitor() {
 				public int visit(IPath path, byte[][] uuids) {
 					for (int i = 0; i < uuids.length; i++) {
 						UniversalUniqueIdentifier blobUUID = new UniversalUniqueIdentifier(uuids[i]);
 						File blobFile = tmpBlobStore.fileFor(blobUUID);
-						states.add(new FileState(NewHistoryStore3.this, path, blobFile.lastModified(), blobUUID));
+						states.add(new FileState(HistoryStore2.this, path, blobFile.lastModified(), blobUUID));
 					}
 					return CONTINUE;
 				}
@@ -332,7 +333,7 @@ public class NewHistoryStore3 implements IHistoryStore {
 
 	public void remove(IPath root, IProgressMonitor monitor) {
 		try {
-			accept(new BatchVisitor() {
+			accept(new Visitor() {
 				public int visit(IPath path, byte[][] uuid) {
 					return DELETE;
 				}
@@ -357,7 +358,7 @@ public class NewHistoryStore3 implements IHistoryStore {
 		// because it changes from VM to VM
 		return Long.toHexString(Math.abs(segment.hashCode()) % SEGMENT_QUOTA);
 	}
-	
+
 	/**
 	 * @see IHistoryStore#removeGarbage()
 	 */

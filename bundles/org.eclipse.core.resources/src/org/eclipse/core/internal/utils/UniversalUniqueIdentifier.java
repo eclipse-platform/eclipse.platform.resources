@@ -18,7 +18,6 @@ import java.security.SecureRandom;
 import java.util.GregorianCalendar;
 import java.util.Random;
 
-
 public class UniversalUniqueIdentifier implements java.io.Serializable {
 
 	/**
@@ -117,7 +116,7 @@ public class UniversalUniqueIdentifier implements java.io.Serializable {
 	 */
 	public UniversalUniqueIdentifier(String string) {
 		// Check to ensure it is a String of the right length.
-		// do not use Assert to avoid having to Policy.bind ahead of time
+		// do not use Assert to avoid having to call Policy.bind ahead of time
 		if (string.length() != PrintStringSize)
 			throw new IllegalArgumentException(Policy.bind("utils.wrongLength", string)); //$NON-NLS-1$
 
