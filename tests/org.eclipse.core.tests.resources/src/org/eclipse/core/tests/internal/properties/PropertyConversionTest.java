@@ -88,8 +88,6 @@ public class PropertyConversionTest extends ResourceTest {
 						return true;
 					}
 				});
-				// close existing history store so all data is committed
-				original.shutdown(getMonitor());
 			} catch (CoreException e) {
 				fail("0.1", e);
 			}
