@@ -140,7 +140,9 @@ public void testDescriptionConstant() {
 /**
  * Tests creation and manipulation of projects names that are reserved on some platforms.
  */
-public void testInvalidProjectNames() {
+public void skipTestInvalidProjectNames() {
+	//FIXME Temporarily skip this test due to VM vendor bug #96338
+	
 	IWorkspaceRoot root = getWorkspace().getRoot();
 	
 	//do some tests with invalid names
@@ -2438,6 +2440,14 @@ public void testProjectReferences() {
 		fail("2.0", e);
 	}
 	assertTrue("2.1", target.getReferencingProjects().length == 1);
+
+	//get references for a non-existent project
+	try {
+		getWorkspace().getRoot().getProject("DoesNotExist").getReferencedProjects();
+		fail("3.0");
+	} catch (CoreException e1) {
+		//should fail
+	}
 }
 public void testSetGetProjectPersistentProperty() {
 	IProject target = getWorkspace().getRoot().getProject("Project");
