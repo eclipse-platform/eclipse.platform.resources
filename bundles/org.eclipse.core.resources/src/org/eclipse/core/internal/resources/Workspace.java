@@ -24,53 +24,9 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.TeamHook;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.jobs.Job;
 
 
 public class Workspace extends PlatformObject implements IWorkspace, ICoreConstants {
-	/**
-	 * The job for performing workspace auto-builds.
-	 */
-	class AutoBuildJob extends Job {
-		private void basicRun(IProgressMonitor monitor) throws CoreException {
-			monitor = Policy.monitorFor(monitor);
-			try {
-				monitor.beginTask(null, Policy.opWork);
-				try {
-					getWorkManager().checkIn();
-					beginOperation(true);
-					getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.subMonitorFor(monitor, Policy.opWork));
-					broadcastChanges(getElementTree(), IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
-				} finally {
-					//building may close the tree, but we are still inside an operation so open it
-					if (getElementTree().isImmutable())
-					newWorkingTree();
-					getWorkManager().avoidAutoBuild();
-					endOperation(false, Policy.subMonitorFor(monitor, Policy.buildWork));
-				}
-			} finally {
-				monitor.done();
-			}
-		}
-		public IStatus run(IProgressMonitor monitor) {
-			if (monitor.isCanceled())
-				return Status.CANCEL_STATUS;
-			try {
-				basicRun(monitor);
-				return Status.OK_STATUS;
-			} catch (OperationCanceledException e) {
-				return Status.CANCEL_STATUS;
-			} catch (CoreException sig) {
-				return sig.getStatus();
-			}
-		}
-		public void checkCancel() {
-			//cancel the build job if another job is attempting to modify the workspace
-			if (Platform.getJobManager().currentJob() != this)
-				cancel();
-		}
-	}
-
 	protected WorkspacePreferences description;
 	protected LocalMetaArea localMetaArea;
 	protected boolean openFlag = false;
@@ -96,6 +52,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	
 	//jobs
 	protected AutoBuildJob autoBuildJob;
+	protected ListenerNotifyJob notifyJob;
 
 	protected final HashSet lifecycleListeners = new HashSet(10);
 
@@ -152,7 +109,8 @@ public Workspace() {
 	tree.immutable();
 	treeLocked = true;
 	tree.setTreeData(newElement(IResource.ROOT));
-	autoBuildJob = new AutoBuildJob();
+	autoBuildJob = new AutoBuildJob(this);
+	notifyJob = new ListenerNotifyJob(this);
 }
 /**
  * Adds a listener for internal workspace lifecycle events.  There is no way to
@@ -225,8 +183,11 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 		try {
 			prepareOperation();
 			beginOperation(true);
+			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
+				broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
 			getBuildManager().build(trigger, Policy.subMonitorFor(monitor, Policy.opWork));
-			broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
+			if (trigger == IncrementalProjectBuilder.AUTO_BUILD)
+				broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
 		} finally {
 			//building may close the tree, but we are still inside an operation so open it
 			if (tree.isImmutable())
@@ -926,12 +887,10 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 			monitor = Policy.monitorFor(monitor);
 			monitor.subTask(MSG_RESOURCES_UPDATING); //$NON-NLS-1$
 			boolean hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
-			broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
 			if (isAutoBuilding() && shouldBuild(hasTreeChanges)) {
 				autoBuildJob.schedule(500);
 			}
-			broadcastChanges(tree, IResourceChangeEvent.POST_CHANGE, true, true, Policy.monitorFor(null));
-			getMarkerManager().resetMarkerDeltas();
+			notifyJob.endTopLevel();
 			// Perform a snapshot if we are sufficiently out of date.  Be sure to make the tree immutable first
 			tree.immutable();
 			saveManager.snapshotIfNeeded(hasTreeChanges);
