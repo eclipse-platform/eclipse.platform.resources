@@ -11,8 +11,6 @@
 package org.eclipse.core.tests.resources.perf;
 
 import java.util.*;
-import java.util.ArrayList;
-import java.util.List;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.internal.resources.Workspace;
@@ -24,12 +22,11 @@ import org.eclipse.core.tests.resources.ResourceTest;
 
 public class PropertyManagerPerformanceTest extends ResourceTest {
 
-	public PropertyManagerPerformanceTest() {
-		super(null);
-	}
-
-	public PropertyManagerPerformanceTest(String name) {
-		super(name);
+	public static String getPropertyValue(int size) {
+		StringBuffer value = new StringBuffer(size);
+		for (int i = 0; i < size; i++)
+			value.append((char) (Math.random() * Character.MAX_VALUE));
+		return value.toString();
 	}
 
 	public static Test suite() {
@@ -39,37 +36,12 @@ public class PropertyManagerPerformanceTest extends ResourceTest {
 		return new TestSuite(PropertyManagerPerformanceTest.class);
 	}
 
-	public static String getPropertyValue(int size) {
-		StringBuffer value = new StringBuffer(size);
-		for (int i = 0; i < size; i++)
-			value.append((char) (Math.random() * Character.MAX_VALUE));
-		return value.toString();
+	public PropertyManagerPerformanceTest() {
+		super(null);
 	}
 
-	public void testSetProperty() {
-		IProject proj1 = getWorkspace().getRoot().getProject("proj1");
-		final IFolder folder1 = proj1.getFolder("folder1");
-		new PerformanceTestRunner() {
-			List allResources = createTree(folder1, 2000);
-			protected void test() {
-				for (Iterator i = allResources.iterator(); i.hasNext();) {
-					IResource resource = (IResource) i.next();
-					try {
-						resource.setPersistentProperty(new QualifiedName("qualifier", "prop" + ((int) Math.random() * 50)), getPropertyValue(2048));
-					} catch (CoreException ce) {
-						fail("0.2", ce);
-					}
-				}
-			}
-
-			protected void tearDown() {
-				try {
-					((Workspace) getWorkspace()).getPropertyManager().deleteProperties(folder1, IResource.DEPTH_INFINITE);
-				} catch (CoreException e) {
-					fail("0.1", e);
-				}
-			}
-		}.run(this, 1, 1);
+	public PropertyManagerPerformanceTest(String name) {
+		super(name);
 	}
 
 	/**
@@ -96,4 +68,89 @@ public class PropertyManagerPerformanceTest extends ResourceTest {
 		return resources;
 	}
 
+	private void testGetProperty(int filesPerFolder, final int properties, int measurements, int repetitions) {
+		IProject proj1 = getWorkspace().getRoot().getProject("proj1");
+		final IFolder folder1 = proj1.getFolder("folder1");
+		final List allResources = createTree(folder1, filesPerFolder);
+		for (Iterator i = allResources.iterator(); i.hasNext();) {
+			IResource resource = (IResource) i.next();
+			for (int j = 0; j < properties; j++)
+				try {
+					resource.setPersistentProperty(new QualifiedName("qualifier", "prop" + j), getPropertyValue(200));
+				} catch (CoreException ce) {
+					fail("0.2", ce);
+				}
+		}
+
+		new PerformanceTestRunner() {
+			protected void test() {
+				for (int j = 0; j < properties; j++)
+					for (Iterator i = allResources.iterator(); i.hasNext();) {
+						IResource resource = (IResource) i.next();
+						try {
+							assertNotNull(resource.getPersistentProperty(new QualifiedName("qualifier", "prop" + j)));
+						} catch (CoreException ce) {
+							fail("0.2", ce);
+						}
+					}
+			}
+		}.run(this, measurements, repetitions);
+		try {
+			((Workspace) getWorkspace()).getPropertyManager().deleteProperties(folder1, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+			fail("0.1", e);
+		}
+
+	}
+
+	public void testGetProperty100x4() {
+		testGetProperty(100, 4, 10, 2);
+	}
+
+	public void testGetProperty20x20() {
+		testGetProperty(20, 20, 10, 2);
+	}
+
+	public void testGetProperty4x100() {
+		testGetProperty(4, 100, 10, 1);
+	}
+
+	private void testSetProperty(int filesPerFolder, int properties, int measurements, int repetitions) {
+		IProject proj1 = getWorkspace().getRoot().getProject("proj1");
+		final IFolder folder1 = proj1.getFolder("folder1");
+		final List allResources = createTree(folder1, filesPerFolder);
+		new PerformanceTestRunner() {
+
+			protected void tearDown() {
+				try {
+					((Workspace) getWorkspace()).getPropertyManager().deleteProperties(folder1, IResource.DEPTH_INFINITE);
+				} catch (CoreException e) {
+					fail("0.1", e);
+				}
+			}
+
+			protected void test() {
+				for (Iterator i = allResources.iterator(); i.hasNext();) {
+					IResource resource = (IResource) i.next();
+					try {
+						resource.setPersistentProperty(new QualifiedName("qualifier", "prop" + ((int) Math.random() * 50)), getPropertyValue(2048));
+					} catch (CoreException ce) {
+						fail("0.2", ce);
+					}
+				}
+			}
+		}.run(this, measurements, repetitions);
+	}
+
+	public void testSetProperty100x4() {
+		testSetProperty(100, 4, 10, 1);
+	}
+
+	public void testSetProperty20x20() {
+		testSetProperty(20, 20, 10, 4);
+	}
+
+	public void testSetProperty4x100() {
+		testSetProperty(4, 100, 10, 20);
+	}
 }

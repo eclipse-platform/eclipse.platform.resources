@@ -26,7 +26,7 @@ public class BucketTree {
 	private final static int SEGMENT_LENGTH = 2;
 	private final static long SEGMENT_QUOTA = (long) Math.pow(2, 4 * SEGMENT_LENGTH); // 1 char = 2 ^ 4 = 0x10	
 
-	private final static String VERSION_FILE = "version"; //$NON-NLS-1$
+	public final static String VERSION_FILE = "version"; //$NON-NLS-1$
 
 	private Bucket current;
 
@@ -54,6 +54,10 @@ public class BucketTree {
 
 	public Bucket getCurrent() {
 		return current;
+	}
+
+	public File getVersionFile() {
+		return new File(this.rootLocation, VERSION_FILE);
 	}
 
 	/**
@@ -100,10 +104,10 @@ public class BucketTree {
 	/**
 	 * Writes the version tag to a file on disk.
 	 */
-	private void saveVersion() throws CoreException {
+	private void saveVersion() throws CoreException {		
 		if (!this.rootLocation.isDirectory())
-			return;
-		File versionFile = new File(this.rootLocation, VERSION_FILE);
+			return;		
+		File versionFile = getVersionFile();
 		FileOutputStream stream = null;
 		boolean failed = false;
 		try {

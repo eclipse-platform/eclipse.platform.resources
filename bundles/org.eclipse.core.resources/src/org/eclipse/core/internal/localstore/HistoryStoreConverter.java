@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
-import java.io.File;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.IResourceStatus;
@@ -37,9 +36,8 @@ public class HistoryStoreConverter {
 		HistoryStore source = new HistoryStore(workspace, location, limit);
 		source.accept(Path.ROOT, new IHistoryStoreVisitor() {
 			public boolean visit(HistoryStoreEntry state) {
-				File bucketDir = tree.locationFor(state.getPath());
 				try {
-					currentBucket.load(bucketDir);
+					tree.loadBucketFor(state.getPath());
 				} catch (CoreException e) {
 					// failed while loading bucket
 					exception[0] = e;
@@ -51,7 +49,7 @@ public class HistoryStoreConverter {
 		}, true);
 		try {
 			// the last bucket changed will not have been saved
-			tree.close();
+			tree.getCurrent().save();
 			// we are done using the old history store instance		
 			source.shutdown(null);
 		} catch (CoreException e) {
@@ -61,7 +59,7 @@ public class HistoryStoreConverter {
 		if (Policy.DEBUG_HISTORY)
 			Policy.debug("Time to convert local history: " + (System.currentTimeMillis() - start) + "ms."); //$NON-NLS-1$ //$NON-NLS-2$
 		if (exception[0] != null) {
-			// failed while visiting or saving
+			// failed while visiting the old data or saving the new data
 			String conversionFailed = Policy.bind("history.conversionFailed"); //$NON-NLS-1$
 			Status failure = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.FAILED_READ_METADATA, new IStatus[] {exception[0].getStatus()}, conversionFailed, null);
 			// we failed, so don't do anything else - we might try converting again later

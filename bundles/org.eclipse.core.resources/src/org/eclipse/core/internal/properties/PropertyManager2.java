@@ -67,7 +67,8 @@ public class PropertyManager2 implements IPropertyManager {
 	private BucketTree tree;
 
 	public PropertyManager2(Workspace workspace) {
-		baseLocation = workspace.getMetaArea().getPropertyStoreLocation(workspace.getRoot()).toFile();
+		baseLocation = workspace.getMetaArea().getPropertyStoreLocation().toFile();
+		baseLocation.mkdirs();		
 		this.tree = new BucketTree(baseLocation, createPropertyIndex());
 	}
 
@@ -75,7 +76,7 @@ public class PropertyManager2 implements IPropertyManager {
 		tree.getCurrent().save();
 	}
 
-	public void copy(IResource source, IResource destination, int depth) throws CoreException {
+	public synchronized void copy(IResource source, IResource destination, int depth) throws CoreException {
 		copyProperties(source.getFullPath(), destination.getFullPath(), depth);
 	}
 
@@ -96,7 +97,7 @@ public class PropertyManager2 implements IPropertyManager {
 		return new PropertyBucket(baseLocation);
 	}
 
-	public void deleteProperties(IResource target, int depth) throws CoreException {
+	public synchronized void deleteProperties(IResource target, int depth) throws CoreException {
 		tree.accept(new PropertyBucket.Visitor() {
 			public int visit(Entry entry) {
 				entry.delete();
@@ -109,7 +110,7 @@ public class PropertyManager2 implements IPropertyManager {
 		deleteProperties(target, IResource.DEPTH_INFINITE);
 	}
 
-	public Map getProperties(IResource target) throws CoreException {
+	public synchronized Map getProperties(IResource target) throws CoreException {
 		final Map result = new HashMap();
 		tree.accept(new PropertyBucket.Visitor() {
 			public int visit(Entry entry) {
@@ -123,7 +124,7 @@ public class PropertyManager2 implements IPropertyManager {
 		return result;
 	}
 
-	public String getProperty(IResource target, QualifiedName name) throws CoreException {
+	public synchronized String getProperty(IResource target, QualifiedName name) throws CoreException {
 		IPath resourcePath = target.getFullPath();
 		PropertyBucket current = (PropertyBucket) tree.getCurrent();
 		File indexDir = tree.locationFor(resourcePath);
@@ -131,7 +132,16 @@ public class PropertyManager2 implements IPropertyManager {
 		return current.getProperty(resourcePath, name);
 	}
 
-	public void setProperty(IResource target, QualifiedName name, String value) throws CoreException {
+	public BucketTree getTree() {
+		return tree;
+	}
+	
+	public File getVersionFile() {
+		return tree.getVersionFile();
+	}
+
+	public synchronized void setProperty(IResource target, QualifiedName name, String value) throws CoreException {
+		// enforce the limit stated by the spec
 		if (value != null && value.length() > 2 * 1024) {
 			String message = Policy.bind("properties.valueTooLong"); //$NON-NLS-1$
 			throw new ResourceException(IResourceStatus.FAILED_WRITE_METADATA, target.getFullPath(), message, null);
@@ -149,7 +159,6 @@ public class PropertyManager2 implements IPropertyManager {
 	}
 
 	public void startup(IProgressMonitor monitor) {
-		// TODO Auto-generated method stub
+		// nothing to do
 	}
-
 }

@@ -26,12 +26,12 @@ import org.eclipse.core.runtime.*;
 public class PropertyManager implements IManager, ILifecycleListener, IPropertyManager {
 	protected Workspace workspace;
 
-	private PropertyManager(Workspace workspace) {
+	public PropertyManager(Workspace workspace) {
 		this.workspace = workspace;
 	}
 	
 	public static IPropertyManager createPropertyManager(Workspace workspace) {
-		return new PropertyManager(workspace);
+		return new PropertyManager2(workspace);
 	}
 
 	public void closePropertyStore(IResource target) throws CoreException {

@@ -129,6 +129,10 @@ public class LocalMetaArea implements ICoreConstants {
 		Assert.isTrue(type != IResource.FILE && type != IResource.FOLDER);
 		return locationFor(resource).append(F_PROPERTIES);
 	}
+	
+	public IPath getPropertyStoreLocation() {
+		return getLocation().append(F_PROPERTIES);		
+	}	
 
 	public IPath getSafeTableLocationFor(String pluginId) {
 		IPath prefix = getLocation().append(F_SAFE_TABLE);
