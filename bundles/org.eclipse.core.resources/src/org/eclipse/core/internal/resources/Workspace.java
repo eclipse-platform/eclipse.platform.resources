@@ -928,7 +928,7 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 			boolean hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
 			broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
 			if (isAutoBuilding() && shouldBuild(hasTreeChanges)) {
-				Platform.getJobManager().schedule(autoBuildJob);
+				autoBuildJob.schedule(500);
 			}
 			broadcastChanges(tree, IResourceChangeEvent.POST_CHANGE, true, true, Policy.monitorFor(null));
 			getMarkerManager().resetMarkerDeltas();
