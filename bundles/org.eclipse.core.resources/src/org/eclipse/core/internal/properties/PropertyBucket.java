@@ -31,8 +31,8 @@ public class PropertyBucket extends Bucket {
 
 		/**
 		 * Deletes the property with the given name, and returns the result array. Returns the original 
-		 * array if the property to be deleted could not be found. Returns nul if the property was found
-		 * and the original array had size 1.
+		 * array if the property to be deleted could not be found. Returns <code>null</code> if the property was found
+		 * and the original array had size 1 (instead of a zero-length array).
 		 */
 		public static String[][] delete(String[][] existing, String propertyName) {
 			// a size-1 array is a special case
@@ -72,6 +72,40 @@ public class PropertyBucket extends Bucket {
 			return newValue;
 		}
 
+		/**
+		 * Merges two entries (are always sorted). Duplicated additions replace existing ones.
+		 */
+		static Object merge(String[][] base, String[][] additions) {
+			int additionPointer = 0;
+			int basePointer = 0;
+			int added = 0;
+			String[][] result = new String[base.length + additions.length][];
+			while (basePointer < base.length && additionPointer < additions.length) {
+				int comparison = base[basePointer][0].compareTo(additions[additionPointer][0]);
+				if (comparison == 0) {
+					result[added++] = additions[additionPointer++];
+					// duplicate, override
+					basePointer++;
+				} else if (comparison < 0)
+					result[added++] = base[basePointer++];
+				else
+					result[added++] = additions[additionPointer++];
+			}
+			// copy the remaining states from either additions or base arrays
+			String[][] remaining = basePointer == base.length ? additions : base;
+			int remainingPointer = basePointer == base.length ? additionPointer : basePointer;
+			int remainingCount = remaining.length - remainingPointer;
+			System.arraycopy(remaining, remainingPointer, result, added, remainingCount);
+			added += remainingCount;
+			if (added == base.length + additions.length)
+				// no collisions
+				return result;
+			// there were collisions, need to compact
+			String[][] finalResult = new String[added][];
+			System.arraycopy(result, 0, finalResult, 0, finalResult.length);
+			return finalResult;
+		}
+
 		private static int search(String[][] existing, String propertyName) {
 			return Arrays.binarySearch(existing, new String[] {propertyName, null}, COMPARATOR);
 		}
@@ -82,6 +116,10 @@ public class PropertyBucket extends Bucket {
 			System.arraycopy(base.value, 0, this.value, 0, this.value.length);
 		}
 
+		/** 
+		 * @param path
+		 * @param value is a String[][] {{propertyKey, propertyValue}}
+		 */
 		protected PropertyEntry(IPath path, String[][] value) {
 			super(path);
 			this.value = value;
@@ -135,40 +173,6 @@ public class PropertyBucket extends Bucket {
 
 		public void visited() {
 			compact();
-		}
-
-		/**
-		 * Merges two entries (are always sorted). Duplicated additions replace existing ones.
-		 */
-		static Object merge(String[][] base, String[][] additions) {
-			int additionPointer = 0;
-			int basePointer = 0;
-			int added = 0;
-			String[][] result = new String[base.length + additions.length][];
-			while (basePointer < base.length && additionPointer < additions.length) {
-				int comparison = base[basePointer][0].compareTo(additions[additionPointer][0]);
-				if (comparison == 0) {
-					result[added++] = additions[additionPointer++];
-					// duplicate, override
-					basePointer++;
-				} else if (comparison < 0)
-					result[added++] = base[basePointer++];
-				else
-					result[added++] = additions[additionPointer++];
-			}
-			// copy the remaining states from either additions or base arrays
-			String[][] remaining = basePointer == base.length ? additions : base;
-			int remainingPointer = basePointer == base.length ? additionPointer : basePointer;
-			int remainingCount = remaining.length - remainingPointer;
-			System.arraycopy(remaining, remainingPointer, result, added, remainingCount);
-			added += remainingCount;
-			if (added == base.length + additions.length)
-				// no collisions
-				return result;
-			// there were collisions, need to compact
-			String[][] finalResult = new String[added][];
-			System.arraycopy(result, 0, finalResult, 0, finalResult.length);
-			return finalResult;
 		}
 	}
 
@@ -260,7 +264,9 @@ public class PropertyBucket extends Bucket {
 		String[][] properties = (String[][]) entryValue;
 		destination.writeShort(properties.length);
 		for (int j = 0; j < properties.length; j++) {
+			// writes the property key
 			destination.writeUTF(properties[j][0]);
+			// then the property value
 			destination.writeUTF(properties[j][1]);
 		}
 	}
