@@ -933,7 +933,7 @@ public void snapshotIfNeeded(boolean hasTreeChanges) throws CoreException {
 			long interval = workspace.internalGetDescription().getSnapshotInterval();
 			if (snapshotJob == null) {
 				if (ResourcesPlugin.getPlugin().isDebugging())
-					System.out.println("Starting snapshot delay thread"); //$NON-NLS-1$
+					System.out.println("Scheduling workspace snapshot"); //$NON-NLS-1$
 				snapshotJob = new DelayedSnapshotJob(this);
 				snapshotJob.schedule(Math.max(interval, MIN_SNAPSHOT_DELAY));
 			}
