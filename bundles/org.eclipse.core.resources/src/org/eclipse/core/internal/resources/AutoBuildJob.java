@@ -18,7 +18,6 @@ import org.eclipse.core.runtime.jobs.Job;
  * The job for performing workspace auto-builds.
  */
 class AutoBuildJob extends Job {
-	private boolean avoidBuild = false;
 	private boolean buildNeeded = false;
 	private boolean forceBuild = false;
 
@@ -31,7 +30,7 @@ class AutoBuildJob extends Job {
 	 * Used to prevent auto-builds at the end of operations that contain explicit builds
 	 */
 	public synchronized void avoidBuild() {
-		avoidBuild = true;
+		buildNeeded = false;
 	}
 	public synchronized void checkCancel() {
 		int state = getState();
@@ -49,9 +48,6 @@ class AutoBuildJob extends Job {
 		//only build at the end of the listener notify job
 		if (shouldBuild())
 			schedule(Policy.AUTO_BUILD_DELAY);
-		// reset auto-build avoidance flag (should only take effect for notification
-		// immediately after the auto-build)
-		avoidBuild = false;
 	}
 	public synchronized void endTopLevel(boolean needsBuild) {
 		buildNeeded |= needsBuild;
@@ -71,11 +67,12 @@ class AutoBuildJob extends Job {
 				return Status.CANCEL_STATUS;
 		}
 		try {
-			workspace.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
-			//clear build flags if all went well
+			//clear build flags
 			forceBuild = buildNeeded = false;
+			workspace.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
 			return Status.OK_STATUS;
 		} catch (OperationCanceledException e) {
+			buildNeeded = true;
 			return Status.CANCEL_STATUS;
 		} catch (CoreException sig) {
 			return sig.getStatus();
@@ -84,9 +81,6 @@ class AutoBuildJob extends Job {
 	private synchronized boolean shouldBuild() {
 		//never build if autobuild is off
 		if (!workspace.isAutoBuilding())
-			return false;
-		//don't build if we've just finished an explicit build
-		if (avoidBuild)
 			return false;
 		//build if the workspace requires a build (description changes)
 		if (forceBuild)
