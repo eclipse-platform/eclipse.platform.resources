@@ -8,10 +8,21 @@ package org.eclipse.core.resources;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IStatus;
 /**
- * NOTE: The following API is experimental, and has been exposed to allow certain clients
- * to try it and provide feedback on the new feature.  This method must not be called by production
- * code, and any callers must be aware that this API is subject to change or removal at any time.
+ * <b>Note:</b> This class/interface is part of an interim API that is still under 
+ * development and expected to change significantly before reaching stability. 
+ * It is being made available at this early stage to solicit feedback from pioneering 
+ * adopters on the understanding that any code that uses this API will almost 
+ * certainly be broken (repeatedly) as the API evolves.
  * 
+ * The file modification validator is a VCM-related hook for pre-checking operations 
+ * that modify the contents of files.
+ * <p>
+ * This interface is used only in conjunction with the
+ * "org.eclipse.core.resources.fileModificationValidator"
+ * extension point. It is intended to be implemented only 
+ * by the Eclipse Platform VCM plug-in.
+ * </p>
+ *
  * @since 2.0
  */
 public interface IFileModificationValidator {
@@ -23,6 +34,8 @@ public interface IFileModificationValidator {
  * The returned status is <code>IStatus.OK</code> if this validator 
  * believes the given file can be modified.  Other return statuses indicate
  * the reason why the individual files cannot be modified.
+ * 
+ * @see IWorkspace#validateEdit
  */
 public IStatus validateEdit(IFile[] files, Object context);
 /**
@@ -36,6 +49,9 @@ public IStatus validateEdit(IFile[] files, Object context);
  * 
  * @return a status indicating whether or not it is reasonable to try writing to the given file.
  *	A return value with an <code>IStatus.OK</code> code indicates a save should be attempted.
+ * 
+ * @see IFile#setContents
+ * @see IFile#appendContents
  */
 public IStatus validateSave(IFile file);
 }
