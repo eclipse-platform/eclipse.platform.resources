@@ -731,11 +731,7 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 	 */
 	public void waitForDelta() {
 		debug("waiting for notification to complete");
-		try {
-			TestingSupport.getListenerNotifyJob().join();
-		} catch (InterruptedException e) {
-			Assert.fail("Unable to join listener job: " + e);
-		}
+		TestingSupport.waitForNotification();
 		debug("finished waiting");
 	}
 }

@@ -67,7 +67,7 @@ public class TestingSupport {
 	}
 	/**
 	 * Blocks the calling thread until auto-build completes.
-	 * For testing purposes only.
+	 * 
 	 * @since 3.0
 	 */
 	public static void waitForAutoBuild() {
@@ -82,8 +82,8 @@ public class TestingSupport {
 	}
 	/**
 	 * Blocks the calling thread until all resource change notifications have completed.
-	 * * For testing purposes only.
-	 * * @ since 3.0 
+	 * 
+	 * @ since 3.0 
 	 */
 	public static void waitForNotification() {
 		try {
