@@ -12,12 +12,8 @@ package org.eclipse.core.tests.resources.perf;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.eclipse.core.internal.localstore.IHistoryStore;
-import org.eclipse.core.internal.localstore.TestingSupport;
-import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.tests.harness.PerformanceTestRunner;
 import org.eclipse.core.tests.internal.localstore.HistoryStoreTest;
 import org.eclipse.core.tests.resources.ResourceTest;
@@ -90,21 +86,13 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 	protected void tearDown() throws Exception {
 		getWorkspace().setDescription(original);
 		super.tearDown();
-		HistoryStoreTest.wipeHistoryStore(getMonitor());
+		HistoryStoreTest.wipeHistoryStore();
 	}
 
 	public void testAddState() {
 		setMaxFileStates("0.01", 100);
 		final IFile file = getWorkspace().getRoot().getProject("proj1").getFile("file.txt");
 		new PerformanceTestRunner() {
-
-			protected void test() {
-				try {
-					file.setContents(getRandomContents(), IResource.KEEP_HISTORY, getMonitor());
-				} catch (CoreException e) {
-					fail("", e);
-				}
-			}
 
 			protected void setUp() {
 				ensureExistsInWorkspace(file, getRandomContents());
@@ -118,8 +106,17 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 					fail("1.0", e);
 				}
 			}
+
+			protected void test() {
+				try {
+					file.setContents(getRandomContents(), IResource.KEEP_HISTORY, getMonitor());
+				} catch (CoreException e) {
+					fail("", e);
+				}
+			}
 		}.run(LocalHistoryPerformanceTest.this, 10, 30);
 	}
+
 	public void testBug28603() {
 		final IProject project = getWorkspace().getRoot().getProject("myproject");
 		final IFolder folder1 = project.getFolder("myfolder1");
@@ -128,15 +125,6 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 		final IFile file2 = folder2.getFile(file1.getName());
 
 		new PerformanceTestRunner() {
-
-			protected void test() {
-				try {
-					file1.move(file2.getFullPath(), true, true, getMonitor());
-					file2.move(file1.getFullPath(), true, true, getMonitor());
-				} catch (CoreException e) {
-					fail("1.0", e);
-				}
-			}
 			protected void setUp() {
 				ensureExistsInWorkspace(new IResource[] {project, folder1, folder2}, true);
 				try {
@@ -152,18 +140,22 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 			protected void tearDown() {
 				try {
 					ensureDoesNotExistInWorkspace(getWorkspace().getRoot());
-					IHistoryStore store = ((Workspace) getWorkspace()).getFileSystemManager().getHistoryStore();
-					// Remove all the entries from the history store index.  Note that
-					// this does not cause the history store states to be removed.
-					store.remove(Path.ROOT, getMonitor());
-					// Now make sure all the states are really removed.
-					TestingSupport.removeGarbage(store);
+					HistoryStoreTest.wipeHistoryStore();
 				} catch (Exception e) {
 					fail("2.0", e);
 				}
 			}
+
+			protected void test() {
+				try {
+					file1.move(file2.getFullPath(), true, true, getMonitor());
+					file2.move(file1.getFullPath(), true, true, getMonitor());
+				} catch (CoreException e) {
+					fail("1.0", e);
+				}
+			}
 		}.run(this, 10, 5);
-	}	
+	}
 
 	private void testClearHistory(final int filesPerFolder, final int statesPerFile) {
 		IProject project = getWorkspace().getRoot().getProject("proj1");
@@ -171,17 +163,17 @@ public class LocalHistoryPerformanceTest extends ResourceTest {
 		ensureDoesNotExistInWorkspace(base);
 		new PerformanceTestRunner() {
 
+			protected void setUp() {
+				createTree(base, filesPerFolder, statesPerFile);
+				ensureDoesNotExistInWorkspace(base);
+			}
+
 			protected void test() {
 				try {
 					base.clearHistory(getMonitor());
 				} catch (CoreException e) {
 					fail("", e);
 				}
-			}
-
-			protected void setUp() {
-				createTree(base, filesPerFolder, statesPerFile);
-				ensureDoesNotExistInWorkspace(base);
 			}
 		}.run(this, 4, 3);
 	}

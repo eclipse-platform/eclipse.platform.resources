@@ -1753,7 +1753,7 @@ public class HistoryStoreTest extends EclipseWorkspaceTest {
 	 * a file is left, it may become part of the history for another file in
 	 * another test (if this file has the same name).
 	 */
-	private void wipeHistoryStore() {
+	public static void wipeHistoryStore() {
 		HistoryStore store = ((Workspace) getWorkspace()).getFileSystemManager().getHistoryStore();
 		// Remove all the entries from the history store index.  Note that
 		// this does not cause the history store states to be removed.
