@@ -13,6 +13,7 @@ package org.eclipse.core.tests.internal.builders;
 import java.util.Map;
 
 import org.eclipse.core.internal.jobs.JobManager;
+import org.eclipse.core.internal.resources.TestingSupport;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.tests.harness.EclipseWorkspaceTest;
@@ -23,40 +24,10 @@ import org.eclipse.core.tests.harness.EclipseWorkspaceTest;
  */
 public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
 	protected static final boolean DEBUG = false;
-	/**
-	 * Class used to wait for build completion in an asynchronous environment.
-	 */
-	class PostBuildListener implements IResourceChangeListener {
-		private boolean waitingForBuild = false;
-		public synchronized void resourceChanged(IResourceChangeEvent event) {
-			switch(event.getType())  {
-				case IResourceChangeEvent.POST_AUTO_BUILD:
-					debug("POST_AUTO_BUILD notification");
-					waitingForBuild = false;
-					notifyAll();
-					break;
-				case IResourceChangeEvent.PRE_AUTO_BUILD:
-				debug("PRE_AUTO_BUILD notification");
-				break;
-				case IResourceChangeEvent.POST_CHANGE:
-				debug("POST_CHANGE notification");
-				break;
-			}
-		}
-		public synchronized void aboutToBuild() {
-			debug("about to build");
-			waitingForBuild = true;
-		}
-		public boolean isBuildFinished() {
-			return !waitingForBuild;
-		}
-	}
 	public static void debug(String msg)  {
 		if (DEBUG)
 			JobManager.debug(msg);
 	}
-	private PostBuildListener postBuildListener = new PostBuildListener();
-	private boolean listenerAdded = false;
 	private boolean autoBuilding;
 
 	public AbstractBuilderTest(String name) {
@@ -67,12 +38,6 @@ public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
 	 * in conjunction with waitForBuild
 	 */
 	protected void aboutToBuild() {
-		if (!listenerAdded)  {
-			int types = IResourceChangeEvent.POST_AUTO_BUILD | IResourceChangeEvent.POST_CHANGE;
-			getWorkspace().addResourceChangeListener(postBuildListener, types);
-			listenerAdded = true;
-		}
-		postBuildListener.aboutToBuild();
 	}
 	/**
 	 * Adds a new delta verifier builder to the given project.
@@ -148,10 +113,6 @@ public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
 	 */
 	protected void tearDown() throws Exception {
 		setAutoBuilding(autoBuilding);
-		if (listenerAdded) {
-			getWorkspace().removeResourceChangeListener(postBuildListener);
-			listenerAdded = false;
-		}
 		super.tearDown();
 	}
 	/**
@@ -159,13 +120,12 @@ public abstract class AbstractBuilderTest extends EclipseWorkspaceTest {
 	 */
 	protected void waitForBuild() {
 		debug("waiting for build to complete");
-		synchronized (postBuildListener) {
-			while (!postBuildListener.isBuildFinished()) {
-				try {
-					postBuildListener.wait(3000);
-				} catch (InterruptedException e) {
-				}
-			}
+		try {
+			//auto-build isn't scheduled until notification completes
+			TestingSupport.getListenerNotifyJob().join();
+			TestingSupport.getAutoBuildJob().join();
+		} catch (InterruptedException e) {
+			debug("Interrupted while waiting for auto-build");
 		}
 		debug("finished waiting");
 	}
