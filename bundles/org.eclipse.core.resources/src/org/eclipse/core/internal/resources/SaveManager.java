@@ -40,10 +40,14 @@ public class SaveManager implements IElementInfoFlattener, IManager {
 	 */
 	protected static final int NO_OP_THRESHOLD = 20;
 
+	/**
+	 * The minimum delay, in milliseconds, between workspace snapshots
+	 */
+	private static final long MIN_SNAPSHOT_DELAY= 1000 * 30L;//30 seconds
+
 	protected boolean snapshotRequested;
 	
-
-	protected DelayedSnapshotRunnable snapshotRunnable;	
+	protected DelayedSnapshotJob snapshotJob;
 	
 	/** plugins that participate on a workspace save */
 	protected HashMap saveParticipants;
@@ -895,9 +899,9 @@ void setPluginsSavedState(HashMap savedStates) {
 	this.savedStates = savedStates;
 }
 public void shutdown(IProgressMonitor monitor) {
-	if (snapshotRunnable != null) {
-		snapshotRunnable.cancel();
-		snapshotRunnable= null;
+	if (snapshotJob != null) {
+		snapshotJob.cancel();
+		snapshotJob= null;
 	}
 }
 /**
@@ -909,9 +913,9 @@ public void snapshotIfNeeded(boolean hasTreeChanges) throws CoreException {
 	if (!workspace.internalGetDescription().isSnapshotEnabled() && !snapshotRequested)
 		return;
 	if (snapshotRequested || operationCount >= workspace.internalGetDescription().getOperationsPerSnapshot()) {
-		if (snapshotRunnable != null) {
-			snapshotRunnable.cancel();
-			snapshotRunnable = null;
+		if (snapshotJob != null) {
+			snapshotJob.cancel();
+			snapshotJob = null;
 		}
 		try {
 			EventStats.startSnapshot();
@@ -927,13 +931,11 @@ public void snapshotIfNeeded(boolean hasTreeChanges) throws CoreException {
 		if (hasTreeChanges) {
 			operationCount++;
 			long interval = workspace.internalGetDescription().getSnapshotInterval();
-			if (snapshotRunnable == null && interval > 0) {
-				if (ResourcesPlugin.getPlugin().isDebugging()) {
+			if (snapshotJob == null) {
+				if (ResourcesPlugin.getPlugin().isDebugging())
 					System.out.println("Starting snapshot delay thread"); //$NON-NLS-1$
-				}
-				snapshotRunnable = new DelayedSnapshotRunnable(this, interval);
-				Thread t = new Thread(snapshotRunnable, "Snapshot"); //$NON-NLS-1$
-				t.start();
+				snapshotJob = new DelayedSnapshotJob(this);
+				snapshotJob.schedule(Math.max(interval, MIN_SNAPSHOT_DELAY));
 			}
 		} else {
 			//increment the operation count if we've had a sufficient number of no-ops
