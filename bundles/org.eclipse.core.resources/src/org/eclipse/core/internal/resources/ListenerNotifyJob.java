@@ -85,13 +85,9 @@ public class ListenerNotifyJob extends Job {
 	 * A top level workspace modifying operation has finished.
 	 */
 	public void endTopLevel() {
-		//if a notification is already queued or running, do nothing
-		switch (getState()) {
-			case WAITING :
-			case RUNNING :
-				return;
-		}
-		doSchedule(System.currentTimeMillis());
+		//only schedule a job if there is not one already running, waiting, or sleeping
+		if (getState() == NONE)
+			doSchedule(System.currentTimeMillis());
 	}
 	/* (non-Javadoc)
 	 * @see Job#run
