@@ -1624,8 +1624,10 @@ public void setDescription(IWorkspaceDescription value) throws CoreException {
 public void setTreeLocked(boolean locked) {
 	treeLocked = locked;
 }
+/**
+ * @deprecated
+ */
 public void setWorkspaceLock(WorkspaceLock lock) {
-	//deprecated
 }
 
 protected void shutdown(IProgressMonitor monitor) throws CoreException {

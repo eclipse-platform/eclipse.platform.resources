@@ -760,6 +760,7 @@ public IStatus move(IResource[] resources, IPath destination, int updateFlags, I
  * @see IProject#move
  */
 public IProjectDescription newProjectDescription(String projectName);
+
 /** 
  * Removes the given resource change listener from this workspace.
  * Has no effect if an identical listener is not registered.
@@ -1046,6 +1047,10 @@ public void setDescription(IWorkspaceDescription description) throws CoreExcepti
  * Clients should not call this method.
  * </p>
  * @param lock the lock to install on this workspace.
+ * 
+ * @deprecated it is no longer possible to override the workspace lock behavior.
+ * This functionality is now provided in the platform API by implementing the
+ * org.eclipse.core.runtime.jobs.ILockListener interface.
  */
 public void setWorkspaceLock(WorkspaceLock lock);
 /**

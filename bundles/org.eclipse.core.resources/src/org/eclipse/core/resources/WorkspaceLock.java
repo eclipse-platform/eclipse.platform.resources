@@ -17,8 +17,10 @@ import org.eclipse.core.runtime.CoreException;
  * Clients may subclass.
  * 
  * @see IWorkspace#setWorkspaceLock
+ * @deprecated it is no longer possible to override the workspace lock behavior.
+ * This functionality is now provided in the platform API by implementing the
+ * org.eclipse.core.runtime.jobs.ILockListener interface.
  */
-
 public class WorkspaceLock {
 
 /**
