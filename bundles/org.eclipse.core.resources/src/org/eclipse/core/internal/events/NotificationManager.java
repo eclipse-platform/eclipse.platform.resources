@@ -47,12 +47,12 @@ public void addListener(IResourceChangeListener listener, int eventMask) {
 public void broadcastChanges(IResourceChangeListener listener, int type, IResourceDelta delta) {
 	ResourceChangeListenerList.ListenerEntry[] entries;
 	entries = new ResourceChangeListenerList.ListenerEntry[] { new ResourceChangeListenerList.ListenerEntry(listener, type)};
-	notify(entries, new ResourceChangeEvent(workspace, type, delta));
+	notify(entries, new ResourceChangeEvent(workspace, type, delta), false);
 }
 /**
  * The main broadcast point for notification deltas
  */
-public void broadcastChanges(ElementTree lastState, int type, boolean unlockTree, boolean updateState) throws CoreException {
+public void broadcastChanges(ElementTree lastState, int type, boolean lockTree, boolean updateState) throws CoreException {
 	// Do the notification if there are listeners for events of the given type.
 	// Be sure to update the state if requested.  This needs to happen regardless of 
 	// whether people are listening.
@@ -73,15 +73,7 @@ public void broadcastChanges(ElementTree lastState, int type, boolean unlockTree
 	// however pre and post build listeners must always be called
 	if ((delta == null || delta.getKind() == 0) && type == IResourceChangeEvent.POST_CHANGE)
 		return;
-	int depth = 0;
-	if (unlockTree)
-		depth = workspace.getWorkManager().beginUnprotected();
-	try {
-		notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
-	} finally {
-		if (unlockTree)
-			workspace.getWorkManager().endUnprotected(depth);
-	}
+	notify(getListeners(), new ResourceChangeEvent(workspace, type, delta), lockTree);
 }
 
 protected ResourceDelta getDelta(ElementTree tree) {
@@ -114,7 +106,7 @@ public void handleEvent(LifecycleEvent event) {
 			if (!listeners.hasListenerFor(IResourceChangeEvent.PRE_CLOSE))
 				return;
 			IProject project = (IProject)event.resource;
-			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_CLOSE, project));
+			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_CLOSE, project), true);
 			break;
 		case LifecycleEvent.PRE_PROJECT_MOVE:
 			//only notify deletion on move if old project handle is going away
@@ -125,26 +117,35 @@ public void handleEvent(LifecycleEvent event) {
 			if (!listeners.hasListenerFor(IResourceChangeEvent.PRE_DELETE))
 				return;
 			project = (IProject)event.resource;
-			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_DELETE, project));
+			notify(getListeners(), new ResourceChangeEvent(workspace, IResourceChangeEvent.PRE_DELETE, project), true);
 			break;
 	}
 }
-private void notify(ResourceChangeListenerList.ListenerEntry[] resourceListeners, final IResourceChangeEvent event) {
+private void notify(ResourceChangeListenerList.ListenerEntry[] resourceListeners, final IResourceChangeEvent event, boolean lockTree) {
 	int type = event.getType();
 	for (int i = 0; i < resourceListeners.length; i++) {
 		if ((type & resourceListeners[i].eventMask) != 0) {
 			final IResourceChangeListener listener = resourceListeners[i].listener;
 			if (Policy.MONITOR_LISTENERS)
 				EventStats.startNotify(listener);
-			Platform.run(new ISafeRunnable() {
-				public void run() throws Exception {
-					listener.resourceChanged(event);
-				}
-				public void handleException(Throwable e) {
-					//ResourceStats.notifyException(e);
-					// don't log the exception....it is already being logged in Platform#run
-				}
-			});
+			boolean oldLock = workspace.isTreeLocked();
+			if (lockTree)
+				workspace.setTreeLocked(true);
+			try {
+				Platform.run(new ISafeRunnable() {
+					public void run() throws Exception {
+						listener.resourceChanged(event);
+					}
+					public void handleException(Throwable e) {
+						//ResourceStats.notifyException(e);
+						// don't log the exception....it is already being logged in Platform#run
+					}
+				});
+			} finally {
+				if (lockTree)
+					workspace.setTreeLocked(oldLock);
+			}
+
 			if (Policy.MONITOR_LISTENERS)
 				EventStats.endNotify();
 		}

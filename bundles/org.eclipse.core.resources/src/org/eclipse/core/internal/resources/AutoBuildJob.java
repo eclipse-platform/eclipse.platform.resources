@@ -44,13 +44,10 @@ class AutoBuildJob extends Job {
 		if (state == Job.RUNNING && Platform.getJobManager().currentJob() != this) 
 			workspace.getBuildManager().interrupt();
 	}
-	public synchronized void endNotify()  {
-		//only build at the end of the listener notify job
-		if (shouldBuild())
-			schedule(Policy.AUTO_BUILD_DELAY);
-	}
 	public synchronized void endTopLevel(boolean needsBuild) {
 		buildNeeded |= needsBuild;
+		if (shouldBuild())
+			schedule(Policy.AUTO_BUILD_DELAY);
 	}
 	/**
 	 * Forces a build to occur at the end of the next top level operation.  This is

@@ -56,7 +56,6 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	
 	//jobs
 	protected AutoBuildJob autoBuildJob;
-	protected ListenerNotifyJob notifyJob;
 
 	protected final HashSet lifecycleListeners = new HashSet(10);
 
@@ -94,9 +93,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 * would fail and be logged in our SafeRunnable wrappers, not affecting the
 	 * normal workspace operation.
 	 */
-	protected boolean treeLocked;
-	
-
+	protected boolean treeLocked = false;
 
 	/** indicates if the workspace crashed in a previous session */
 	protected boolean crashed = false;
@@ -109,7 +106,6 @@ public Workspace() {
 	treeLocked = true;
 	tree.setTreeData(newElement(IResource.ROOT));
 	autoBuildJob = new AutoBuildJob(this);
-	notifyJob = new ListenerNotifyJob(this);
 }
 /**
  * Adds a listener for internal workspace lifecycle events.  There is no way to
@@ -143,6 +139,10 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 	workManager.incrementNestedOperations();
 	if (!workManager.isBalanced())
 		Assert.isTrue(false, "Operation was not prepared."); //$NON-NLS-1$
+	if (isTreeLocked() && createNewTree) {
+		String message = Policy.bind("resources.cannotModify"); //$NON-NLS-1$
+		throw new ResourceException(IResourceStatus.WORKSPACE_LOCKED, null, message, null);
+	}
 	if (workManager.getPreparedOperationDepth() > 1) {
 		if (createNewTree && tree.isImmutable())
 			newWorkingTree();
@@ -846,10 +846,8 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 	try {
 		workManager.setBuild(build);
 		// if we are not exiting a top level operation then just decrement the count and return
-		if (workManager.getPreparedOperationDepth() > 1) {
-			notifyJob.endNested();
+		if (workManager.getPreparedOperationDepth() > 1) 
 			return;
-		}
 		// do the following in a try/finally to ensure that the operation tree is null'd at the end
 		// as we are completing a top level operation.
 		try {
@@ -859,6 +857,8 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 			// At this time we need to rebalance the nested operations. It is necessary because
 			// build() and snapshot() should not fail if they are called.
 			workManager.rebalanceNestedOperations();
+
+			broadcastChanges(IResourceChangeEvent.POST_CHANGE, true, true);
 
 			//find out if any operation has potentially modified the tree
 			hasTreeChanges = workManager.shouldBuild();
@@ -876,9 +876,8 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 	} finally {
 		workManager.checkOut();
 	}
-	//notify build and listener jobs after lock is released so there is no contention for the lock
+	//notify build job after lock is released so there is no contention for the lock
 	autoBuildJob.endTopLevel(hasTreeChanges);
-	notifyJob.endTopLevel(hasTreeChanges);
 }
 
 /**
@@ -1245,7 +1244,7 @@ protected boolean isOverlapping(IPath location1, IPath location2, boolean bothDi
 	return one.isPrefixOf(two) || (bothDirections && two.isPrefixOf(one));
 }
 public boolean isTreeLocked() {
-	return false;
+	return treeLocked;
 }
 /**
  * Link the given tree into the receiver's tree at the specified resource.
@@ -1681,7 +1680,6 @@ protected void shutdown(IProgressMonitor monitor) throws CoreException {
 		saveManager = null;
 		_workManager = null;
 		autoBuildJob.cancel();
-		notifyJob.cancel();
 		if (!status.isOK())
 			throw new CoreException(status);
 	} finally {
@@ -1718,6 +1716,8 @@ protected void startup(IProgressMonitor monitor) throws CoreException {
 	//must start after save manager, because (read) access to tree is needed
 	aliasManager = new AliasManager(this);
 	aliasManager.startup(null);
+
+	treeLocked = false; // unlock the tree.
 }
 /** 
  * Returns a string representation of this working state's

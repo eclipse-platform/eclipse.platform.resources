@@ -57,11 +57,12 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 			public void resourceChanged(IResourceChangeEvent event) {
 				assertEquals("1.0", IResourceChangeEvent.PRE_CLOSE, event.getType());
 				assertEquals("1.1", project, event.getResource());
-				//ensure that I'm allowed to modify the workspace
+				//ensure that I'm not allowed to modify the workspace
 				try {
 					file.create(getRandomContents(), IResource.NONE, getMonitor());
+					assertTrue("2.0", false);
 				} catch (CoreException e) {
-					ChangingListenerTest.this.fail("1.99", e);
+					//should fail
 				}
 			}
 		}
@@ -69,12 +70,12 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		Listener listener = new Listener();
 		getWorkspace().addResourceChangeListener(listener, IResourceChangeEvent.PRE_CLOSE);
 		try {
-			assertTrue("2.0", !file.exists());
+			assertTrue("3.0", !file.exists());
 			project.close(getMonitor());
 			project.open(getMonitor());
-			assertTrue("2.1", file.exists());
+			assertTrue("3.1", !file.exists());
 		} catch (CoreException e) {
-			fail("2.99", e);
+			fail("3.99", e);
 		} finally {
 			getWorkspace().removeResourceChangeListener(listener);
 		}
@@ -86,11 +87,12 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 			public void resourceChanged(IResourceChangeEvent event) {
 				assertEquals("1.0", IResourceChangeEvent.PRE_DELETE, event.getType());
 				assertEquals("1.1", project, event.getResource());
-				//ensure that I'm allowed to modify the workspace
+				//ensure that I'm not allowed to modify the workspace
 				try {
 					file.create(getRandomContents(), IResource.NONE, getMonitor());
+					assertTrue("2.0", false);
 				} catch (CoreException e) {
-					ChangingListenerTest.this.fail("1.99", e);
+					//should fail
 				}
 			}
 		}
@@ -98,13 +100,13 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		Listener listener = new Listener();
 		getWorkspace().addResourceChangeListener(listener, IResourceChangeEvent.PRE_DELETE);
 		try {
-			assertTrue("2.0", !file.exists());
+			assertTrue("3.0", !file.exists());
 			project.delete(IResource.NEVER_DELETE_PROJECT_CONTENT, getMonitor());
 			project.create(getMonitor());
 			project.open(getMonitor());
-			assertTrue("2.1", file.exists());
+			assertTrue("3.1", !file.exists());
 		} catch (CoreException e) {
-			fail("2.99", e);
+			fail("3.99", e);
 		} finally {
 			getWorkspace().removeResourceChangeListener(listener);
 		}
@@ -118,29 +120,13 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		 * it receives its own delta.
 		 */
 		class Listener1 extends ResourceDeltaVerifier {
-			int iteration = 0;
 			public void resourceChanged(IResourceChangeEvent event) {
-				switch (iteration) {
-					case 0 :
-						super.reset();
-						addExpectedChange(project, IResourceDelta.ADDED, IResourceDelta.OPEN);
-						addExpectedChange(dotProject, IResourceDelta.ADDED, 0);
-						super.verifyDelta(event.getDelta());
-						assertTrue("1.0: " + getMessage(), isDeltaValid());
-						try {
-							file.create(getRandomContents(), IResource.NONE, getMonitor());
-						} catch (CoreException e) {
-							ChangingListenerTest.this.fail("1.99", e);
-						}
-						break;
-					case 1 :
-						super.reset();
-						addExpectedChange(file, IResourceDelta.ADDED, 0);
-						super.verifyDelta(event.getDelta());
-						assertTrue("2.0: " + getMessage(), isDeltaValid());
-						break;
+				try {
+					file.create(getRandomContents(), IResource.NONE, getMonitor());
+					assertTrue("2.0", false);
+				} catch (CoreException e) {
+					//should fail
 				}
-				iteration++;
 			}
 		}
 		Listener1 listener = new Listener1();
@@ -148,12 +134,8 @@ public class ChangingListenerTest extends EclipseWorkspaceTest {
 		getWorkspace().addResourceChangeListener(listener);
 		try {
 			ensureExistsInWorkspace(project, true);
-			//wait for a notification to pass
-			waitForNotify();
-			assertTrue("3.0", file.exists());
+			assertTrue("3.0", !file.exists());
 			//wait for second notification
-			while (listener.iteration < 2)
-				waitForNotify();
 		} finally {
 			getWorkspace().removeResourceChangeListener(listener);
 		}

@@ -71,10 +71,8 @@ public class TestingSupport {
 	 * @since 3.0
 	 */
 	public static void waitForAutoBuild() {
-		//auto-build isn't scheduled until notification completes
-		waitForNotification();
 		try {
-			((Workspace) ResourcesPlugin.getWorkspace()).notifyJob.join();
+			((Workspace) ResourcesPlugin.getWorkspace()).autoBuildJob.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			throw new RuntimeException("Interrupted while waiting for build"); //$NON-NLS-1$
@@ -86,12 +84,6 @@ public class TestingSupport {
 	 * @ since 3.0 
 	 */
 	public static void waitForNotification() {
-		try {
-			((Workspace) ResourcesPlugin.getWorkspace()).notifyJob.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			throw new RuntimeException("Interrupted while waiting for notification"); //$NON-NLS-1$
-		}
 	}
 	/* 
 	 * Class cannot be instantiated.
