@@ -1,16 +1,15 @@
 /**********************************************************************
  * Copyright (c) 2002 IBM Corporation and others.
  * All rights reserved.   This program and the accompanying materials
- * are made available under the terms of the Common Public License v0.5
+ * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/cpl-v05.html
+ * http://www.eclipse.org/legal/cpl-v10.html
  * 
  * Contributors:
  * IBM - Initial API and implementation
  **********************************************************************/
 package org.eclipse.core.internal.resources;
 
-import java.io.*;
 import org.eclipse.core.internal.localstore.*;
 import org.eclipse.core.internal.properties.PropertyManager;
 import org.eclipse.core.internal.utils.Assert;
@@ -205,7 +204,7 @@ public boolean movedProjectSubtree(IProject project, IProjectDescription destDes
 	
 		// Move the workspace tree.
 		try {
-			workspace.move(source, destination.getFullPath(), depth, false);
+			workspace.move(source, destination.getFullPath(), depth, false, true);
 		} catch (CoreException e) {
 			String message = Policy.bind("resources.errorMoving", source.getFullPath().toString(), destination.getFullPath().toString()); //$NON-NLS-1$
 			IStatus status = new ResourceStatus(IStatus.ERROR, source.getFullPath(), message, e);
