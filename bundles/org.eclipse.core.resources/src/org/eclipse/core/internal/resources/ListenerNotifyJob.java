@@ -32,6 +32,7 @@ public class ListenerNotifyJob extends Job {
 	private Workspace workspace;
 
 	public ListenerNotifyJob(Workspace workspace) {
+		super(ICoreConstants.MSG_RESOURCES_UPDATING);
 		this.workspace = workspace;
 		this.lastFinished = System.currentTimeMillis();
 	}

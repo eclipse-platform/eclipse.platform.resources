@@ -24,6 +24,7 @@ class AutoBuildJob extends Job {
 
 	private final Workspace workspace;
 	AutoBuildJob(Workspace workspace) {
+		super(ICoreConstants.MSG_EVENTS_BUILDING_0);
 		this.workspace = workspace;
 	}
 	/**
