@@ -55,11 +55,9 @@ public class PropertyStoreConverter {
 	 * happened during the conversion process.
 	 */
 	public IStatus convertProperties(Workspace workspace, final PropertyManager2 destination) {
-		// quickly check whether should try converting
-		// since the root and every project have their own .properties file, 
-		// we cannot pay the cost for checking so, instead, we try to find 
-		// a single file used by the new implementation.
-		// However, that way, conversion will happen only once.		
+		// Quickly check whether should try converting persistent properties
+		// We cannot pay the cost of checking very project so, instead, we try to find 
+		// a single file used by the new implementation  
 		File versionFile = destination.getVersionFile();
 		if (versionFile.isFile())
 			// conversion already done, won't try doing it again
