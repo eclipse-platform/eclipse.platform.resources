@@ -18,23 +18,19 @@ import org.eclipse.core.runtime.jobs.Job;
  * Job for performing POST_CHANGE notifications to workspace resource change listeners.
  */
 public class ListenerNotifyJob extends Job {
-	/**
-	 * The maximum time to wait, in milliseconds, before starting a notification.
-	 */
-	private static final long MAX_DELAY= 10000; //10 seconds
-	/**
-	 * The minimum time to wait, in milliseconds, before starting a notification.
-	 */
-	private static final long MIN_DELAY = 1000; //1 second
 	private boolean isPending = false;
 	private long pendingStart;
 	private long lastFinished;
+	private long maxDelay;
+	private long minDelay;
 	private Workspace workspace;
 
 	public ListenerNotifyJob(Workspace workspace) {
 		super(ICoreConstants.MSG_RESOURCES_UPDATING);
 		this.workspace = workspace;
 		this.lastFinished = System.currentTimeMillis();
+		this.maxDelay = Policy.defaultMaxNotifyDelay;
+		this.minDelay = Policy.defaultMinNotifyDelay;
 	}
 	private void basicRun(IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
@@ -62,7 +58,7 @@ public class ListenerNotifyJob extends Job {
 	 */
 	private void doSchedule(long currentTime)  {
 		isPending = false;
-		schedule(Math.max(0L, (lastFinished + MIN_DELAY) - currentTime));
+		schedule(Math.max(0L, (lastFinished + minDelay) - currentTime));
 	}
 	/**
 	 * A nested workspace modifying operation has finished.
@@ -74,7 +70,7 @@ public class ListenerNotifyJob extends Job {
 		//if we've been pending too long, start a notification job anyway
 		if (isPending) {
 			long currentTime = System.currentTimeMillis();
-			if (currentTime - pendingStart > MAX_DELAY)
+			if (currentTime - pendingStart > maxDelay)
 				doSchedule(currentTime);
 		} else {
 			isPending = true;
@@ -95,6 +91,9 @@ public class ListenerNotifyJob extends Job {
 	public IStatus run(IProgressMonitor monitor) {
 		try {
 			basicRun(monitor);
+			//recompute max/min delay in case they have changed
+			maxDelay = workspace.internalGetDescription().getMaxNotifyDelay();
+			minDelay = workspace.internalGetDescription().getMinNotifyDelay();
 			return Status.OK_STATUS;
 		} catch (CoreException e) {
 			return e.getStatus();

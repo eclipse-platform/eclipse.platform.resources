@@ -40,7 +40,8 @@ public class Policy {
 	public static final long defaultMaxFileStateSize = 1024 * 1024l; // 1 Mb
 	public static final int defaultMaxFileStates = 50;
 	public static final int defaultMaxBuildIterations = 10;
-	
+	public static final long defaultMaxNotifyDelay= 10000;// 10 seconds
+	public static final int defaultMinNotifyDelay = 1000;// 1 second
 
 	//debug constants
 	public static boolean DEBUG_BUILD_FAILURE = false;
