@@ -773,12 +773,13 @@ public class ResourceTest extends CoreTest {
 	 * Blocks the calling thread until autobuild completes.
 	 */
 	protected void waitForRefresh() {
-		try {
-			Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_REFRESH, null);
-		} catch (OperationCanceledException e) {
-			//ignore
-		} catch (InterruptedException e) {
-			//ignore
-		}
+		//not implemented in 3.0.1
+//		try {
+//			Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_REFRESH, null);
+//		} catch (OperationCanceledException e) {
+//			//ignore
+//		} catch (InterruptedException e) {
+//			//ignore
+//		}
 	}
 }
