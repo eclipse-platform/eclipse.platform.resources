@@ -25,7 +25,15 @@ import org.eclipse.core.runtime.jobs.Job;
  */
 public class TestingSupport {
 	/**
+	 * Returns the job that performs auto-build
+	 * @since 3.0
+	 */
+	public static Job getAutoBuildJob() {
+		return ((Workspace) ResourcesPlugin.getWorkspace()).autoBuildJob;
+	}
+	/**
 	 * Returns the listener notification job
+	 * @since 3.0
 	 */
 	public static Job getListenerNotifyJob() {
 		return ((Workspace) ResourcesPlugin.getWorkspace()).notifyJob;
