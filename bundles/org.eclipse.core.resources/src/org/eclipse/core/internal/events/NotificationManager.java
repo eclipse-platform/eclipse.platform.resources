@@ -70,7 +70,8 @@ public void broadcastChanges(ElementTree lastState, int type, boolean updateStat
 		lastMarkerChangeId = 0;
 	}
 	// if the delta is empty the root's change is undefined, there is nothing to do
-	if (delta == null || delta.getKind() == 0)
+	// however pre and post build listeners must always be called
+	if ((delta == null || delta.getKind() == 0) && type == IResourceChangeEvent.POST_CHANGE)
 		return;
 	notify(getListeners(), new ResourceChangeEvent(workspace, type, delta));
 }
