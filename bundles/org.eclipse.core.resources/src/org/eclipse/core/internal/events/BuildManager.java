@@ -162,7 +162,7 @@ protected void basicBuild(final IProject project, final int trigger, final Multi
 			String message = e.getMessage();
 			if (message == null)
 				message = Policy.bind("events.unknown", e.getClass().getName(), currentBuilder.getClass().getName()); //$NON-NLS-1$
-			status.add(new Status(Status.WARNING, ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, e));
+			status.add(new Status(IStatus.WARNING, ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, e));
 		}
 	};
 	Platform.run(code);
