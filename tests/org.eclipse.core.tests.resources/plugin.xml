@@ -30,8 +30,8 @@
     <test id="resources.AllTests">
       <run class="org.eclipse.core.tests.resources.AllTests"/>
     </test>
-    <test id="resources.TeamPrivateMemberTest">
-      <run class="org.eclipse.core.tests.resources.TeamPrivateMemberTest"/>
+    <test id="resources.ChangingListenerTest">
+      <run class="org.eclipse.core.tests.resources.ChangingListenerTest"/>
     </test>
     <test id="resources.IFileTest">
       <run class="org.eclipse.core.tests.resources.IFileTest"/>
@@ -84,6 +84,9 @@
     <test id="resources.ProjectOrderTest">
       <run class="org.eclipse.core.tests.resources.ProjectOrderTest"/>
     </test>
+    <test id="resources.WorkspaceJobTest">
+      <run class="org.eclipse.core.tests.resources.WorkspaceJobTest"/>
+    </test>
     <test id="resources.WorkspaceTest">
       <run class="org.eclipse.core.tests.resources.WorkspaceTest"/>
     </test>
@@ -92,6 +95,9 @@
     </test>
     <test id="resources.ResourceURLTest">
       <run class="org.eclipse.core.tests.resources.ResourceURLTest"/>
+    </test>
+    <test id="resources.TeamPrivateMemberTest">
+      <run class="org.eclipse.core.tests.resources.TeamPrivateMemberTest"/>
     </test>
     
     <test id="resources.performance.MarkerPerformanceTest">

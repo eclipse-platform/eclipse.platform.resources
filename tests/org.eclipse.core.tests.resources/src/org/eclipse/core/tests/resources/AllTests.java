@@ -29,6 +29,7 @@ public AllTests(String name) {
 }
 	public static Test suite() {
 		TestSuite suite = new TestSuite();
+		suite.addTest(ChangingListenerTest.suite());
 		suite.addTest(IFileTest.suite());
 		suite.addTest(IFolderTest.suite());
 		suite.addTest(IProjectTest.suite());
@@ -40,6 +41,8 @@ public AllTests(String name) {
 		suite.addTest(ISynchronizerTest.suite());
 		suite.addTest(IWorkspaceRootTest.suite());
 		suite.addTest(IWorkspaceTest.suite());
+		suite.addTest(LinkedResourceTest.suite());
+		suite.addTest(LinkedResourceWithPathVariableTest.suite());
 		suite.addTest(MarkerSetTest.suite());
 		suite.addTest(MarkerTest.suite());
 		suite.addTest(NatureTest.suite());
@@ -47,8 +50,6 @@ public AllTests(String name) {
 		suite.addTest(ResourceURLTest.suite());
 		suite.addTest(TeamPrivateMemberTest.suite());
 		suite.addTest(WorkspaceTest.suite());
-		suite.addTest(LinkedResourceTest.suite());
-		suite.addTest(LinkedResourceWithPathVariableTest.suite());
 		suite.addTest(WorkspaceJobTest.suite());
 		
 		return suite;
