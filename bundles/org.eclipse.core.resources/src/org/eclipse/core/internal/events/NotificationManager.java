@@ -45,9 +45,9 @@ public void addListener(IResourceChangeListener listener, int eventMask) {
  * Helper method for the save participant lifecycle computation.  
  */
 public void broadcastChanges(IResourceChangeListener listener, int type, IResourceDelta delta) {
-	ResourceChangeListenerList.ListenerEntry[] listeners;
-	listeners = new ResourceChangeListenerList.ListenerEntry[] { new ResourceChangeListenerList.ListenerEntry(listener, type)};
-	notify(listeners, new ResourceChangeEvent(workspace, type, delta));
+	ResourceChangeListenerList.ListenerEntry[] entries;
+	entries = new ResourceChangeListenerList.ListenerEntry[] { new ResourceChangeListenerList.ListenerEntry(listener, type)};
+	notify(entries, new ResourceChangeEvent(workspace, type, delta));
 }
 /**
  * The main broadcast point for notification deltas
