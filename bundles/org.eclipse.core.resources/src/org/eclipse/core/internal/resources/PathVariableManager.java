@@ -12,6 +12,7 @@
 package org.eclipse.core.internal.resources;
 
 import java.util.*;
+
 import org.eclipse.core.internal.events.PathVariableChangeEvent;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.*;
@@ -23,7 +24,6 @@ import org.eclipse.core.runtime.*;
 public class PathVariableManager implements IPathVariableManager, IManager {
 
 	private Set listeners;
-	private Workspace workspace;
 	private Preferences preferences;
 
 	static final String VARIABLE_PREFIX = "pathvariable."; //$NON-NLS-1$
@@ -32,7 +32,6 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 	 * Constructor for the class.
 	 */
 	public PathVariableManager(Workspace workspace) {
-		this.workspace = workspace;
 		this.listeners = Collections.synchronizedSet(new HashSet());
 		this.preferences = ResourcesPlugin.getPlugin().getPluginPreferences();
 	}
