@@ -24,9 +24,52 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.TeamHook;
 import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.jobs.Job;
 
 
 public class Workspace extends PlatformObject implements IWorkspace, ICoreConstants {
+	/**
+	 * The job for performing workspace auto-builds.
+	 */
+	class AutoBuildJob extends Job {
+		private void basicRun(IProgressMonitor monitor) throws CoreException {
+			monitor = Policy.monitorFor(monitor);
+			try {
+				monitor.beginTask(null, Policy.opWork);
+				try {
+					getWorkManager().checkIn();
+					beginOperation(true);
+					getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, Policy.subMonitorFor(monitor, Policy.opWork));
+					broadcastChanges(getElementTree(), IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
+				} finally {
+					//building may close the tree, but we are still inside an operation so open it
+					if (getElementTree().isImmutable())
+					newWorkingTree();
+					getWorkManager().avoidAutoBuild();
+					endOperation(false, Policy.subMonitorFor(monitor, Policy.buildWork));
+				}
+			} finally {
+				monitor.done();
+			}
+		}
+		public IStatus run(IProgressMonitor monitor) {
+			if (monitor.isCanceled())
+				return Status.CANCEL_STATUS;
+			try {
+				basicRun(monitor);
+				return Status.OK_STATUS;
+			} catch (OperationCanceledException e) {
+				return Status.CANCEL_STATUS;
+			} catch (CoreException sig) {
+				return sig.getStatus();
+			}
+		}
+		public void checkCancel() {
+			//cancel the build job if another job is attempting to modify the workspace
+			if (Platform.getJobManager().currentJob() != this)
+				cancel();
+		}
+	}
 
 	protected WorkspacePreferences description;
 	protected LocalMetaArea localMetaArea;
@@ -50,6 +93,9 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	protected IProject[] buildOrder = null;
 	protected boolean forceBuild = false;
 	protected IWorkspaceRoot defaultRoot = new WorkspaceRoot(Path.ROOT, this);
+	
+	//jobs
+	protected AutoBuildJob autoBuildJob;
 
 	protected final HashSet lifecycleListeners = new HashSet(10);
 
@@ -106,6 +152,7 @@ public Workspace() {
 	tree.immutable();
 	treeLocked = true;
 	tree.setTreeData(newElement(IResource.ROOT));
+	autoBuildJob = new AutoBuildJob();
 }
 /**
  * Adds a listener for internal workspace lifecycle events.  There is no way to
@@ -154,7 +201,7 @@ public void beginOperation(boolean createNewTree) throws CoreException {
 		newWorkingTree();
 	}
 }
-private void broadcastChanges(ElementTree currentTree, int type, boolean lockTree, boolean updateState, IProgressMonitor monitor) {
+protected void broadcastChanges(ElementTree currentTree, int type, boolean lockTree, boolean updateState, IProgressMonitor monitor) {
 	if (operationTree == null)
 		return;
 	monitor.subTask(MSG_RESOURCES_UPDATING); 
@@ -179,6 +226,7 @@ public void build(int trigger, IProgressMonitor monitor) throws CoreException {
 			prepareOperation();
 			beginOperation(true);
 			getBuildManager().build(trigger, Policy.subMonitorFor(monitor, Policy.opWork));
+			broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
 		} finally {
 			//building may close the tree, but we are still inside an operation so open it
 			if (tree.isImmutable())
@@ -880,15 +928,8 @@ public void endOperation(boolean build, IProgressMonitor monitor) throws CoreExc
 			boolean hasTreeChanges = operationTree != null && ElementTree.hasChanges(tree, operationTree, ResourceComparator.getComparator(false), true);
 			broadcastChanges(tree, IResourceChangeEvent.PRE_AUTO_BUILD, false, false, Policy.monitorFor(null));
 			if (isAutoBuilding() && shouldBuild(hasTreeChanges)) {
-				try {
-					getBuildManager().build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
-				} catch (OperationCanceledException e) {
-					cancel = e;
-				} catch (CoreException sig) {
-					signal = sig;
-				}
+				Platform.getJobManager().schedule(autoBuildJob);
 			}
-			broadcastChanges(tree, IResourceChangeEvent.POST_AUTO_BUILD, false, false, Policy.monitorFor(null));
 			broadcastChanges(tree, IResourceChangeEvent.POST_CHANGE, true, true, Policy.monitorFor(null));
 			getMarkerManager().resetMarkerDeltas();
 			// Perform a snapshot if we are sufficiently out of date.  Be sure to make the tree immutable first
@@ -1555,6 +1596,8 @@ public IStatus open(IProgressMonitor monitor) throws CoreException {
  * Called before checking the pre-conditions of an operation.
  */
 public void prepareOperation() throws CoreException {
+	//ask the autobuild to cancel, and it should quickly give up its lock
+	autoBuildJob.checkCancel();
 	getWorkManager().checkIn();
 	if (!isOpen()) {
 		String message = Policy.bind("resources.workspaceClosed"); //$NON-NLS-1$
@@ -1735,7 +1778,6 @@ protected void startup(IProgressMonitor monitor) throws CoreException {
 	//must start after save manager, because (read) access to tree is needed
 	aliasManager = new AliasManager(this);
 	aliasManager.startup(null);
-	
 	treeLocked = false; // unlock the tree.
 }
 /** 
@@ -2139,9 +2181,4 @@ protected void validateSave(final IFile file) throws CoreException {
 	if (!status[0].isOK())
 		throw new ResourceException(status[0]);
 }
-
-
-
-
-
 }
