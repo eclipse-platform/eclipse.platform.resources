@@ -279,14 +279,6 @@ public class PropertyManager implements IManager, ILifecycleListener, IPropertyM
 	public void startup(IProgressMonitor monitor) throws CoreException {
 		workspace.addLifecycleListener(this);
 	}
-
-	private PropertyStore basicGetPropertyStore(IResource target) {
-		return null;
-	}
-	
-	private void basicSetPropertyStore(IResource target, PropertyStore store) {
-		
-	}
 	
 	public Map getProperties(IResource resource) throws CoreException {
 		PropertyStore store = getPropertyStore(resource);
