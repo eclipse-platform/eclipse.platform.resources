@@ -35,7 +35,7 @@ public class WorkspaceTest extends EclipseWorkspaceTest {
 		super(name);
 	}
 
-	public void cleanup() throws Throwable {
+	public void doCleanup() throws Throwable {
 		IProject target = getWorkspace().getRoot().getProject("foo");
 		target.delete(true, true, null);
 		//don't close the workspace because other tests running later will need it.
@@ -108,7 +108,7 @@ public class WorkspaceTest extends EclipseWorkspaceTest {
 		suite.addTest(new WorkspaceTest("testMultiDeletion"));
 		suite.addTest(new WorkspaceTest("testProjectDeletion"));
 
-		suite.addTest(new WorkspaceTest("cleanup"));
+		suite.addTest(new WorkspaceTest("doCleanup"));
 		return suite;
 	}
 
