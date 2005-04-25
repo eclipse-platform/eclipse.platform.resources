@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.perf;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.eclipse.core.internal.content.DefaultDescription;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.content.IContentDescription;
@@ -24,7 +27,7 @@ public class ContentDescriptionPerformanceTest extends ResourceTest {
 	private final static String NON_DEFAULT_DESCRIPTION_FILE_NAME = "specific.xml";
 	private final static int SUBDIRS = 200;
 	private final static int TOTAL_FILES = 5000;
-	private final static String VALID_XML_CONTENTS = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><some-uncommon-root-element/>";
+	private final static String VALID_XML_CONTENTS = "<?xml version=\"1.0\"?><some-uncommon-root-element/>";
 	private final static String VALID_XML_CONTENTS_WITH_NON_DEFAULT_ENCODING = "<?xml version=\"1.0\" encoding=\"US-ASCII\"?><some-uncommon-root-element/>";
 
 	private static String getFileName(int number) {
@@ -39,15 +42,19 @@ public class ContentDescriptionPerformanceTest extends ResourceTest {
 		}
 	}
 
+	public static Test suite() {
+		return new TestSuite(ContentDescriptionPerformanceTest.class);
+	}
+
 	public ContentDescriptionPerformanceTest(String name) {
 		super(name);
 	}
 
 	void assertHasExpectedDescription(String fileName, IContentDescription description) {
 		if (fileName.endsWith(DEFAULT_DESCRIPTION_FILE_NAME))
-			assertTrue("description for " + fileName, description == description.getContentType().getDefaultDescription());
+			assertTrue("description for " + fileName, description instanceof DefaultDescription);
 		else if (fileName.endsWith(NON_DEFAULT_DESCRIPTION_FILE_NAME))
-			assertTrue("description for " + fileName, description != description.getContentType().getDefaultDescription());
+			assertTrue("description for " + fileName, !(description instanceof DefaultDescription));
 		else
 			assertNull("description for " + fileName, description);
 	}

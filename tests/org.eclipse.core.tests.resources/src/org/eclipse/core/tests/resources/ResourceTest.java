@@ -281,6 +281,11 @@ public class ResourceTest extends CoreTest {
 		}
 		return result;
 	}
+	
+	protected void cleanup() throws CoreException {
+		ensureDoesNotExistInWorkspace(getWorkspace().getRoot());
+		getWorkspace().save(true, null);
+	}	
 
 	/**
 	 * Returns a boolean value indicating whether or not the contents
@@ -753,9 +758,9 @@ public class ResourceTest extends CoreTest {
 		super.tearDown();
 		// Ensure everything is in a clean state for next one.
 		// Session tests should overwrite it.
-		ensureDoesNotExistInWorkspace(getWorkspace().getRoot());
-		getWorkspace().save(true, null);
+		cleanup();
 	}
+
 	/**
 	 * Blocks the calling thread until autobuild completes.
 	 */
