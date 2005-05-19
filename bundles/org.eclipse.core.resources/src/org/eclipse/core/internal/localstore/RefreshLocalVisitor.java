@@ -189,20 +189,18 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 			}
 		} else {
 			if (node.existsInFileSystem()) {
-				if (!CoreFileSystemLibrary.isCaseSensitive()) {
-					Container parent = (Container) target.getParent();
-					if (!parent.exists()) {
-						refresh(parent);
-						if (!parent.exists())
-							return RL_NOT_IN_SYNC;
-					}
-					if (!target.getName().equals(node.getLocalName()))
-						return RL_IN_SYNC;
+				Container parent = (Container) target.getParent();
+				if (!parent.exists()) {
+					refresh(parent);
+					if (!parent.exists())
+						return RL_NOT_IN_SYNC;
 				}
-				createResource(node, target);
-				resourceChanged = true;
-				return RL_NOT_IN_SYNC;
+				if (!target.getName().equals(node.getLocalName()))
+					return RL_IN_SYNC;
 			}
+			createResource(node, target);
+			resourceChanged = true;
+			return RL_NOT_IN_SYNC;
 		}
 		return RL_UNKNOWN;
 	}
