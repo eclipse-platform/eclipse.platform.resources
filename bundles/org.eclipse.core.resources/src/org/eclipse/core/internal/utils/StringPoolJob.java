@@ -13,6 +13,7 @@ package org.eclipse.core.internal.utils;
 import java.util.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.*;
+import org.osgi.framework.Bundle;
 
 /**
  * Performs string sharing passes on all string pool participants registered
@@ -27,6 +28,8 @@ public class StringPoolJob extends Job {
 	 * rule required when running it.
 	 */
 	private Map participants = Collections.synchronizedMap(new HashMap(10));
+
+	private final Bundle systemBundle = Platform.getBundle("org.eclipse.osgi"); //$NON-NLS-1$
 
 	public StringPoolJob() {
 		super(Messages.utils_stringJobName);
@@ -76,6 +79,10 @@ public class StringPoolJob extends Job {
 	 * Method declared on Job
 	 */
 	protected IStatus run(IProgressMonitor monitor) {
+		//if the system is shutting down, don't share strings
+		if (systemBundle != null && systemBundle.getState() == Bundle.STOPPING)
+			return Status.OK_STATUS;
+
 		//copy current participants to handle concurrent additions and removals to map
 		Map.Entry[] entries = (Map.Entry[]) participants.entrySet().toArray(new Map.Entry[0]);
 		ISchedulingRule[] rules = new ISchedulingRule[entries.length];
@@ -87,17 +94,18 @@ public class StringPoolJob extends Job {
 		final ISchedulingRule rule = MultiRule.combine(rules);
 		long start = -1;
 		int savings = 0;
+		final IJobManager jobManager = Platform.getJobManager();
 		try {
-			Platform.getJobManager().beginRule(rule, monitor);
+			jobManager.beginRule(rule, monitor);
 			start = System.currentTimeMillis();
 			savings = shareStrings(toRun, monitor);
 		} finally {
-			Platform.getJobManager().endRule(rule);
+			jobManager.endRule(rule);
 		}
 		if (start > 0) {
 			lastDuration = System.currentTimeMillis() - start;
 			if (Policy.DEBUG_STRINGS)
-				Policy.debug("String sharing saved " + savings + " bytes in: " + lastDuration); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				Policy.debug("String sharing saved " + savings + " bytes in: " + lastDuration); //$NON-NLS-1$ //$NON-NLS-2$ 
 		}
 		//throttle frequency if it takes too long
 		long scheduleDelay = Math.max(RESCHEDULE_DELAY, lastDuration*100);
