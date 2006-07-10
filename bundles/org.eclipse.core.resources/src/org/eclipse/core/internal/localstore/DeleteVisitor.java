@@ -80,15 +80,19 @@ public class DeleteVisitor implements IUnifiedTreeVisitor, ICoreConstants {
 	}
 
 	private void recursiveKeepHistory(IHistoryStore store, UnifiedTreeNode node) {
+		final IResource resource = node.getResource();
+		//we don't delete linked content, so no need to keep history
+		if (resource.isLinked())
+			return;
 		if (node.isFolder()) {
-			monitor.subTask(NLS.bind(Messages.localstore_deleting, node.getResource().getFullPath()));
+			monitor.subTask(NLS.bind(Messages.localstore_deleting, resource.getFullPath()));
 			for (Iterator children = node.getChildren(); children.hasNext();)
 				recursiveKeepHistory(store, (UnifiedTreeNode) children.next());
 		} else {
 			IFileInfo info = node.fileInfo;
 			if (info == null)
 				info = new FileInfo(node.getLocalName());
-			store.addState(node.getResource().getFullPath(), node.getStore(), info, true);
+			store.addState(resource.getFullPath(), node.getStore(), info, true);
 		}
 		monitor.worked(1);
 	}
