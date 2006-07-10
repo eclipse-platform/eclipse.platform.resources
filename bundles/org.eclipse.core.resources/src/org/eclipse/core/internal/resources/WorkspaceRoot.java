@@ -11,9 +11,9 @@
 package org.eclipse.core.internal.resources;
 
 import java.net.URI;
+import java.util.*;
 import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.internal.utils.FileUtil;
-import org.eclipse.core.internal.utils.ObjectMap;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
@@ -23,7 +23,7 @@ public class WorkspaceRoot extends Container implements IWorkspaceRoot {
 	 * that have been requested from this root.  This maps project
 	 * name strings to project handles.
 	 */
-	private ObjectMap projectTable = new ObjectMap(10);
+	private final Map projectTable = Collections.synchronizedMap(new HashMap(16));
 	
 	/**
 	 * Cache of the canonicalized platform location.
@@ -163,12 +163,7 @@ public class WorkspaceRoot extends Container implements IWorkspaceRoot {
 			String message = "Path for project must have only one segment."; //$NON-NLS-1$
 			Assert.isLegal(projectPath.segmentCount() == ICoreConstants.PROJECT_SEGMENT_LENGTH, message);
 			result = new Project(projectPath, workspace);
-			//copy the map on write to protect against concurrent access
-			//note that multiple concurrent writes will overwrite each other, but 
-			//because of the nature of the cache it does not matter
-			ObjectMap newMap = (ObjectMap) projectTable.clone();
-			newMap.put(name, result);
-			projectTable = newMap;
+			projectTable.put(name, result);
 		}
 		return result;
 	}
