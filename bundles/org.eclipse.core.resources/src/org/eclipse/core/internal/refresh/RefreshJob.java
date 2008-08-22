@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2005 IBM Corporation and others.
+ * Copyright (c) 2004, 2008 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.refresh;
 
 import java.util.*;
+import org.eclipse.core.internal.localstore.PrefixPool;
 import org.eclipse.core.internal.utils.Messages;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.*;
@@ -33,6 +34,12 @@ public class RefreshJob extends WorkspaceJob {
 	 * requests or background refresh requests.
 	 */
 	private final List fRequests;
+
+	/**
+	 * The history of path prefixes visited during this refresh job invocation.
+	 * This is used to prevent infinite refresh loops caused by symbolic links in the file system.
+	 */
+	private PrefixPool pathPrefixHistory, rootPathHistory;
 
 	public RefreshJob() {
 		super(Messages.refresh_jobName);
@@ -94,6 +101,24 @@ public class RefreshJob extends WorkspaceJob {
 				collectChildrenToDepth(members[i], children, depth - 1);
 		}
 		return children;
+	}
+	
+	/**
+	 * Returns the path prefixes visited by this job so far.
+	 */
+	public PrefixPool getPathPrefixHistory() {
+		if (pathPrefixHistory == null)
+			pathPrefixHistory = new PrefixPool(20);
+		return pathPrefixHistory;
+	}
+
+	/**
+	 * Returns the root paths visited by this job so far.
+	 */
+	public PrefixPool getRootPathHistory() {
+		if (rootPathHistory == null)
+			rootPathHistory = new PrefixPool(20);
+		return rootPathHistory;
 	}
 
 	/**
@@ -163,6 +188,8 @@ public class RefreshJob extends WorkspaceJob {
 				}
 			}
 		} finally {
+			pathPrefixHistory = null;
+			rootPathHistory = null;
 			monitor.done();
 			if (RefreshManager.DEBUG)
 				System.out.println(RefreshManager.DEBUG_PREFIX + " finished refresh job in: " + (System.currentTimeMillis() - start) + "ms"); //$NON-NLS-1$ //$NON-NLS-2$
