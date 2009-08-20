@@ -1,11 +1,11 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2009 IBM Corporation and others.
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  which accompanies this distribution, and is available at
- *  http://www.eclipse.org/legal/epl-v10.html
- * 
- *  Contributors:
+ * Copyright (c) 2000, 2006 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.core.tests.internal.builders;
@@ -828,7 +828,7 @@ public class BuilderTest extends AbstractBuilderTest {
 			fail("3.0");
 		} catch (CoreException e) {
 			//see discussion in bug 273147 about build exception severity
-			assertEquals("3.1", IStatus.ERROR, e.getStatus().getSeverity());
+			assertEquals("3.1", IStatus.WARNING, e.getStatus().getSeverity());
 			//expected
 		} finally {
 			getWorkspace().removeResourceChangeListener(listener);

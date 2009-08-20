@@ -63,14 +63,14 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 			if ((fChangeFlags & IResourceDelta.MOVED_FROM) != 0) {
 				return movedFromPath;
 			}
-			return null;
-		}
+				return null;
+			}
 
 		public IPath getMovedToPath() {
 			if ((fChangeFlags & IResourceDelta.MOVED_TO) != 0) {
 				return movedToPath;
 			}
-			return null;
+				return null;
 		}
 
 		public int getKind() {

@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Support group creation
  *******************************************************************************/
 package org.eclipse.core.tests.resources;
 
@@ -441,7 +442,10 @@ public abstract class ResourceTest extends CoreTest {
 				((IFile) resource).create(local ? new ByteArrayInputStream(new byte[0]) : null, true, getMonitor());
 				break;
 			case IResource.FOLDER :
-				((IFolder) resource).create(true, local, getMonitor());
+				if (resource.getName().indexOf("_GROUP_") != -1)
+					((IFolder) resource).createGroup(0, getMonitor());
+				else
+					((IFolder) resource).create(true, local, getMonitor());
 				break;
 			case IResource.PROJECT :
 				((IProject) resource).create(getMonitor());

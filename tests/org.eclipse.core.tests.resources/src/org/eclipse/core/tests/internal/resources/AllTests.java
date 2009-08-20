@@ -27,6 +27,7 @@ public class AllTests extends TestCase {
 		suite.addTest(ResourceInfoTest.suite());
 		suite.addTest(WorkspaceConcurrencyTest.suite());
 		suite.addTest(WorkspacePreferencesTest.suite());
+		suite.addTest(ProjectPathVariableManagerTest.suite());
 		return suite;
 	}
 
