@@ -114,7 +114,11 @@ class MonitorManager implements ILifecycleListener, IPathVariableChangeListener,
 			case LifecycleEvent.PRE_PROJECT_CLOSE:
 			case LifecycleEvent.PRE_PROJECT_DELETE:
 				unmonitor(event.resource);
+				if (event.resource.getType() == IResource.PROJECT)
+					((IProject) event.resource).getPathVariableManager().removeChangeListener(this);
 				break;
+			case LifecycleEvent.PRE_PROJECT_OPEN:
+				((IProject) event.resource).getPathVariableManager().addChangeListener(this);
 		}
 	}
 

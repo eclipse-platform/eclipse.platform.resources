@@ -7,6 +7,7 @@
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
@@ -263,5 +264,14 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
 		return Status.OK_STATUS;
+	}
+
+	/**
+	 * @throws CoreException 
+	 * @see IPathVariableManager#convertToRelative(IPath, boolean, String)
+	 */
+	public IPath convertToRelative(IPath path, boolean force, String variableHint) throws CoreException {
+		// the workspace path variable manager doesn't have the PARENT variable to support the "force" flag.
+		return PathVariableUtil.convertToRelative(this, path, false, variableHint);
 	}
 }

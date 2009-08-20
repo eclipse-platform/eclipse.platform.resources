@@ -8,6 +8,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Martin Oberhuber (Wind River) - [210664] descriptionChanged(): ignore LF style
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Group and Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
@@ -59,7 +60,6 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 			results.add(Path.ROOT);
 			return results;
 		}
-		IPathVariableManager varMan = workspace.getPathVariableManager();
 		IProject[] projects = root.getProjects(IContainer.INCLUDE_HIDDEN);
 		for (int i = 0; i < projects.length; i++) {
 			IProject project = projects[i];
@@ -85,7 +85,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 				continue;
 			for (Iterator it = links.values().iterator(); it.hasNext();) {
 				LinkDescription link = (LinkDescription) it.next();
-				testLocation = varMan.resolveURI(link.getLocationURI());
+				testLocation = project.getPathVariableManager().resolveURI(link.getLocationURI());
 				// if we are looking for file: locations try to get a file: location for this link
 				if (isFileLocation && !EFS.SCHEME_FILE.equals(testLocation.getScheme()))
 					testLocation = getFileURI(testLocation);
@@ -323,10 +323,9 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 				return IFile.ENCODING_UTF_16BE;
 			if (first == 0xFF && second == 0xFE)
 				return IFile.ENCODING_UTF_16LE;
-			int third = input.read();
+			int third = (input.read() & 0xFF);
 			if (third == -1)
 				return IFile.ENCODING_UNKNOWN;
-			third &= 0xFF;
 			//look for the UTF-8 BOM
 			if (first == 0xEF && second == 0xBB && third == 0xBF)
 				return IFile.ENCODING_UTF_8;
@@ -423,6 +422,14 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 			root = info.getFileStoreRoot();
 			if (root != null && root.isValid())
 				return root;
+			if (info.isSet(ICoreConstants.M_GROUP)) {
+				ProjectDescription description = ((Project) target.getProject()).internalGetDescription();
+				if (description != null) {
+					setLocation(target, info, description.getGroupLocationURI(target.getProjectRelativePath()));
+					return info.getFileStoreRoot();
+				}
+				return info.getFileStoreRoot();
+			}
 			if (info.isSet(ICoreConstants.M_LINK)) {
 				ProjectDescription description = ((Project) target.getProject()).internalGetDescription();
 				if (description != null) {

@@ -7,6 +7,7 @@
  * 
  *  Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.resources;
 
@@ -843,4 +844,26 @@ public interface IProject extends IContainer, IAdaptable {
 	 * @since 2.0
 	 */
 	public void setDescription(IProjectDescription description, int updateFlags, IProgressMonitor monitor) throws CoreException;
+
+	/**
+	 * Returns the path variable manager for this project.
+	 * 
+	 * @return the path variable manager
+	 * @see IPathVariableManager
+	 * @since 3.6
+	 */
+	public IPathVariableManager getPathVariableManager();
+
+	/**
+	 * Returns a variable relative path equivalent to an absolute path for a
+	 * file or folder in the file system, according to the variables defined in
+	 * this project PathVariableManager. The file or folder need not to exist.
+	 * 
+	 * @param location
+	 *            a path in the local file system
+	 * @return the corresponding variable relative path, or <code>null</code>
+	 *         if no such path is available
+	 * @since 3.6
+	 */
+	public IPath getVariableRelativePathLocation(IPath location);
 }

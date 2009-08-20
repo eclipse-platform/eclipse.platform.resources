@@ -7,8 +7,15 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
+
+import org.eclipse.core.resources.IProject;
+
+import org.eclipse.core.resources.IResource;
+
+import org.eclipse.core.resources.IWorkspaceRoot;
 
 import java.io.File;
 import java.net.URI;
@@ -39,8 +46,6 @@ public class FileStoreRoot {
 
 	private URI root;
 
-	private final IPathVariableManager variableManager;
-
 	/**
 	 * Defines the root of a file system within the workspace tree.
 	 * @param rootURI The virtual file representing the root of the file
@@ -51,10 +56,23 @@ public class FileStoreRoot {
 	FileStoreRoot(URI rootURI, IPath workspacePath) {
 		Assert.isNotNull(rootURI);
 		Assert.isNotNull(workspacePath);
-		this.variableManager = ResourcesPlugin.getWorkspace().getPathVariableManager();
 		this.root = rootURI;
 		this.chop = workspacePath.segmentCount();
 		this.localRoot = toLocalPath(root);
+	}
+
+	private IPathVariableManager getManager(IPath workspacePath) {
+		if (workspacePath.segmentCount() > 0) {
+			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace()
+					.getRoot();
+			if (workspacePath.segmentCount() > 1)
+				workspacePath = workspacePath.removeLastSegments(workspacePath
+						.segmentCount() - 1);
+			IResource resource = workspaceRoot.findMember(workspacePath);
+			if (resource != null && resource.getType() == IResource.PROJECT)
+				return ((IProject) resource).getPathVariableManager();
+		}
+		return ResourcesPlugin.getWorkspace().getPathVariableManager();
 	}
 
 	/**
@@ -64,7 +82,7 @@ public class FileStoreRoot {
 	 */
 	public URI computeURI(IPath workspacePath) {
 		IPath childPath = workspacePath.removeFirstSegments(chop);
-		final URI rootURI = variableManager.resolveURI(root);
+		final URI rootURI = getManager(workspacePath).resolveURI(root);
 		if (childPath.segmentCount() == 0)
 			return rootURI;
 		try {
@@ -81,7 +99,7 @@ public class FileStoreRoot {
 	IFileStore createStore(IPath workspacePath) throws CoreException {
 		IPath childPath = workspacePath.removeFirstSegments(chop);
 		IFileStore rootStore;
-		final URI uri = variableManager.resolveURI(root);
+		final URI uri = getManager(workspacePath).resolveURI(root);
 		if (!uri.isAbsolute()) {
 			//handles case where resource location cannot be resolved
 			//such as unresolved path variable or invalid file system scheme
@@ -105,7 +123,7 @@ public class FileStoreRoot {
 			location = localRoot;
 		else
 			location = localRoot.append(workspacePath.removeFirstSegments(chop));
-		location = variableManager.resolvePath(location);
+		location = getManager(workspacePath).resolvePath(location);
 		//if path is still relative then path variable could not be resolved
 		if (!location.isAbsolute())
 			return null;

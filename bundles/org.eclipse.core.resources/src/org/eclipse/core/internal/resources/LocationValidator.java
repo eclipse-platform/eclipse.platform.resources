@@ -7,6 +7,7 @@
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
@@ -47,12 +48,16 @@ public class LocationValidator {
 	 */
 	private IStatus validateAbsolute(URI location, boolean error) {
 		if (!location.isAbsolute()) {
-			IPath pathPart = new Path(location.getSchemeSpecificPart());
 			String message;
-			if (pathPart.segmentCount() > 0)
-				message = NLS.bind(Messages.pathvar_undefined, location.toString(), pathPart.segment(0));
-			else
+			if (location.getSchemeSpecificPart() == null)
 				message = Messages.links_noPath;
+			else {
+				IPath pathPart = new Path(location.getSchemeSpecificPart());
+				if (pathPart.segmentCount() > 0)
+					message = NLS.bind(Messages.pathvar_undefined, location.toString(), pathPart.segment(0));
+				else
+					message = Messages.links_noPath;
+			}
 			int code = error ? IResourceStatus.VARIABLE_NOT_DEFINED : IResourceStatus.VARIABLE_NOT_DEFINED_WARNING;
 			return new ResourceStatus(code, null, message);
 		}
@@ -63,7 +68,11 @@ public class LocationValidator {
 	 * @see IWorkspace#validateLinkLocation(IResource, IPath)
 	 */
 	public IStatus validateLinkLocation(IResource resource, IPath unresolvedLocation) {
-		IPath location = workspace.getPathVariableManager().resolvePath(unresolvedLocation);
+		IPath location;
+		if (resource.getProject() != null)
+			location = resource.getProject().getPathVariableManager().resolvePath(unresolvedLocation);
+		else
+			location = workspace.getPathVariableManager().resolvePath(unresolvedLocation);
 		if (location.isEmpty())
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, resource.getFullPath(), Messages.links_noPath);
 		//check that the location is absolute
@@ -79,6 +88,8 @@ public class LocationValidator {
 	}
 
 	public IStatus validateLinkLocationURI(IResource resource, URI unresolvedLocation) {
+		if (unresolvedLocation.getSchemeSpecificPart() == null)
+			return new ResourceStatus(IResourceStatus.INVALID_VALUE, resource.getFullPath(), Messages.links_noPath);
 		String message;
 		//check if resource linking is disabled
 		if (ResourcesPlugin.getPlugin().getPluginPreferences().getBoolean(ResourcesPlugin.PREF_DISABLE_LINKING)) {
@@ -96,7 +107,11 @@ public class LocationValidator {
 			message = NLS.bind(Messages.links_parentNotAccessible, resource.getFullPath());
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, resource.getFullPath(), message);
 		}
-		URI location = workspace.getPathVariableManager().resolveURI(unresolvedLocation);
+		URI location;
+		if (resource.getProject() != null)
+			location = resource.getProject().getPathVariableManager().resolveURI(unresolvedLocation);
+		else
+			location = workspace.getPathVariableManager().resolveURI(unresolvedLocation);
 		//check nature veto
 		String[] natureIds = ((Project) resource.getProject()).internalGetDescription().getNatureIds();
 
@@ -286,8 +301,11 @@ public class LocationValidator {
 	public IStatus validateProjectLocation(IProject context, IPath unresolvedLocation) {
 		if (unresolvedLocation == null)
 			return validateProjectLocationURI(context, null);
-
-		IPath location = workspace.getPathVariableManager().resolvePath(unresolvedLocation);
+		IPath location;
+		if (context != null)
+			location = context.getPathVariableManager().resolvePath(unresolvedLocation);
+		else
+			location = workspace.getPathVariableManager().resolvePath(unresolvedLocation);
 		//check that the location is absolute
 		if (!location.isAbsolute()) {
 			String message;
@@ -327,8 +345,11 @@ public class LocationValidator {
 		// the default is ok for all other projects
 		if (unresolvedLocation == null)
 			return Status.OK_STATUS;
-
-		URI location = workspace.getPathVariableManager().resolveURI(unresolvedLocation);
+		URI location;
+		if (context != null)
+			location = context.getPathVariableManager().resolveURI(unresolvedLocation);
+		else
+			location = workspace.getPathVariableManager().resolveURI(unresolvedLocation);
 		//check the standard path name restrictions
 		IStatus result = validateSegments(location);
 		if (!result.isOK())

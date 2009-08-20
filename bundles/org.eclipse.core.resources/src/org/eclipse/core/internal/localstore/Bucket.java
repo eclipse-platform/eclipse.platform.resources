@@ -111,11 +111,11 @@ public abstract class Bucket {
 		public final static int CONTINUE = 0;
 		// should stop looking at any states immediately
 		public final static int STOP = 1;
-		// should stop looking at states for files in this container (or any of its children)
+		// should stop looking at states for files in this container (or any of its children)	
 		public final static int RETURN = 2;
-	
+
 		/**
-		 * Called after the bucket has been visited (and saved).
+		 * Called after the bucket has been visited (and saved). 
 		 * @throws CoreException
 		 */
 		public void afterSaving(Bucket bucket) throws CoreException {

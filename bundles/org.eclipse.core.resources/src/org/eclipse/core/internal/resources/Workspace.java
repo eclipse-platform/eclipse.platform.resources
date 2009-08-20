@@ -8,17 +8,23 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Red Hat Incorporated - loadProjectDescription(InputStream)
+ *     Serge Beauchamp (Freescale Semiconductor) - [252996] add resource filtering
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Group and Project Path Variable Support
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
+import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.internal.events.*;
 import org.eclipse.core.internal.localstore.FileSystemResourceManager;
 import org.eclipse.core.internal.properties.IPropertyManager;
 import org.eclipse.core.internal.refresh.RefreshManager;
+import org.eclipse.core.internal.resources.projectVariables.ParentVariableProvider;
+import org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationProjectVariable;
 import org.eclipse.core.internal.utils.*;
 import org.eclipse.core.internal.watson.*;
 import org.eclipse.core.resources.*;
@@ -697,7 +703,15 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		}
 	}
 
-	protected void copyTree(IResource source, IPath destination, int depth, int updateFlags, boolean keepSyncInfo) throws CoreException {
+	protected void copyTree(IResource source, IPath destination, int depth,
+			int updateFlags, boolean keepSyncInfo) throws CoreException {
+		copyTree(source, destination, depth, updateFlags, keepSyncInfo, false, source.getType() == IResource.PROJECT);
+	}
+
+	protected void copyTree(IResource source, IPath destination, int depth,
+			int updateFlags, boolean keepSyncInfo, boolean moveResources, boolean movingProject)
+			throws CoreException {
+				
 		// retrieve the resource at the destination if there is one (phantoms included).
 		// if there isn't one, then create a new handle based on the type that we are
 		// trying to copy
@@ -736,17 +750,39 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		// update link locations in project descriptions
 		if (source.isLinked()) {
 			LinkDescription linkDescription;
-			if ((updateFlags & IResource.SHALLOW) != 0) {
+			URI sourceLocationURI = transferVariableDefinition(source, destinationResource, source.getLocationURI());
+			if (((updateFlags & IResource.SHALLOW) != 0) || ((Resource) source).isUnderGroup()) {
 				//for shallow move the destination is a linked resource with the same location
 				newInfo.set(ICoreConstants.M_LINK);
-				linkDescription = new LinkDescription(destinationResource, source.getLocationURI());
+				linkDescription = new LinkDescription(destinationResource, sourceLocationURI);
 			} else {
 				//for deep move the destination is not a linked resource
 				newInfo.clear(ICoreConstants.M_LINK);
 				linkDescription = null;
 			}
+			if (moveResources && !movingProject) {
+				if (((Project) source.getProject()).internalGetDescription().setLinkLocation(source.getProjectRelativePath(), null))
+					((Project) source.getProject()).writeDescription(updateFlags);
+			}
 			Project project = (Project) destinationResource.getProject();
 			project.internalGetDescription().setLinkLocation(destinationResource.getProjectRelativePath(), linkDescription);
+			project.writeDescription(updateFlags);
+			newInfo.setFileStoreRoot(null);
+		}
+
+		// update filters in project descriptions
+		if (source.hasFilters() && source.getProject().exists()) {
+			Project sourceProject = (Project) source.getProject();
+			LinkedList/*<FilterDescription>*/ originalDescriptions = sourceProject.internalGetDescription().getFilter(source.getProjectRelativePath());
+			LinkedList/*<FilterDescription>*/ filterDescriptions = FilterDescription.copy(originalDescriptions, destinationResource.getProjectRelativePath());
+			if (moveResources && !movingProject) {
+				if (((Project) source.getProject())
+						.internalGetDescription()
+						.setFilters(source.getProjectRelativePath(), null))
+					((Project) source.getProject()).writeDescription(updateFlags);
+			}
+			Project project = (Project) destinationResource.getProject();
+			project.internalGetDescription().setFilters(destinationResource.getProjectRelativePath(), filterDescriptions);
 			project.writeDescription(updateFlags);
 		}
 
@@ -761,16 +797,134 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		if (projectCopy) {
 			IResource dotProject = ((Project) source).findMember(IProjectDescription.DESCRIPTION_FILE_NAME);
 			if (dotProject != null)
-				copyTree(dotProject, destination.append(dotProject.getName()), depth, updateFlags, keepSyncInfo);
+				copyTree(dotProject, destination.append(dotProject.getName()), depth, updateFlags, keepSyncInfo, moveResources, movingProject);
 		}
 		IResource[] children = ((IContainer) source).members(IContainer.INCLUDE_TEAM_PRIVATE_MEMBERS | IContainer.INCLUDE_HIDDEN);
 		for (int i = 0, imax = children.length; i < imax; i++) {
 			String childName = children[i].getName();
 			if (!projectCopy || !childName.equals(IProjectDescription.DESCRIPTION_FILE_NAME)) {
 				IPath childPath = destination.append(childName);
-				copyTree(children[i], childPath, depth, updateFlags, keepSyncInfo);
+				copyTree(children[i], childPath, depth, updateFlags, keepSyncInfo, moveResources, movingProject);
 			}
 		}
+	}
+
+	public URI transferVariableDefinition(IResource source, IResource dest,
+			URI sourceURI) throws CoreException {
+		IPath srcLoc = source.getLocation();
+		IPath srcRawLoc = source.getRawLocation();
+		if ((srcLoc != null) && !srcRawLoc.equals(srcLoc)) {
+			// the location is variable relative
+			if (!source.getProject().equals(dest.getProject())) {
+				String variable = srcRawLoc.segment(0);
+				variable = copyVariable(source.getProject(), dest.getProject(),
+						variable);
+				IPath newLocation = Path.fromPortableString(variable).append(
+						srcRawLoc.removeFirstSegments(1));
+				sourceURI = toURI(newLocation);
+			} else {
+				sourceURI = toURI(srcRawLoc);
+			}
+		}
+		return sourceURI;
+	}
+
+	URI toURI(IPath path) {
+		if (path.isAbsolute())
+			return URIUtil.toURI(path);
+		else
+			try {
+				return new URI(null, null, path.toPortableString(), null);
+			} catch (URISyntaxException e) {
+				return URIUtil.toURI(path);
+			}
+	}
+
+	String copyVariable(IProject source, IProject dest, String variable)
+			throws CoreException {
+		IPathVariableManager destPathVariableManager = dest
+				.getPathVariableManager();
+		IPathVariableManager srcPathVariableManager = source
+				.getPathVariableManager();
+
+		IPath srcValue = srcPathVariableManager.getValue(variable);
+		if (srcValue == null) // if the variable doesn't exist, return another
+								// variable that doesn't exist either
+			return PathVariableUtil.getUniqueVariableName(variable, destPathVariableManager);
+		IPath resolvedSrcValue = srcPathVariableManager.resolvePath(srcValue);
+
+		boolean variableExisted = false;
+		// look if the exact same variable exists
+		if (destPathVariableManager.isDefined(variable)) {
+			variableExisted = true;
+			if (destPathVariableManager.resolvePath(
+					destPathVariableManager.getValue(variable)).equals(
+					resolvedSrcValue))
+				return variable;
+		}
+		// look if one variable in the destination project matches
+		String[] variables = destPathVariableManager.getPathVariableNames();
+		for (int i = 0; i < variables.length; i++) {
+			if (variables[i].equals(WorkspaceLocationProjectVariable.NAME))
+				continue;
+			if (variables[i].equals(ParentVariableProvider.NAME))
+				continue;
+			IPath resolveDestVariable = destPathVariableManager
+					.resolvePath(destPathVariableManager.getValue(variables[i]));
+			if (resolveDestVariable.equals(resolvedSrcValue)) {
+				return variables[i];
+			}
+		}
+		// if the variable doesn't exist in the dest project, or
+		// if the value is different than the source project, we have to create
+		// an equivalent.
+		String destVariable = PathVariableUtil.getUniqueVariableName(variable,
+				destPathVariableManager);
+
+		boolean shouldConvertToRelative = true;
+		if (!srcValue.equals(resolvedSrcValue) && !variableExisted) {
+			// the variable content contains references to more variables
+			
+			String[] referencedVariables = ProjectPathVariableManager
+				.splitVariableNames(srcValue.toPortableString());
+			shouldConvertToRelative = false;
+			// If the variable value is of type ${PARENT-COUNT-VAR}, 
+			// we can avoid generating an intermediate variable and convert it directly.
+			if (referencedVariables.length == 1) {
+				if (PathVariableUtil.isParentVariable(referencedVariables[0]))
+					shouldConvertToRelative = true;
+			}
+				
+			if (!shouldConvertToRelative) {
+				String[] segments = ProjectPathVariableManager
+				.splitVariablesAndContent(srcValue.toPortableString());
+				StringBuffer result = new StringBuffer();
+				for (int i = 0; i < segments.length; i++) {
+					String var = ProjectPathVariableManager
+							.extractVariable(segments[i]);
+					if (var.length() > 0) {
+						String copiedVariable = copyVariable(source, dest, var);
+						int index = segments[i].indexOf(var);
+						if (index != -1) {
+							result.append(segments[i].substring(0, index));
+							result.append(copiedVariable);
+							int start = index + var.length();
+							int end = segments[i].length();
+							result.append(segments[i].substring(start, end));
+						}
+					} else
+						result.append(segments[i]);
+				}
+				srcValue = Path.fromPortableString(result.toString());
+			}
+		}
+		if (shouldConvertToRelative) {
+			IPath relativeSrcValue = PathVariableUtil.convertToPathRelativeMacro(destPathVariableManager,resolvedSrcValue, true, null);
+			if (relativeSrcValue != null)
+				srcValue = relativeSrcValue;
+		}
+		destPathVariableManager.setValue(destVariable, srcValue);
+		return destVariable;
 	}
 
 	/**
@@ -1583,7 +1737,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	void move(Resource source, IPath destination, int depth, int updateFlags, boolean keepSyncInfo) throws CoreException {
 		// overlay the tree at the destination path, preserving any important info
 		// in any already existing resource information
-		copyTree(source, destination, depth, updateFlags, keepSyncInfo);
+		copyTree(source, destination, depth, updateFlags, keepSyncInfo, true, source.getType() == IResource.PROJECT);
 		source.fixupAfterMoveSource();
 	}
 
@@ -1812,7 +1966,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			monitor.done();
 		}
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see IWorkspace#save(boolean, IProgressMonitor)
 	 */

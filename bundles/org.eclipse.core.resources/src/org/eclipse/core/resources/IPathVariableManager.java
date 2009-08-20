@@ -7,6 +7,7 @@
  * 
  *  Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Serge Beauchamp (Freescale Semiconductor) - [229633] Project Path Variable Support
  *******************************************************************************/
 
 package org.eclipse.core.resources;
@@ -200,4 +201,31 @@ public interface IPathVariableManager {
 	 * @see IStatus#OK
 	 */
 	public IStatus validateValue(IPath path);
+
+	/** Convert an absolute path to path variable relative path.
+	 *  For example, converts "C:/foo/bar.txt" into "FOO/bar.txt", 
+	 *  granted that the path variable "FOO" value is "C:/foo".
+	 *  
+	 *  The "force" argument allows intermediate path variable to
+	 *  be created if for a given path can be relative only to a parent
+	 *  of an existing path variable.
+	 *  
+	 *  For example, if the path "C:/other/file.txt" is to be converted
+	 *  and no path variables point to "C:/" or "C:/other" but "FOO" 
+	 *  points to "C:/foo", an intermediate "OTHER" variable will be 
+	 *  created relative to "FOO" containing the value "${PARENT-1-FOO}"
+	 *  so that the final path returned will be "OTHER/file.txt".
+	 *  
+	 *  The argument "variableHint" can be used to specify to which 
+	 *  path variable the path should be made relative to.
+	 *  
+	 * @param path  The absolute path to be converted
+	 * @param force Set to true if intermediate path variables need to be created if the path is relative only to a parent of an existing path variable.
+	 * @param variableHint The name of the variable to which the path should be relative to, or null for the nearest one.
+	 * @return  The converted path
+	 * @exception CoreException if this method fails. Reasons include:
+	 * <ul>
+	 * <li>The variable name is not valid</li>
+	 */
+	public IPath convertToRelative(IPath path, boolean force, String variableHint) throws CoreException;
 }

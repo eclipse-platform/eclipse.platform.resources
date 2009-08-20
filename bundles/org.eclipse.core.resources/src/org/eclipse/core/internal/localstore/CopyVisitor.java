@@ -7,8 +7,18 @@
  * 
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *     Serge Beauchamp (Freescale Semiconductor) - [252996] add resource filtering
+*******************************************************************************/
 package org.eclipse.core.internal.localstore;
+
+import java.net.URI;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+
+import org.eclipse.core.internal.resources.FilterDescription;
+
+import java.util.LinkedList;
+import org.eclipse.core.internal.resources.Project;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
@@ -49,7 +59,7 @@ public class CopyVisitor implements IUnifiedTreeVisitor {
 	private FileSystemResourceManager localManager;
 
 	public CopyVisitor(IResource rootSource, IResource destination, int updateFlags, IProgressMonitor monitor) {
-		this.localManager = ((Resource)rootSource).getLocalManager();
+		this.localManager = ((Resource) rootSource).getLocalManager();
 		this.rootDestination = destination;
 		this.updateFlags = updateFlags;
 		this.isDeep = (updateFlags & IResource.SHALLOW) == 0;
@@ -70,10 +80,25 @@ public class CopyVisitor implements IUnifiedTreeVisitor {
 
 	protected boolean copyContents(UnifiedTreeNode node, Resource source, Resource destination) {
 		try {
-			if (!isDeep && source.isLinked()) {
-				destination.createLink(source.getRawLocationURI(), updateFlags & IResource.ALLOW_MISSING_LOCAL, null);
+			if (source.isGroup()) {
+				((Folder) destination).createGroup(updateFlags & IResource.ALLOW_MISSING_LOCAL, null);
+				return true;
+			}
+			if ((!isDeep || source.isUnderGroup()) && source.isLinked()) {
+				URI sourceLocationURI = getWorkspace().transferVariableDefinition(source, destination, source.getRawLocationURI());
+				destination.createLink(sourceLocationURI, updateFlags & IResource.ALLOW_MISSING_LOCAL, null);
 				return false;
 			}
+			// update filters in project descriptions
+			if (source.hasFilters()) {
+				Project sourceProject = (Project) source.getProject();
+				LinkedList/*<FilterDescription>*/originalDescriptions = sourceProject.internalGetDescription().getFilter(source.getProjectRelativePath());
+				LinkedList/*<FilterDescription>*/filterDescriptions = FilterDescription.copy(originalDescriptions, destination.getProjectRelativePath());
+				Project project = (Project) destination.getProject();
+				project.internalGetDescription().setFilters(destination.getProjectRelativePath(), filterDescriptions);
+				project.writeDescription(updateFlags);
+			}
+
 			IFileStore sourceStore = node.getStore();
 			IFileStore destinationStore = destination.getStore();
 			//ensure the parent of the root destination exists (bug 126104)
@@ -103,7 +128,7 @@ public class CopyVisitor implements IUnifiedTreeVisitor {
 
 	protected Resource getDestinationResource(Resource source, IPath suffix) {
 		if (suffix.segmentCount() == 0)
-			return (Resource)rootDestination;
+			return (Resource) rootDestination;
 		IPath destinationPath = rootDestination.getFullPath().append(suffix);
 		return getWorkspace().newResource(destinationPath, source.getType());
 	}
@@ -126,6 +151,9 @@ public class CopyVisitor implements IUnifiedTreeVisitor {
 	}
 
 	protected boolean isSynchronized(UnifiedTreeNode node) {
+		/* groups are always deemed as being synchronized */
+		if (node.getResource().isGroup())
+			return true;
 		/* does the resource exist in workspace and file system? */
 		if (!node.existsInWorkspace() || !node.existsInFileSystem())
 			return false;
