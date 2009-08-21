@@ -527,7 +527,7 @@ public class Project extends Container implements IProject {
 						workspace.endOperation(buildRule, false, innerMonitor);
 						try {
 							workspace.prepareOperation(rule, innerMonitor);
-							//don't open the tree eagerly because it will be wasted if no build occurs
+							//don't open the tree eagerly because it will be wasted if no change occurs
 							workspace.beginOperation(false);
 							workspace.broadcastBuildEvent(Project.this, IResourceChangeEvent.POST_BUILD, trigger);
 							//building may close the tree, so open it
