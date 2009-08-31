@@ -471,7 +471,7 @@ public interface IContainer extends IResource, IAdaptable {
 	 * Adds a new filter matching the arguments to this folder's filter list  
 	 * 
 	 * @param filterID the id of the resource filter provider
-	 * @param type (IFilter.INCLUDE_ONLY or IFilter.EXCLUDE_ALL) and/or IFilter.INHERITABLE
+	 * @param type (IResourceFilter.INCLUDE_ONLY or IResourceFilter.EXCLUDE_ALL) and/or IResourceFilter.INHERITABLE
 	 * @param arguments the string argument for this filter id, or null
 	 * @param updateFlags bit-wise or of update flag constants
 	 *   ({@link IResource#BACKGROUND_REFRESH})
@@ -495,7 +495,7 @@ public interface IContainer extends IResource, IAdaptable {
 	 * Remove the filter matching the arguments from this folder's filter list  
 	 * 
 	 * @param filterID the id of the resource filter provider
-	 * @param type (IFilter.INCLUDE_ONLY or IFilter.EXCLUDE_ALL) and/or IFilter.INHERITABLE
+	 * @param type (IResourceFilter.INCLUDE_ONLY or IResourceFilter.EXCLUDE_ALL) and/or IResourceFilter.INHERITABLE
 	 * @param arguments the string argument for this filter id, or null
 	 * @param updateFlags bit-wise or of update flag constants
 	 *   ({@link IResource#BACKGROUND_REFRESH})
@@ -519,7 +519,7 @@ public interface IContainer extends IResource, IAdaptable {
 	 * Retrieve the filters for this folder.
 	 * If no filters exist for this resource, an empty array is returned.
 	 * 
-	 * @return this folder resources, or IFilter[0] if no filters exist
+	 * @return this folder resources, or IResourceFilter[0] if no filters exist
 	 * @exception CoreException if this resource's filters could not be retrieved. Reasons include:
 	 * <ul>
 	 * <li> This resource is not a folder.</li>
@@ -529,5 +529,5 @@ public interface IContainer extends IResource, IAdaptable {
 	 * 
 	 * @since 3.6
 	 */
-	public IFilter[] getFilters() throws CoreException;
+	public IResourceFilter[] getFilters() throws CoreException;
 }

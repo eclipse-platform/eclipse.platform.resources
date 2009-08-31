@@ -115,7 +115,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCreateFilterOnFolder() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -138,7 +138,7 @@ public class FilteredResourceTest extends ResourceTest {
 		} catch (CoreException e) {
 			fail("1.2", e);
 		}
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {
@@ -148,7 +148,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo");
-		assertEquals("1.7", filters[0].getType(), IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS);
 		assertEquals("1.8", filters[0].getPath(), existingFolderInExistingProject.getProjectRelativePath());
 		
 		IResource members[] = null;
@@ -167,7 +167,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCreateFilterOnProject() {
 		try {
-			existingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -190,7 +190,7 @@ public class FilteredResourceTest extends ResourceTest {
 		} catch (CoreException e) {
 			fail("1.2", e);
 		}
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingProject.getFilters();
 		} catch (CoreException e) {
@@ -200,7 +200,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo");
-		assertEquals("1.7", filters[0].getType(), IFilter.INCLUDE_ONLY | IFilter.FOLDERS);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.INCLUDE_ONLY | IResourceFilter.FOLDERS);
 		assertEquals("1.8", filters[0].getPath(), existingProject.getProjectRelativePath());
 
 		IResource members[] = null;
@@ -235,7 +235,7 @@ public class FilteredResourceTest extends ResourceTest {
 		}
 
 		try {
-			folder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES, "foo", 0, getMonitor());
+			folder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -257,7 +257,7 @@ public class FilteredResourceTest extends ResourceTest {
 		} catch (CoreException e) {
 			fail("1.2", e);
 		}
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = folder.getFilters();
 		} catch (CoreException e) {
@@ -267,7 +267,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo");
-		assertEquals("1.7", filters[0].getType(), IFilter.INCLUDE_ONLY | IFilter.FILES);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES);
 		assertEquals("1.8", filters[0].getPath(), folder.getProjectRelativePath());
 		
 		IResource members[] = null;
@@ -297,8 +297,8 @@ public class FilteredResourceTest extends ResourceTest {
 		}
 
 		try {
-			folder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, ".*\\.cpp", 0, getMonitor());
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, ".*\\.h", 0, getMonitor());
+			folder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, ".*\\.cpp", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, ".*\\.h", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -461,7 +461,7 @@ public class FilteredResourceTest extends ResourceTest {
 
 		// remove the first filter
 		try {
-			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, ".*\\.h", 0, getMonitor());
+			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, ".*\\.h", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("8.0");
 		}
@@ -487,7 +487,7 @@ public class FilteredResourceTest extends ResourceTest {
 		
 		// add the filter again
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, ".*\\.h", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, ".*\\.h", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("9.0");
 		}
@@ -530,8 +530,8 @@ public class FilteredResourceTest extends ResourceTest {
 		}
 
 		try {
-			folder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES, ".*\\.h", 0, getMonitor());
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES, ".*\\.cpp", 0, getMonitor());
+			folder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES, ".*\\.h", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES, ".*\\.cpp", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -626,7 +626,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertTrue("0.3", parentLoc.isPrefixOf(childLoc));
 		try {
 			// Filter out all children from existingFolderInExistingProject 
-			folder1.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
+			folder1.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("0.5", e);
 		}
@@ -699,8 +699,8 @@ public class FilteredResourceTest extends ResourceTest {
 			folder1.setLinkLocation(childLoc, IResource.FORCE, getMonitor());
 
 			// Filter out all children from existingFolderInExistingProject 
-			folder2.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
-			folder1.removeFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
+			folder2.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
+			folder1.removeFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
 			assertTrue(folder1.getFilters().length == 0);
 		} catch (CoreException e) {
 			fail("3.0", e);
@@ -767,7 +767,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertTrue("0.3", parentLoc.isPrefixOf(childLoc));
 		try {
 			// Filter out all children from existingFolderInExistingProject 
-			folder1.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
+			folder1.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("0.5", e);
 		}
@@ -836,8 +836,8 @@ public class FilteredResourceTest extends ResourceTest {
 			folder1.setLinkLocation(childLoc, IResource.FORCE, getMonitor());
 
 			// Filter out all children from existingFolderInExistingProject 
-			folder2.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
-			folder1.removeFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, ".*", 0, getMonitor());
+			folder2.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
+			folder1.removeFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, ".*", 0, getMonitor());
 			assertTrue(folder1.getFilters().length == 0);
 		} catch (CoreException e) {
 			fail("4.0", e);
@@ -868,7 +868,7 @@ public class FilteredResourceTest extends ResourceTest {
 
 		assertTrue("0.1", !folder.exists());
 		try {
-			folder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES, "foo", 0, getMonitor());
+			folder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("0.5");
 		}
@@ -897,7 +897,7 @@ public class FilteredResourceTest extends ResourceTest {
 		} catch (CoreException e) {
 			fail("1.2", e);
 		}
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = folder.getFilters();
 		} catch (CoreException e) {
@@ -907,7 +907,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo");
-		assertEquals("1.7", filters[0].getType(), IFilter.INCLUDE_ONLY | IFilter.FILES);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES);
 		assertEquals("1.8", filters[0].getPath(), folder.getProjectRelativePath());
 		
 		IResource members[] = null;
@@ -926,7 +926,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCreateAndRemoveFilterOnFolder() {
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -951,7 +951,7 @@ public class FilteredResourceTest extends ResourceTest {
 		}
 
 		try {
-			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.3", e);
 		}
@@ -964,7 +964,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.4", e);
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingFolder.getFilters();
 		} catch (CoreException e) {
@@ -991,7 +991,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCreateAndRemoveFilterOnFolderWithoutClosingProject() {
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1008,12 +1008,12 @@ public class FilteredResourceTest extends ResourceTest {
 		}
 
 		try {
-			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo", 0, getMonitor());
+			existingFolderInExistingFolder.removeFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.3", e);
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingFolder.getFilters();
 		} catch (CoreException e) {
@@ -1040,7 +1040,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testIncludeOnlyFilter() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, ".*\\.c", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, ".*\\.c", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1070,7 +1070,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("2.4", members[1].getName(), "foo.c");
 
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("3.0");
 		}
@@ -1099,7 +1099,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testExcludeAllFilter() {
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES | IFilter.FOLDERS, ".*\\.c", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES | IResourceFilter.FOLDERS, ".*\\.c", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1130,7 +1130,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("2.4", members[1].getName(), "foo.h");
 
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES | IFilter.FOLDERS, "foo.*", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("3.0");
 		}
@@ -1157,8 +1157,8 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testMixedFilter() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES | IFilter.FOLDERS, ".*\\.c", 0, getMonitor());
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES | IFilter.FOLDERS, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES | IResourceFilter.FOLDERS, ".*\\.c", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1192,8 +1192,8 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testInheritedFilter() {
 		try {
-			existingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.INHERITABLE | IFilter.FILES, ".*\\.c", 0, getMonitor());
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES | IFilter.FOLDERS, "foo.*", 0, getMonitor());
+			existingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.INHERITABLE | IResourceFilter.FILES, ".*\\.c", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES | IResourceFilter.FOLDERS, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1227,7 +1227,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testFolderOnlyFilters() {
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FOLDERS, "foo.*", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FOLDERS, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1259,7 +1259,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testFileOnlyFilters() {
 		try {
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1291,7 +1291,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testMoveFolderWithFilterToAnotherProject() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1314,7 +1314,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.2");
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {
@@ -1333,7 +1333,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.6", filters.length, 1);
 		assertEquals("1.7", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.8", filters[0].getArguments(), "foo.*");
-		assertEquals("1.9", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("1.9", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("2.0", filters[0].getPath(), destination.getProjectRelativePath());
 	}
 
@@ -1342,7 +1342,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCopyFolderWithFilterToAnotherProject() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1365,7 +1365,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.2");
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {
@@ -1375,7 +1375,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo.*");
-		assertEquals("1.7", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("1.8", filters[0].getPath(), existingFolderInExistingProject.getProjectRelativePath());
 
 		filters = null;
@@ -1388,7 +1388,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("2.1", filters.length, 1);
 		assertEquals("2.2", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("2.3", filters[0].getArguments(), "foo.*");
-		assertEquals("2.4", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("2.4", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("2.5", filters[0].getPath(), destination.getProjectRelativePath());
 	}
 
@@ -1397,7 +1397,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testCopyFolderWithFilterToAnotherFolder() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1422,7 +1422,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.2");
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {
@@ -1432,7 +1432,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("1.4", filters.length, 1);
 		assertEquals("1.5", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("1.6", filters[0].getArguments(), "foo.*");
-		assertEquals("1.7", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("1.7", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("1.8", filters[0].getPath(), existingFolderInExistingProject.getProjectRelativePath());
 
 		filters = null;
@@ -1445,7 +1445,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("2.1", filters.length, 1);
 		assertEquals("2.2", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("2.3", filters[0].getArguments(), "foo.*");
-		assertEquals("2.4", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("2.4", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("2.5", filters[0].getPath(), destination.getProjectRelativePath());
 	}
 
@@ -1454,7 +1454,7 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testMoveFolderWithFilterToAnotherFolder() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1479,7 +1479,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.2");
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {
@@ -1498,7 +1498,7 @@ public class FilteredResourceTest extends ResourceTest {
 		assertEquals("2.1", filters.length, 1);
 		assertEquals("2.2", filters[0].getId(), REGEX_FILTER_PROVIDER);
 		assertEquals("2.3", filters[0].getArguments(), "foo.*");
-		assertEquals("2.4", filters[0].getType(), IFilter.EXCLUDE_ALL | IFilter.FILES);
+		assertEquals("2.4", filters[0].getType(), IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES);
 		assertEquals("2.5", filters[0].getPath(), destination.getProjectRelativePath());
 	}
 
@@ -1507,8 +1507,8 @@ public class FilteredResourceTest extends ResourceTest {
 	 */
 	public void testDeleteFolderWithFilterToAnotherFolder() {
 		try {
-			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IFilter.EXCLUDE_ALL | IFilter.FILES, "foo.*", 0, getMonitor());
-			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IFilter.INCLUDE_ONLY | IFilter.FILES, ".*\\.c", 0, getMonitor());
+			existingFolderInExistingProject.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.EXCLUDE_ALL | IResourceFilter.FILES, "foo.*", 0, getMonitor());
+			existingFolderInExistingFolder.addFilter(REGEX_FILTER_PROVIDER, IResourceFilter.INCLUDE_ONLY | IResourceFilter.FILES, ".*\\.c", 0, getMonitor());
 		} catch (CoreException e) {
 			fail("1.0");
 		}
@@ -1532,7 +1532,7 @@ public class FilteredResourceTest extends ResourceTest {
 			fail("1.2");
 		}
 
-		IFilter[] filters = null;
+		IResourceFilter[] filters = null;
 		try {
 			filters = existingFolderInExistingProject.getFilters();
 		} catch (CoreException e) {

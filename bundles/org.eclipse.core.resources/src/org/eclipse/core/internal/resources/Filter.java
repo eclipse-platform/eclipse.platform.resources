@@ -21,15 +21,15 @@ import org.eclipse.core.resources.IFilterType;
 
 import java.util.*;
 import org.eclipse.core.filesystem.IFileInfo;
-import org.eclipse.core.resources.IFilter;
+import org.eclipse.core.resources.IResourceFilter;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 
 /**
- * Class that instantiate IFilter's  that are stored in the project description.
+ * Class that instantiate IResourceFilter's  that are stored in the project description.
  */
 
-public class Filter implements IFilter {
+public class Filter implements IResourceFilter {
 
 	FilterDescription description;
 	IProject project;

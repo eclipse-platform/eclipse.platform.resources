@@ -800,22 +800,22 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 	/* (non-Javadoc)
 	 * @see org.eclipse.core.resources.IContainer#getFilters()
 	 */
-	public IFilter[] getFilters() throws CoreException {
-		IFilter[] results = null;
+	public IResourceFilter[] getFilters() throws CoreException {
+		IResourceFilter[] results = null;
 		checkValidPath(path, FOLDER | PROJECT, true);
 		Project project = (Project) getProject();
 		ProjectDescription desc = project.internalGetDescription();
 		if (desc != null) {
 			LinkedList/*<FilterDescription>*/ list = desc.getFilter(getProjectRelativePath());
 			if (list != null) {
-				results = new IFilter[list.size()];
+				results = new IResourceFilter[list.size()];
 				for (int i = 0; i < list.size(); i++) {
 					results[i] = new Filter(project, (FilterDescription) list.get(i));
 				}
 				return results;
 			}
 		}
-		return new IFilter[0];
+		return new IResourceFilter[0];
 	}
 
 	/* (non-Javadoc)

@@ -21,8 +21,9 @@ import org.eclipse.core.runtime.*;
  * @see IFolder#removeFilter(String, int, String, int, IProgressMonitor)
  * @see IFolder#getFilters()
  * @noimplement This interface is not intended to be implemented by clients.
+ * @since 3.6
  */
-public interface IFilter {
+public interface IResourceFilter {
 
 	/*====================================================================
 	 * Constants defining which members are wanted:

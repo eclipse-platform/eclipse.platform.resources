@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import org.eclipse.core.runtime.IPath;
 
-import org.eclipse.core.resources.IFilter;
+import org.eclipse.core.resources.IResourceFilter;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.*;
@@ -34,7 +34,7 @@ public class FilterDescription implements Comparable {
 	 */
 	private IPath path;
 	/**
-	 * The resource type (IFilter.INCLUDE_ONLY or IFilter.EXCLUDE_ALL) and/or IFilter.INHERITABLE
+	 * The resource type (IResourceFilter.INCLUDE_ONLY or IResourceFilter.EXCLUDE_ALL) and/or IResourceFilter.INHERITABLE
 	 */
 	private int type;
 
@@ -135,7 +135,7 @@ public class FilterDescription implements Comparable {
 	}
 
 	public boolean isInheritable() {
-		return (getType() & IFilter.INHERITABLE) != 0;
+		return (getType() & IResourceFilter.INHERITABLE) != 0;
 	}
 
 	public static LinkedList copy(LinkedList originalDescriptions, IPath projectRelativePath) {
