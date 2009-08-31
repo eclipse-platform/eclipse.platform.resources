@@ -102,7 +102,7 @@ public final class ResourcesPlugin extends Plugin {
 	 * Simple identifier constant (value <code>"variableProviders"</code>)
 	 * for the variable providers extension point.
 	 * 
-	 * @since 3.5
+	 * @since 3.6
 	 */
 	public static final String PT_VARIABLE_PROVIDERS = "variableProviders"; //$NON-NLS-1$
 
@@ -110,6 +110,7 @@ public final class ResourcesPlugin extends Plugin {
 	 * Simple identifier constant (value <code>"filterProviders"</code>)
 	 * for the filter providers extension point.
 	 * 
+	 * @since 3.6
 	 */
 	public static final String PT_FILTER_PROVIDERS = "filterProviders"; //$NON-NLS-1$
 
