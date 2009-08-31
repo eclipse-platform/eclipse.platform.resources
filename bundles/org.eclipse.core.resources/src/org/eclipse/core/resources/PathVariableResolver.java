@@ -1,12 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2008 IBM Corporation and others.
+ * Copyright (c) 2008, 2009 Freescale Semiconductor and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  * 
  * Contributors:
- *     Serge Beauchamp (Freescale Semiconductor) - initial API and implementation
+ *     Freescale Semiconductor - initial API and implementation
+ *     IBM Corporation - ongoing development
  *******************************************************************************/
 package org.eclipse.core.resources;
 
@@ -14,8 +15,9 @@ package org.eclipse.core.resources;
  * An interface that variable providers should implement in order
  * to extends the default path variable list used to resolve relative
  * locations of linked resources.
+ * @since 3.6
  */
-public interface IProjectVariableProvider {
+public abstract class PathVariableResolver {
 
 	/**
 	 * Returns a variable value
@@ -26,7 +28,7 @@ public interface IProjectVariableProvider {
 	 *            The project that the variable is being resolved for.
 	 * @return the variable value.
 	 */
-	public String getValue(String variable, IProject project);
+	public abstract String getValue(String variable, IProject project);
 
 	/**
 	 * If the variable supports extensions (specified as
@@ -39,5 +41,5 @@ public interface IProjectVariableProvider {
 	 *            The project that the variable is being resolved for.
 	 * @return the possible variable extensions or null if none are supported.
 	 */
-	public Object[] getExtensions(String variable, IProject project);
+	public abstract Object[] getExtensions(String variable, IProject project);
 }

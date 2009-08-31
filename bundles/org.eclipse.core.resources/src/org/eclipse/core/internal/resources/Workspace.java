@@ -23,8 +23,8 @@ import org.eclipse.core.internal.events.*;
 import org.eclipse.core.internal.localstore.FileSystemResourceManager;
 import org.eclipse.core.internal.properties.IPropertyManager;
 import org.eclipse.core.internal.refresh.RefreshManager;
-import org.eclipse.core.internal.resources.projectVariables.ParentVariableProvider;
-import org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationProjectVariable;
+import org.eclipse.core.internal.resources.projectVariables.ParentVariableResolver;
+import org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationVariableResolver;
 import org.eclipse.core.internal.utils.*;
 import org.eclipse.core.internal.watson.*;
 import org.eclipse.core.resources.*;
@@ -865,9 +865,9 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		// look if one variable in the destination project matches
 		String[] variables = destPathVariableManager.getPathVariableNames();
 		for (int i = 0; i < variables.length; i++) {
-			if (variables[i].equals(WorkspaceLocationProjectVariable.NAME))
+			if (variables[i].equals(WorkspaceLocationVariableResolver.NAME))
 				continue;
-			if (variables[i].equals(ParentVariableProvider.NAME))
+			if (variables[i].equals(ParentVariableResolver.NAME))
 				continue;
 			IPath resolveDestVariable = destPathVariableManager
 					.resolvePath(destPathVariableManager.getValue(variables[i]));

@@ -1,25 +1,26 @@
 /*******************************************************************************
- * Copyright (c) 2008 IBM Corporation and others.
+ * Copyright (c) 2008, 2009 Freescale Semiconductor and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  * 
  * Contributors:
- *     IBM Corporation - initial API and implementation
+ *     Freescale Semiconductor - initial API and implementation
+ *     IBM Corporation - ongoing development
  *******************************************************************************/
 package org.eclipse.core.internal.resources.projectVariables;
 
 import java.net.URL;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectVariableProvider;
+import org.eclipse.core.resources.PathVariableResolver;
 import org.eclipse.core.runtime.*;
 
 /**
  * ECLIPSE_HOME project variable, pointing to the location of the eclipse home
  * 
  */
-public class EclipseHomeProjectVariable implements IProjectVariableProvider {
+public class EclipseHomeProjectVariable extends PathVariableResolver {
 
 	public EclipseHomeProjectVariable() {
 		// nothing to do.

@@ -12,13 +12,13 @@ package org.eclipse.core.internal.resources;
 
 import org.eclipse.core.runtime.Path;
 
-import org.eclipse.core.internal.resources.projectVariables.ParentVariableProvider;
+import org.eclipse.core.internal.resources.projectVariables.ParentVariableResolver;
 
-import org.eclipse.core.internal.resources.projectVariables.ProjectLocationProjectVariable;
+import org.eclipse.core.internal.resources.projectVariables.ProjectLocationVariableResolver;
 
 import org.eclipse.core.runtime.IPath;
 
-import org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationProjectVariable;
+import org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationVariableResolver;
 import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.runtime.*;
 
@@ -79,10 +79,10 @@ public class PathVariableUtil {
 			if (skipWorkspace) {
 				// Variables relative to the workspace are not portable, and defeat the purpose of having linked resource locations, 
 				// so they should not automatically be created relative to the workspace.
-				if (variable.equals(WorkspaceLocationProjectVariable.NAME))
+				if (variable.equals(WorkspaceLocationVariableResolver.NAME))
 					continue; 
 			}
-			if (variable.equals(ParentVariableProvider.NAME))
+			if (variable.equals(ParentVariableResolver.NAME))
 				continue;
 			// find closest path to the original path
 			IPath value = pathVariableManager.getValue(variable);
@@ -106,10 +106,10 @@ public class PathVariableUtil {
 				for (int k = 0; k < existingVariables.length; k++) {
 					String variable = existingVariables[k];
 					if (skipWorkspace) {
-						if (variable.equals(WorkspaceLocationProjectVariable.NAME))
+						if (variable.equals(WorkspaceLocationVariableResolver.NAME))
 							continue;
 					}
-					if (variable.equals(ParentVariableProvider.NAME))
+					if (variable.equals(ParentVariableResolver.NAME))
 						continue;
 					IPath value = pathVariableManager.getValue(variable);
 					value = convertToProperCase(pathVariableManager.resolvePath(value));
@@ -125,7 +125,7 @@ public class PathVariableUtil {
 					return wrapInProperFormat(newPath, generateMacro);
 			}
 			if (originalSegmentCount == 0) {
-				String variable = ProjectLocationProjectVariable.NAME;
+				String variable = ProjectLocationVariableResolver.NAME;
 				IPath value = pathVariableManager.getValue(variable);
 				value = convertToProperCase(pathVariableManager.resolvePath(value));
 				if (originalPath.isPrefixOf(value))
@@ -210,7 +210,7 @@ public class PathVariableUtil {
 	}
 
 	static public boolean isParentVariable(String variableString) {
-		return variableString.startsWith(ParentVariableProvider.NAME + '-');
+		return variableString.startsWith(ParentVariableResolver.NAME + '-');
 	}
 	
 	// the format is PARENT-COUNT-ARGUMENT

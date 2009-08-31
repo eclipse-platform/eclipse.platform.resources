@@ -209,15 +209,15 @@
             name="ECLIPSE_HOME">
       </variableProvider>
       <variableProvider
-            class="org.eclipse.core.internal.resources.projectVariables.ProjectLocationProjectVariable"
+            class="org.eclipse.core.internal.resources.projectVariables.ProjectLocationVariableResolver"
             name="PROJECT_LOC">
       </variableProvider>
       <variableProvider
-            class="org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationProjectVariable"
+            class="org.eclipse.core.internal.resources.projectVariables.WorkspaceLocationVariableResolver"
             name="WORKSPACE_LOC">
       </variableProvider>
       <variableProvider
-            class="org.eclipse.core.internal.resources.projectVariables.ParentVariableProvider"
+            class="org.eclipse.core.internal.resources.projectVariables.ParentVariableResolver"
             name="PARENT">
       </variableProvider>
    </extension>

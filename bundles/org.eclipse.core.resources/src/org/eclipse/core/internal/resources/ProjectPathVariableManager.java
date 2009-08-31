@@ -18,7 +18,7 @@ import java.net.URI;
 import java.util.*;
 import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.internal.events.PathVariableChangeEvent;
-import org.eclipse.core.internal.resources.projectVariables.ProjectLocationProjectVariable;
+import org.eclipse.core.internal.resources.projectVariables.ProjectLocationVariableResolver;
 import org.eclipse.core.internal.utils.Messages;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.*;
@@ -555,7 +555,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
     	    		}
     	    	}
     	    	if (i == 0) // this means the value is implicitly relative to the project location
-    	    		components[0] = PathVariableUtil.buildParentPathVariable(ProjectLocationProjectVariable.NAME, parentCount, false);
+    	    		components[0] = PathVariableUtil.buildParentPathVariable(ProjectLocationVariableResolver.NAME, parentCount, false);
     	    	else {
 	    	    	for (int j = i - 1; j >= 0; j--) {
 	    	    		if (parentCount == 0)

@@ -1,12 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2008 IBM Corporation and others.
+ * Copyright (c) 2008, 2009 Freescale Semiconductor and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  * 
  * Contributors:
- *     Serge Beauchamp (Freescale Semiconductor) - initial API and implementation
+ *     Freescale Semiconductor - initial API and implementation
+ *     IBM Corporation - ongoing development
  *******************************************************************************/
 package org.eclipse.core.resources;
 
@@ -23,7 +24,7 @@ import org.eclipse.osgi.util.NLS;
 public class ProjectVariableProviderManager {
 
 	public static class Descriptor {
-		IProjectVariableProvider provider = null;
+		PathVariableResolver provider = null;
 		String name = null;
 		String value = null;
 
@@ -32,7 +33,7 @@ public class ProjectVariableProviderManager {
 			name = element.getAttribute("name"); //$NON-NLS-1$
 			value = element.getAttribute("value"); //$NON-NLS-1$
 			try {
-				provider = (IProjectVariableProvider) element
+				provider = (PathVariableResolver) element
 						.createExecutableExtension("class"); //$NON-NLS-1$
 			} catch (CoreException t) {
 			}
