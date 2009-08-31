@@ -34,7 +34,7 @@ public class FilterTypeManager {
 		private String name;
 		private String description;
 		private String argumentType;
-		private IFilterTypeFactory factory;
+		private IFileInfoFilterFactory factory;
 		private boolean isFirst = false;
 		
 		public Descriptor(IConfigurationElement element) throws CoreException {
@@ -49,7 +49,7 @@ public class FilterTypeManager {
 			if (argumentType == null)
 				argumentType = ARGUMENT_TYPE_NONE;
 			if (instantiateFactory)
-				factory = (IFilterTypeFactory ) element.createExecutableExtension("class"); //$NON-NLS-1$
+				factory = (IFileInfoFilterFactory ) element.createExecutableExtension("class"); //$NON-NLS-1$
 			String ordering = element.getAttribute("ordering"); //$NON-NLS-1$
 			if (ordering != null)
 				isFirst = ordering.equals("first"); //$NON-NLS-1$
@@ -66,7 +66,7 @@ public class FilterTypeManager {
 		public String getArgumentType() {
 			return argumentType;
 		}
-		public IFilterTypeFactory getFactory() {
+		public IFileInfoFilterFactory getFactory() {
 			return factory;
 		}
 		public boolean isFirstOrdering() {

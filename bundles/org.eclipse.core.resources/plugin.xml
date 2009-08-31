@@ -194,7 +194,7 @@
          point="org.eclipse.core.resources.filterProviders">
       <filterProvider
             argumentType="string"
-            class="org.eclipse.core.internal.resources.RegexFilterTypeFactory"
+            class="org.eclipse.core.internal.resources.RegexFilterFactory"
             description="%regexFilterProvider.description"
             id="org.eclipse.core.resources.regexFilterProvider"
             name="%regexFilterProvider.name"

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2006 IBM Corporation and others.
+ * Copyright (c) 2008, 2009 IFreeescale Semiconductor and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,24 +7,26 @@
  * 
  * Contributors:
  *     Serge Beauchamp(Freeescale Semiconductor) - initial API and implementation
+ *     IBM Corporation - ongoing development
  *******************************************************************************/
 package org.eclipse.core.resources;
 
 import org.eclipse.core.filesystem.IFileInfoFilter;
 
 /**
- * Represents a resource filter type factory that instantiate 
- * filter types based on the matching criteria.
+ * A factory for instantiating {@link IFileInfoFilter} instances
+ * of a particular type.
  * 
+ * @since 3.6
  */
-public interface IFilterTypeFactory  {
+public interface IFileInfoFilterFactory  {
 
 	/**
-	 * Initialize this filter instance with a project and arguments.
-	 * The arguments can be null, depending on the filter type.
+	 * Returns a filter instance with the given project and arguments.
 	 * 
 	 * @param project the project from which this filter is called
-	 * @param arguments the test arguments, or null
+	 * @param arguments the test arguments, or <code>null</code> if not applicable
+	 * for this filter type.
 	 */
 	public IFileInfoFilter instantiate(IProject project, String arguments);
 }
