@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.filesystem.IFileInfoFilter;
+
 import org.eclipse.core.resources.IFilterTypeFactory;
 
 import java.util.regex.Matcher;
@@ -19,7 +21,6 @@ import java.util.regex.Pattern;
 import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.resources.IProject;
 
-import org.eclipse.core.resources.IFilterType;
 
 /**
  * A Filter provider for Java Regular expression supported by 
@@ -27,7 +28,7 @@ import org.eclipse.core.resources.IFilterType;
  */
 public class RegexFilterTypeFactory implements IFilterTypeFactory {
 
-	static class RegexFilterType implements IFilterType {
+	static class RegexFilterType implements IFileInfoFilter {
 		Pattern pattern = null;
 	
 		public RegexFilterType(IProject project, String arguments) {
@@ -40,7 +41,7 @@ public class RegexFilterTypeFactory implements IFilterTypeFactory {
 		}
 	}
 
-	public IFilterType instantiate(IProject project, String arguments) {
+	public IFileInfoFilter instantiate(IProject project, String arguments) {
 		return new RegexFilterType(project, arguments);
 	}
 }

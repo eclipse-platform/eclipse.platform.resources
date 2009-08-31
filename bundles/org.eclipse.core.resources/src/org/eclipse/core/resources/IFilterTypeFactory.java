@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
+import org.eclipse.core.filesystem.IFileInfoFilter;
+
 /**
  * Represents a resource filter type factory that instantiate 
  * filter types based on the matching criteria.
@@ -24,5 +26,5 @@ public interface IFilterTypeFactory  {
 	 * @param project the project from which this filter is called
 	 * @param arguments the test arguments, or null
 	 */
-	public IFilterType instantiate(IProject project, String arguments);
+	public IFileInfoFilter instantiate(IProject project, String arguments);
 }

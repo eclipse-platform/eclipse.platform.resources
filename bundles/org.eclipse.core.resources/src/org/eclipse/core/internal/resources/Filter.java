@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.filesystem.IFileInfoFilter;
+
 import org.eclipse.core.resources.FilterTypeManager;
 
 import org.eclipse.core.internal.utils.Messages;
@@ -17,7 +19,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.util.NLS;
 
-import org.eclipse.core.resources.IFilterType;
 
 import java.util.*;
 import org.eclipse.core.filesystem.IFileInfo;
@@ -33,7 +34,7 @@ public class Filter implements IResourceFilter {
 
 	FilterDescription description;
 	IProject project;
-	IFilterType provider = null;
+	IFileInfoFilter provider = null;
 	
 	public Filter(IProject project, FilterDescription  description) {
 		this.description = description;

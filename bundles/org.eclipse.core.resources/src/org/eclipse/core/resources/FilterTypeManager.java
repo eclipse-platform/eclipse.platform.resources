@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
+import org.eclipse.core.filesystem.IFileInfoFilter;
+
 import org.eclipse.core.runtime.CoreException;
 
 import java.util.HashMap;
@@ -144,7 +146,7 @@ public class FilterTypeManager {
 		return (Descriptor[]) factories.values().toArray(new Descriptor[0]);
 	}
 	
-	public IFilterType instantiate(String id, IProject project, String arguments) {
+	public IFileInfoFilter instantiate(String id, IProject project, String arguments) {
 		Object obj = factories.get(id);
 		if (obj != null)
 			return ((Descriptor) obj).getFactory().instantiate(project, arguments);
