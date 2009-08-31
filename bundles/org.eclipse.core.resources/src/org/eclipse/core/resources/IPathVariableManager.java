@@ -38,39 +38,50 @@ import org.eclipse.core.runtime.*;
 public interface IPathVariableManager {
 
 	/**
-	 * Sets the path variable with the given name to be the specified value.
-	 * Depending on the value given and if the variable is currently defined
-	 * or not, there are several possible outcomes for this operation:
-	 * <p>
-	 * <ul>
-	 * <li>A new variable will be created, if there is no variable defined with
-	 * the given name, and the given value is not <code>null</code>.
-	 * </li>
+	 * Registers the given listener to receive notification of changes to path
+	 * variables. The listener will be notified whenever a variable has been
+	 * added, removed or had its value changed. Has no effect if an identical
+	 * path variable change listener is already registered.
 	 * 
-	 * <li>The referred variable's value will be changed, if it already exists
-	 * and the given value is not <code>null</code>.</li>
-	 * 
-	 * <li>The referred variable will be removed, if a variable with the given
-	 * name is currently defined and the given value is <code>null</code>.
-	 * </li>
+	 * @param listener the listener
+	 * @see IPathVariableChangeListener
+	 */
+	public void addChangeListener(IPathVariableChangeListener listener);
+
+	/** Convert an absolute path to path variable relative path.
+	 *  For example, converts "C:/foo/bar.txt" into "FOO/bar.txt", 
+	 *  granted that the path variable "FOO" value is "C:/foo".
 	 *  
-	 * <li>The call will be ignored, if a variable with the given name is not
-	 * currently defined and the given value is <code>null</code>, or if it is
-	 * defined but the given value is equal to its current value.
-	 * </li>
-	 * </ul>
-	 * <p>If a variable is effectively changed, created or removed by a call to
-	 * this method, notification will be sent to all registered listeners.</p>
-	 * 
-	 * @param name the name of the variable 
-	 * @param value the value for the variable (may be <code>null</code>)
+	 *  The "force" argument allows intermediate path variable to
+	 *  be created if for a given path can be relative only to a parent
+	 *  of an existing path variable.
+	 *  
+	 *  For example, if the path "C:/other/file.txt" is to be converted
+	 *  and no path variables point to "C:/" or "C:/other" but "FOO" 
+	 *  points to "C:/foo", an intermediate "OTHER" variable will be 
+	 *  created relative to "FOO" containing the value "${PARENT-1-FOO}"
+	 *  so that the final path returned will be "OTHER/file.txt".
+	 *  
+	 *  The argument "variableHint" can be used to specify to which 
+	 *  path variable the path should be made relative to.
+	 *  
+	 * @param path  The absolute path to be converted
+	 * @param force Set to true if intermediate path variables need to be created if the path is relative only to a parent of an existing path variable.
+	 * @param variableHint The name of the variable to which the path should be relative to, or null for the nearest one.
+	 * @return  The converted path
 	 * @exception CoreException if this method fails. Reasons include:
 	 * <ul>
 	 * <li>The variable name is not valid</li>
-	 * <li>The variable value is relative</li>
-	 * </ul>
+	 * @since 3.6
 	 */
-	public void setValue(String name, IPath value) throws CoreException;
+	public IPath convertToRelative(IPath path, boolean force, String variableHint) throws CoreException;
+
+	/**
+	 * Returns an array containing all defined path variable names.
+	 *  
+	 * @return an array containing all defined path variable names
+	 */
+	public String[] getPathVariableNames();
 
 	/**
 	 * Returns the value of the path variable with the given name. If there is
@@ -83,22 +94,15 @@ public interface IPathVariableManager {
 	public IPath getValue(String name);
 
 	/**
-	 * Returns an array containing all defined path variable names.
-	 *  
-	 * @return an array containing all defined path variable names
-	 */
-	public String[] getPathVariableNames();
-
-	/**
-	 * Registers the given listener to receive notification of changes to path
-	 * variables. The listener will be notified whenever a variable has been
-	 * added, removed or had its value changed. Has no effect if an identical
-	 * path variable change listener is already registered.
+	 * Returns <code>true</code> if the given variable is defined and
+	 * <code>false</code> otherwise. Returns <code>false</code> if the given
+	 * name is not a valid path variable name.
 	 * 
-	 * @param listener the listener
-	 * @see IPathVariableChangeListener
+	 * @param name the variable's name
+	 * @return <code>true</code> if the variable exists, <code>false</code>
+	 *    otherwise
 	 */
-	public void addChangeListener(IPathVariableChangeListener listener);
+	public boolean isDefined(String name);
 
 	/**
 	 * Removes the given path variable change listener from the listeners list.
@@ -108,26 +112,6 @@ public interface IPathVariableManager {
 	 * @see IPathVariableChangeListener
 	 */
 	public void removeChangeListener(IPathVariableChangeListener listener);
-
-	/**
-	 * Resolves a relative <code>URI</code> object potentially containing a
-	 * variable reference as its first segment, replacing the variable reference
-	 * (if any) with the variable's value (which is a concrete absolute URI).
-	 * If the given URI is absolute or has a non- <code>null</code> device then
-	 * no variable substitution is done and that URI is returned as is.  If the
-	 * given URI is relative and has a <code>null</code> device, but the first
-	 * segment does not correspond to a defined variable, then the URI is
-	 * returned as is.
-	 * <p>
-	 * If the given URI is <code>null</code> then <code>null</code> will be
-	 * returned.  In all other cases the result will be non-<code>null</code>.
-	 * </p>
-	 * 
-	 * @param uri  the URI to be resolved
-	 * @return the resolved URI or <code>null</code>
-	 * @since 3.2
-	 */
-	public URI resolveURI(URI uri);
 
 	/**
 	 * Resolves a relative <code>IPath</code> object potentially containing a
@@ -166,15 +150,59 @@ public interface IPathVariableManager {
 	public IPath resolvePath(IPath path);
 
 	/**
-	 * Returns <code>true</code> if the given variable is defined and
-	 * <code>false</code> otherwise. Returns <code>false</code> if the given
-	 * name is not a valid path variable name.
+	 * Resolves a relative <code>URI</code> object potentially containing a
+	 * variable reference as its first segment, replacing the variable reference
+	 * (if any) with the variable's value (which is a concrete absolute URI).
+	 * If the given URI is absolute or has a non- <code>null</code> device then
+	 * no variable substitution is done and that URI is returned as is.  If the
+	 * given URI is relative and has a <code>null</code> device, but the first
+	 * segment does not correspond to a defined variable, then the URI is
+	 * returned as is.
+	 * <p>
+	 * If the given URI is <code>null</code> then <code>null</code> will be
+	 * returned.  In all other cases the result will be non-<code>null</code>.
+	 * </p>
 	 * 
-	 * @param name the variable's name
-	 * @return <code>true</code> if the variable exists, <code>false</code>
-	 *    otherwise
+	 * @param uri  the URI to be resolved
+	 * @return the resolved URI or <code>null</code>
+	 * @since 3.2
 	 */
-	public boolean isDefined(String name);
+	public URI resolveURI(URI uri);
+
+	/**
+	 * Sets the path variable with the given name to be the specified value.
+	 * Depending on the value given and if the variable is currently defined
+	 * or not, there are several possible outcomes for this operation:
+	 * <p>
+	 * <ul>
+	 * <li>A new variable will be created, if there is no variable defined with
+	 * the given name, and the given value is not <code>null</code>.
+	 * </li>
+	 * 
+	 * <li>The referred variable's value will be changed, if it already exists
+	 * and the given value is not <code>null</code>.</li>
+	 * 
+	 * <li>The referred variable will be removed, if a variable with the given
+	 * name is currently defined and the given value is <code>null</code>.
+	 * </li>
+	 *  
+	 * <li>The call will be ignored, if a variable with the given name is not
+	 * currently defined and the given value is <code>null</code>, or if it is
+	 * defined but the given value is equal to its current value.
+	 * </li>
+	 * </ul>
+	 * <p>If a variable is effectively changed, created or removed by a call to
+	 * this method, notification will be sent to all registered listeners.</p>
+	 * 
+	 * @param name the name of the variable 
+	 * @param value the value for the variable (may be <code>null</code>)
+	 * @exception CoreException if this method fails. Reasons include:
+	 * <ul>
+	 * <li>The variable name is not valid</li>
+	 * <li>The variable value is relative</li>
+	 * </ul>
+	 */
+	public void setValue(String name, IPath value) throws CoreException;
 
 	/**
 	 * Validates the given name as the name for a path variable. A valid path
@@ -201,31 +229,4 @@ public interface IPathVariableManager {
 	 * @see IStatus#OK
 	 */
 	public IStatus validateValue(IPath path);
-
-	/** Convert an absolute path to path variable relative path.
-	 *  For example, converts "C:/foo/bar.txt" into "FOO/bar.txt", 
-	 *  granted that the path variable "FOO" value is "C:/foo".
-	 *  
-	 *  The "force" argument allows intermediate path variable to
-	 *  be created if for a given path can be relative only to a parent
-	 *  of an existing path variable.
-	 *  
-	 *  For example, if the path "C:/other/file.txt" is to be converted
-	 *  and no path variables point to "C:/" or "C:/other" but "FOO" 
-	 *  points to "C:/foo", an intermediate "OTHER" variable will be 
-	 *  created relative to "FOO" containing the value "${PARENT-1-FOO}"
-	 *  so that the final path returned will be "OTHER/file.txt".
-	 *  
-	 *  The argument "variableHint" can be used to specify to which 
-	 *  path variable the path should be made relative to.
-	 *  
-	 * @param path  The absolute path to be converted
-	 * @param force Set to true if intermediate path variables need to be created if the path is relative only to a parent of an existing path variable.
-	 * @param variableHint The name of the variable to which the path should be relative to, or null for the nearest one.
-	 * @return  The converted path
-	 * @exception CoreException if this method fails. Reasons include:
-	 * <ul>
-	 * <li>The variable name is not valid</li>
-	 */
-	public IPath convertToRelative(IPath path, boolean force, String variableHint) throws CoreException;
 }
