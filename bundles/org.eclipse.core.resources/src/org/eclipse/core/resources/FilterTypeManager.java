@@ -19,6 +19,7 @@ import org.eclipse.core.runtime.*;
 
 /**
  *  This class collects all the FilterTypeFactories along with their properties.
+ * @since 3.6
  */
 public class FilterTypeManager {
 

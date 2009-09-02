@@ -20,6 +20,7 @@ import org.eclipse.osgi.util.NLS;
 
 /**
  * Repository for all variable providers available through the extension points.
+ * @since 3.6
  */
 public class ProjectVariableProviderManager {
 
