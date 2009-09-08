@@ -193,11 +193,15 @@ public class PathVariableUtil {
 	}
 
 	private static String getExistingVariable(String newValue, IPathVariableManager pathVariableManager) {
+		IPath resolvedNewValue = convertToProperCase(pathVariableManager.resolvePath(Path.fromOSString(newValue)));
 		String[] existingVariables = pathVariableManager.getPathVariableNames();
 		for (int i = 0; i < existingVariables.length; i++) {
 			String variable = existingVariables[i];
 			IPath value = pathVariableManager.getValue(variable);
 			if (value.toOSString().equals(newValue))
+				return variable;
+			IPath resolvedValue = convertToProperCase(pathVariableManager.resolvePath(value));
+			if (resolvedValue.equals(resolvedNewValue))
 				return variable;
 		}
 		return null;

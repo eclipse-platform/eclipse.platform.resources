@@ -1300,4 +1300,52 @@ public class LinkedResourceWithPathVariableTest extends LinkedResourceTest {
 		assertTrue("4.1", !variable.isReadOnly());
 		assertEquals("4.2", null, variable.getExtensions(PROJECT_VARIABLE_NAME, existingProject));
 	}
+
+	/** 
+	 * Test Bug 288880 - Redundant path variables generated when converting some linked resources to path variable-relative
+	 */
+	public void testNonRedundentPathVariablesGenerated() {
+		IFile file = existingProjectInSubDirectory.getFile("my_link");
+
+		IPathVariableManager pathVariableManager = existingProjectInSubDirectory.getPathVariableManager();
+
+		int pathVariableCount = pathVariableManager.getPathVariableNames().length;
+		// creates a variable-based location
+		IPath variableBasedLocation = null;
+		IPath targetPath = existingProjectInSubDirectory.getLocation().removeLastSegments(1).append("outside.txt");
+		if (!targetPath.toFile().exists()) {
+			try {
+				targetPath.toFile().createNewFile();
+			} catch (IOException e2) {
+				fail("1.0", e2);
+			}
+		}
+		toDelete.add(targetPath);
+
+		try {
+			variableBasedLocation = pathVariableManager.convertToRelative(targetPath, true, null);
+		} catch (CoreException e1) {
+			fail("2.0", e1);
+		}
+		int newPathVariableCount = pathVariableManager.getPathVariableNames().length;
+		IPath resolvedPath = pathVariableManager.resolvePath(variableBasedLocation);
+		// the file should not exist yet
+		assertDoesNotExistInWorkspace("3.0", file);
+		assertEquals("3.1", targetPath, resolvedPath);
+		assertEquals("3.2", pathVariableCount + 1, newPathVariableCount);
+
+		try {
+			variableBasedLocation = pathVariableManager.convertToRelative(targetPath, true, null);
+		} catch (CoreException e1) {
+			fail("4.0", e1);
+		}
+
+		newPathVariableCount = pathVariableManager.getPathVariableNames().length;
+		resolvedPath = pathVariableManager.resolvePath(variableBasedLocation);
+		// the file should not exist yet
+		assertDoesNotExistInWorkspace("5.0", file);
+		assertEquals("5.1", targetPath, resolvedPath);
+		assertEquals("5.2", pathVariableCount + 1, newPathVariableCount);
+
+	}
 }
