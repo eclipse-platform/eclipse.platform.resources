@@ -9,7 +9,13 @@
  *     Freescale Semiconductor - initial API and implementation
  *     IBM Corporation - ongoing development
  *******************************************************************************/
-package org.eclipse.core.resources;
+package org.eclipse.core.internal.resources;
+
+import org.eclipse.core.resources.IProject;
+
+import org.eclipse.core.resources.ResourcesPlugin;
+
+import org.eclipse.core.resources.PathVariableResolver;
 
 import java.util.*;
 import org.eclipse.core.internal.resources.ResourceException;

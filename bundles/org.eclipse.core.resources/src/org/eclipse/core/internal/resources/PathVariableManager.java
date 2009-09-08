@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.resources.IPathVariable;
+
 import java.net.URI;
 import java.util.*;
 import org.eclipse.core.filesystem.URIUtil;
@@ -112,6 +114,15 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 	}
 
 	/**
+	 * @see org.eclipse.core.resources.IPathVariableManager#getPathVariable(String)
+	 */
+	public IPathVariable getPathVariable(String name) {
+		if (isDefined(name))
+			return new PathVariable(name);
+		return null;
+	}
+
+	/**
 	 * @see org.eclipse.core.resources.IPathVariableManager#getPathVariableNames()
 	 */
 	public String[] getPathVariableNames() {
@@ -133,6 +144,7 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 		}
 		return (String[]) result.toArray(new String[result.size()]);
 	}
+
 
 	/**
 	 * Note that if a user changes the key in the preferences file to be invalid

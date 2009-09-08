@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.resources.IPathVariable;
+
 import org.eclipse.core.runtime.CoreException;
 
 import org.eclipse.core.runtime.IPath;
@@ -120,6 +122,15 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 			};
 			SafeRunner.run(job);
 		}
+	}
+
+	/**
+	 * @see org.eclipse.core.resources.IPathVariableManager#getPathVariable(String)
+	 */
+	public IPathVariable getPathVariable(String name) {
+		if (isDefined(name))
+			return new PathVariable(name);
+		return null;
 	}
 
 	/**

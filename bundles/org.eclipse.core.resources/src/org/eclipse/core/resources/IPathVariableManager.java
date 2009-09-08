@@ -84,6 +84,17 @@ public interface IPathVariableManager {
 	public String[] getPathVariableNames();
 
 	/**
+	 * Returns the IPathVariable interface for the variable with the given name. 
+	 * If there is no variable defined with the given name, returns <code>null</code>.
+	 * 
+	 * @param name the name of the variable to return the value for  
+	 * @return the value for the variable, or <code>null</code> if there is no
+	 *    variable defined with the given name
+	 * @since 3.6
+	 */
+	public IPathVariable getPathVariable(String name);
+
+	/**
 	 * Returns the value of the path variable with the given name. If there is
 	 * no variable defined with the given name, returns <code>null</code>.
 	 * 
