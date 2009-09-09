@@ -30,6 +30,7 @@ public class AllTests extends TestCase {
 		suite.addTest(GroupResourceTest.suite());
 		suite.addTest(HiddenResourceTest.suite());
 		suite.addTest(IFileTest.suite());
+		suite.addTest(IFilterDescriptorTest.suite());
 		suite.addTest(IFolderTest.suite());
 		suite.addTest(IPathVariableTest.suite());
 		suite.addTest(IProjectDescriptionTest.suite());
