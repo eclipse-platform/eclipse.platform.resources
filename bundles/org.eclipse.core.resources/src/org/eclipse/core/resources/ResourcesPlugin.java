@@ -107,12 +107,12 @@ public final class ResourcesPlugin extends Plugin {
 	public static final String PT_VARIABLE_PROVIDERS = "variableProviders"; //$NON-NLS-1$
 
 	/**
-	 * Simple identifier constant (value <code>"filterProviders"</code>)
-	 * for the filter providers extension point.
+	 * Simple identifier constant (value <code>"filters"</code>)
+	 * for the filters extension point.
 	 * 
 	 * @since 3.6
 	 */
-	public static final String PT_FILTER_PROVIDERS = "filterProviders"; //$NON-NLS-1$
+	public static final String PT_FILTERS = "filters"; //$NON-NLS-1$
 
 	/**
 	 * Constant identifying the job family identifier for the background autobuild job.

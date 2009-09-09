@@ -29,12 +29,12 @@ import org.eclipse.core.runtime.*;
  */
 class FilterTypeManager implements IManager {
 
-	private static final String FILTER_PROVIDER = "filterProvider";  //$NON-NLS-1$
+	private static final String FILTER_ELEMENT = "filter";  //$NON-NLS-1$
 
 	private HashMap/*<String, FilterDescriptor>*/  factories = new HashMap();
 
 	public FilterTypeManager() {
-		IExtensionPoint point = Platform.getExtensionRegistry().getExtensionPoint(ResourcesPlugin.PI_RESOURCES,ResourcesPlugin.PT_FILTER_PROVIDERS);
+		IExtensionPoint point = RegistryFactory.getRegistry().getExtensionPoint(ResourcesPlugin.PI_RESOURCES,ResourcesPlugin.PT_FILTERS);
 		if (point != null) {
 			IExtension[] ext = point.getExtensions();
 			// initial population
@@ -42,7 +42,7 @@ class FilterTypeManager implements IManager {
 				IExtension extension = ext[i];
 				processExtension(extension);
 			}
-			Platform.getExtensionRegistry().addListener(new IRegistryEventListener() {
+			RegistryFactory.getRegistry().addListener(new IRegistryEventListener() {
 				public void added(IExtension[] extensions) {
 					for (int i = 0; i < extensions.length; i++)
 						processExtension(extensions[i]);
@@ -73,7 +73,7 @@ class FilterTypeManager implements IManager {
 		IConfigurationElement[] elements = extension.getConfigurationElements();
 		for (int i = 0; i < elements.length; i++) {
 			IConfigurationElement element = elements[i];
-			if (element.getName().equalsIgnoreCase(FILTER_PROVIDER)) {
+			if (element.getName().equalsIgnoreCase(FILTER_ELEMENT)) {
 				try {
 					IFilterDescriptor desc = new FilterDescriptor(element);
 					factories.put(desc.getId(), desc);
@@ -88,7 +88,7 @@ class FilterTypeManager implements IManager {
 		IConfigurationElement[] elements = extension.getConfigurationElements();
 		for (int i = 0; i < elements.length; i++) {
 			IConfigurationElement element = elements[i];
-			if (element.getName().equalsIgnoreCase(FILTER_PROVIDER)) {
+			if (element.getName().equalsIgnoreCase(FILTER_ELEMENT)) {
 				try {
 					IFilterDescriptor desc = new FilterDescriptor(element, false);
 					factories.remove(desc.getId());

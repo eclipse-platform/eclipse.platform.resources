@@ -10,7 +10,7 @@
    <extension-point id="teamHook" name="%teamHookName" schema="schema/teamHook.exsd"/>
    <extension-point id="refreshProviders" name="%refreshProvidersName" schema="schema/refreshProviders.exsd"/>
    <extension-point id="modelProviders" name="%modelProviders" schema="schema/modelProviders.exsd"/>
-   <extension-point id="filterProviders" name="%filterProviders" schema="schema/filterProviders.exsd"/>
+   <extension-point id="filters" name="%filters" schema="schema/filters.exsd"/>
    <extension-point id="variableProviders" name="%variableProviders" schema="schema/variableProviders.exsd"/>
 
 	<extension id="preferences" point="org.eclipse.core.runtime.preferences" name="%preferencesExtPtName">
@@ -190,16 +190,17 @@
             properties="projectPersistentProperty"
             id="org.eclipse.core.resources.mappingPropertyTester"/>
    </extension>
+<!-- Filters -->
    <extension
-         point="org.eclipse.core.resources.filterProviders">
-      <filterProvider
+         point="org.eclipse.core.resources.filters"
+         id="regexFilter">
+      <filter
             argumentType="string"
             class="org.eclipse.core.internal.resources.RegexFilterFactory"
             description="%regexFilterProvider.description"
-            id="org.eclipse.core.resources.regexFilterProvider"
             name="%regexFilterProvider.name"
             ordering="first">
-      </filterProvider>
+      </filter>
    </extension>
 
    <extension
