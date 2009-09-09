@@ -50,6 +50,26 @@ public interface IFilterDescriptor {
 	public static final String ARGUMENT_TYPE_STRING = "string"; //$NON-NLS-1$
 
 	/**
+	 * Returns the argument type expected by this filter. The result will be one of the
+	 * <tt>ARGUMENT_TYPE_*</tt> constants declared on this class.
+	 * @return The argument type of this filter extension
+	 */
+	public abstract String getArgumentType();
+
+	/**
+	 * Returns a translated, human-readable description for this filter extension.
+	 * @return The human-readable filter description
+	 */
+	public abstract String getDescription();
+
+	/**
+	 * Returns the factory for creating filters of this type.
+	 * 
+	 * @return The factory for creating filters of this type.
+	 */
+	public abstract IFileInfoFilterFactory getFactory();
+
+	/**
 	 * Returns the fully qualified id of the filter extension.
 	 * @return The fully qualified id of the filter extension.
 	 */
@@ -60,26 +80,6 @@ public interface IFilterDescriptor {
 	 * @return The human-readable filter name
 	 */
 	public abstract String getName();
-
-	/**
-	 * Returns a translated, human-readable description for this filter extension.
-	 * @return The human-readable filter description
-	 */
-	public abstract String getDescription();
-
-	/**
-	 * Returns the argument type expected by this filter. The result will be one of the
-	 * <tt>ARGUMENT_TYPE_*</tt> constants declared on this class.
-	 * @return The argument type of this filter extension
-	 */
-	public abstract String getArgumentType();
-
-	/**
-	 * Returns the factory for creating filters of this type.
-	 * 
-	 * @return The factory for creating filters of this type.
-	 */
-	public abstract IFileInfoFilterFactory getFactory();
 
 	/**
 	 * TODO What is this?
