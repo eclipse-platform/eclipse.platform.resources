@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.resources.IFilterDescriptor;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -106,6 +108,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	protected IMoveDeleteHook moveDeleteHook = null;
 	protected NatureManager natureManager;
+	protected FilterTypeManager filterManager;
 	protected long nextMarkerId = 0;
 	protected long nextNodeId = 1;
 
@@ -1332,6 +1335,14 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		return moveDeleteHook;
 	}
 
+	public IFilterDescriptor getFilterDescriptor(String filterId) {
+		return filterManager.getFilterDescriptor(filterId);
+	}
+
+	public IFilterDescriptor[] getFilterDescriptors() {
+		return filterManager.getFilterDescriptors();
+	}
+
 	/* (non-Javadoc)
 	 * @see IWorkspace#getNatureDescriptor(String)
 	 */
@@ -2040,7 +2051,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	protected void shutdown(IProgressMonitor monitor) throws CoreException {
 		monitor = Policy.monitorFor(monitor);
 		try {
-			IManager[] managers = {buildManager, propertyManager, pathVariableManager, charsetManager, fileSystemManager, markerManager, _workManager, aliasManager, refreshManager, contentDescriptionManager};
+			IManager[] managers = {buildManager, propertyManager, pathVariableManager, charsetManager, fileSystemManager, markerManager, _workManager, aliasManager, refreshManager, contentDescriptionManager, natureManager, filterManager};
 			monitor.beginTask("", managers.length); //$NON-NLS-1$
 			String message = Messages.resources_shutdownProblems;
 			MultiStatus status = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.INTERNAL_ERROR, message, null);
@@ -2099,6 +2110,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			pathVariableManager.startup(null);
 			natureManager = new NatureManager();
 			natureManager.startup(null);
+			filterManager = new FilterTypeManager();
+			filterManager.startup(null);
 			buildManager = new BuildManager(this, getWorkManager().getLock());
 			buildManager.startup(null);
 			notificationManager = new NotificationManager(this);
@@ -2277,5 +2290,4 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		if (!status[0].isOK())
 			throw new ResourceException(status[0]);
 	}
-
 }

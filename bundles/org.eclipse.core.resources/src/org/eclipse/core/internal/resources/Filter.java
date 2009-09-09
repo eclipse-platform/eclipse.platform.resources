@@ -10,9 +10,10 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.resources.IFilterDescriptor;
+
 import org.eclipse.core.filesystem.IFileInfoFilter;
 
-import org.eclipse.core.resources.FilterTypeManager;
 
 import org.eclipse.core.internal.utils.Messages;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -43,7 +44,9 @@ public class Filter implements IResourceFilter {
 	
 	public boolean match(IFileInfo fileInfo) throws CoreException {
 		if (provider == null) {
-			provider = FilterTypeManager.getDefault().instantiate(getId(), project, getArguments());
+			IFilterDescriptor filterDescriptor = project.getWorkspace().getFilterDescriptor(getId());
+			if (filterDescriptor != null)
+				provider = filterDescriptor.getFactory().instantiate(project, getArguments());
 			if (provider == null) {
 				String message = NLS.bind(Messages.filters_missingFilterType, getId());
 				throw new CoreException(new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, Platform.PLUGIN_ERROR, message, new Error()));
@@ -55,7 +58,7 @@ public class Filter implements IResourceFilter {
 	}
 
 	public boolean isFirst() {
-		FilterTypeManager.Descriptor descriptor = FilterTypeManager.getDefault().findDescriptor(getId());
+		IFilterDescriptor descriptor = project.getWorkspace().getFilterDescriptor(getId());
 		if (descriptor != null)
 			return descriptor.isFirstOrdering();
 		return false;
