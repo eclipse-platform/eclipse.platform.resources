@@ -104,7 +104,7 @@ public final class ResourcesPlugin extends Plugin {
 	 * 
 	 * @since 3.6
 	 */
-	public static final String PT_VARIABLE_PROVIDERS = "variableProviders"; //$NON-NLS-1$
+	public static final String PT_VARIABLE_PROVIDERS = "variableResolvers"; //$NON-NLS-1$
 
 	/**
 	 * Simple identifier constant (value <code>"filters"</code>)

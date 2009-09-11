@@ -17,7 +17,7 @@ import org.eclipse.core.resources.PathVariableResolver;
 import org.eclipse.core.runtime.*;
 
 /**
- * ECLIPSE_HOME project variable, pointing to the location of the eclipse home
+ * ECLIPSE_HOME project variable, pointing to the location of the eclipse install directory.
  * 
  */
 public class EclipseHomeProjectVariable extends PathVariableResolver {
@@ -31,9 +31,4 @@ public class EclipseHomeProjectVariable extends PathVariableResolver {
 		IPath ppath = new Path(installURL.getFile()).removeTrailingSeparator();
 		return ppath.toPortableString();
 	}
-
-	public Object[] getExtensions(String variable, IProject project) {
-		return null;
-	}
-
 }

@@ -11,7 +11,7 @@
    <extension-point id="refreshProviders" name="%refreshProvidersName" schema="schema/refreshProviders.exsd"/>
    <extension-point id="modelProviders" name="%modelProviders" schema="schema/modelProviders.exsd"/>
    <extension-point id="filters" name="%filters" schema="schema/filters.exsd"/>
-   <extension-point id="variableProviders" name="%variableProviders" schema="schema/variableProviders.exsd"/>
+   <extension-point id="variableResolvers" name="%variableResolvers" schema="schema/variableResolvers.exsd"/>
 
 	<extension id="preferences" point="org.eclipse.core.runtime.preferences" name="%preferencesExtPtName">
 		<scope name="project" class="org.eclipse.core.internal.resources.ProjectPreferences"/>
@@ -204,7 +204,7 @@
    </extension>
 
    <extension
-         point="org.eclipse.core.resources.variableProviders">
+         point="org.eclipse.core.resources.variableResolvers">
       <variableProvider
             class="org.eclipse.core.internal.resources.projectVariables.EclipseHomeProjectVariable"
             name="ECLIPSE_HOME">

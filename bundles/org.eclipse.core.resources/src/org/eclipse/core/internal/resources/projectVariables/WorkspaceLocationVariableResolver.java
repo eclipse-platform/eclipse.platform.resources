@@ -27,9 +27,4 @@ public class WorkspaceLocationVariableResolver extends PathVariableResolver {
 	public String getValue(String variable, IProject project) {
 		return project.getWorkspace().getRoot().getLocation().toPortableString();
 	}
-
-	public Object[] getExtensions(String variable, IProject project) {
-		return null;
-	}
-
 }

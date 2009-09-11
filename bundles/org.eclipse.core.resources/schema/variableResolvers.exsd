@@ -2,11 +2,11 @@
 <!-- Schema file written by PDE -->
 <schema targetNamespace="org.eclipse.core.resources" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
-      <appinfo>
-         <meta.schema plugin="org.eclipse.core.resources" id="variableProviders" name="variable Providers"/>
-      </appinfo>
+      <appInfo>
+         <meta.schema plugin="org.eclipse.core.resources" id="variableResolvers" name="Path variable resolver"/>
+      </appInfo>
       <documentation>
-         A variable provider extends the default list of projects variables that can be used to specify the relative location of a linked resource.
+         A variable resolver extends the default list of project path variables that can be used to specify the relative location of a linked resource.
       </documentation>
    </annotation>
 
@@ -14,13 +14,13 @@
 
    <element name="extension">
       <annotation>
-         <appinfo>
+         <appInfo>
             <meta.element />
-         </appinfo>
+         </appInfo>
       </annotation>
       <complexType>
          <sequence>
-            <element ref="variableProvider" minOccurs="1" maxOccurs="unbounded"/>
+            <element ref="variableResolver" minOccurs="1" maxOccurs="unbounded"/>
          </sequence>
          <attribute name="point" type="string" use="required">
             <annotation>
@@ -41,24 +41,24 @@
                <documentation>
                   
                </documentation>
-               <appinfo>
+               <appInfo>
                   <meta.attribute translatable="true"/>
-               </appinfo>
+               </appInfo>
             </annotation>
          </attribute>
       </complexType>
    </element>
 
-   <element name="variableProvider">
+   <element name="variableResolver">
       <complexType>
          <attribute name="class" type="string">
             <annotation>
                <documentation>
-                  A class providing dynamically the value of the variable.
+                  A class dynamically providing the value of the variable.
                </documentation>
-               <appinfo>
-                  <meta.attribute kind="java" basedOn=":org.eclipse.core.resources.IProjectVariableProvider"/>
-               </appinfo>
+               <appInfo>
+                  <meta.attribute kind="java" basedOn="org.eclipse.core.resources.PathVariableResolver:"/>
+               </appInfo>
             </annotation>
          </attribute>
          <attribute name="value" type="string">
@@ -79,31 +79,54 @@
    </element>
 
    <annotation>
-      <appinfo>
+      <appInfo>
          <meta.section type="since"/>
-      </appinfo>
+      </appInfo>
       <documentation>
-         3.5
+         3.6
       </documentation>
    </annotation>
 
    <annotation>
-      <appinfo>
+      <appInfo>
          <meta.section type="apiInfo"/>
-      </appinfo>
+      </appInfo>
       <documentation>
-         The value of the class attribute must represent an implementation of &lt;tt&gt;org.eclipse.core.resources.IProjectVariableProvider&lt;/tt&gt;.
+         The value of the class attribute must represent a subclass of &lt;tt&gt;org.eclipse.core.resources.PathVariableResolver&lt;/tt&gt;.
       </documentation>
    </annotation>
 
-
+   <annotation>
+      <appInfo>
+         <meta.section type="examples"/>
+      </appInfo>
+      <documentation>
+            &lt;extension
+         point=&quot;org.eclipse.core.resources.variableResolvers&quot;&gt;
+      &lt;variableResolver
+            class=&quot;org.eclipse.core.internal.resources.projectVariables.EclipseHomeProjectVariable&quot;
+            name=&quot;ECLIPSE_HOME&quot;&gt;
+      &lt;/variableResolver&gt;
+   &lt;/extension&gt;
+      </documentation>
+   </annotation>
 
    <annotation>
-      <appinfo>
-         <meta.section type="copyright"/>
-      </appinfo>
+      <appInfo>
+         <meta.section type="implementation"/>
+      </appInfo>
       <documentation>
-         Copyright (c) 2008 IBM Corporation and others.&lt;br&gt;
+         The &lt;tt&gt;org.eclipse.core.resources&lt;/tt&gt; bundle provides resolvers for the following variables:  &lt;tt&gt;ECLIPSE_HOME&lt;/tt&gt;, &lt;tt&gt;PROJECT_LOC&lt;/tt&gt;, &lt;tt&gt;WORKSPACE_LOC&lt;/tt&gt;, and &lt;tt&gt;PARENT&lt;/tt&gt;
+
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="copyright"/>
+      </appInfo>
+      <documentation>
+         Copyright (c) 2008, 2009 IBM Corporation and others.&lt;br&gt;
 All rights reserved. This program and the accompanying materials are made 
 available under the terms of the Eclipse Public License v1.0 which 
 accompanies 

@@ -20,6 +20,25 @@ package org.eclipse.core.resources;
 public abstract class PathVariableResolver {
 
 	/**
+	 * If the variable supports extensions (specified as
+	 * "${VARNAME-EXTENSIONNAME}"), this method can return the list of possible
+	 * extensions, or null if none are supported.
+	 * <p>
+	 * This default implementation always returns <code>null</code>. Subclasses
+	 * should override to provide custom extensions.
+	 * </p>
+	 * 
+	 * @param variable
+	 *            The current variable name.
+	 * @param project
+	 *            The project that the variable is being resolved for.
+	 * @return the possible variable extensions or null if none are supported.
+	 */
+	public Object[] getExtensions(String variable, IProject project) {
+		return null;
+	}
+
+	/**
 	 * Returns a variable value
 	 * 
 	 * @param variable
@@ -29,17 +48,4 @@ public abstract class PathVariableResolver {
 	 * @return the variable value.
 	 */
 	public abstract String getValue(String variable, IProject project);
-
-	/**
-	 * If the variable supports extensions (specified as
-	 * "${VARNAME-EXTENSIONNAME}"), this method can return the list of possible
-	 * extensions, or null if none are supported.
-	 * 
-	 * @param variable
-	 *            The current variable name.
-	 * @param project
-	 *            The project that the variable is being resolved for.
-	 * @return the possible variable extensions or null if none are supported.
-	 */
-	public abstract Object[] getExtensions(String variable, IProject project);
 }

@@ -28,9 +28,4 @@ public class ProjectLocationVariableResolver extends PathVariableResolver {
 	public String getValue(String variable, IProject project) {
 		return project.getLocation().toPortableString();
 	}
-
-	public Object[] getExtensions(String variable, IProject project) {
-		return null;
-	}
-
 }

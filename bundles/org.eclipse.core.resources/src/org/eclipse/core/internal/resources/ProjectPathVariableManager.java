@@ -247,7 +247,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 * For example, if the value is "${ECLIPSE_HOME}/plugins", the value
 	 * returned will be {"${ECLIPSE_HOME}" "/plugins"}
 	 */
-	static public String[] splitVariablesAndContent(String value) {
+	static String[] splitVariablesAndContent(String value) {
 		LinkedList result = new LinkedList();
 		while (true) {
 			// we check if the value contains referenced variables with ${VAR}
@@ -275,7 +275,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 * "${ECLIPSE_HOME}/${FOO}/plugins", the value returned will be 
 	 * {"ECLIPSE_HOME", "FOO"}.
 	 */
-	static public String[] splitVariableNames(String value) {
+	static String[] splitVariableNames(String value) {
 		LinkedList result = new LinkedList();
 		while (true) {
 			int index = value.indexOf("${"); //$NON-NLS-1$
@@ -296,7 +296,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 * be "ECLIPSE_HOME". If the segment doesn't contain any variable, the value
 	 * returned will be "".
 	 */
-	static public String extractVariable(String segment) {
+	static String extractVariable(String segment) {
 		int index = segment.indexOf("${"); //$NON-NLS-1$
 		if (index != -1) {
 			int endIndex = getMatchingBrace(segment, index);
