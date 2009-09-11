@@ -24,7 +24,7 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * Core's implementation of IPathVariableManager. 
+ * Core's implementation of {@link IPathVariableManager}.
  */
 public class PathVariableManager implements IPathVariableManager, IManager {
 
@@ -144,7 +144,6 @@ public class PathVariableManager implements IPathVariableManager, IManager {
 		}
 		return (String[]) result.toArray(new String[result.size()]);
 	}
-
 
 	/**
 	 * Note that if a user changes the key in the preferences file to be invalid

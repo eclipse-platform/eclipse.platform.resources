@@ -35,23 +35,19 @@ public class ProjectVariableProviderManager {
 		String name = null;
 		String value = null;
 
-		public Descriptor(IExtension extension, IConfigurationElement element)
-				throws RuntimeException, CoreException {
+		public Descriptor(IExtension extension, IConfigurationElement element) throws RuntimeException, CoreException {
 			name = element.getAttribute("name"); //$NON-NLS-1$
 			value = element.getAttribute("value"); //$NON-NLS-1$
 			try {
-				provider = (PathVariableResolver) element
-						.createExecutableExtension("class"); //$NON-NLS-1$
+				provider = (PathVariableResolver) element.createExecutableExtension("class"); //$NON-NLS-1$
 			} catch (CoreException t) {
 			}
 			if (name == null)
-				fail(NLS.bind(Messages.mapping_invalidDef, extension
-						.getUniqueIdentifier()));
+				fail(NLS.bind(Messages.mapping_invalidDef, extension.getUniqueIdentifier()));
 		}
 
 		protected void fail(String reason) throws CoreException {
-			throw new ResourceException(new Status(IStatus.ERROR,
-					ResourcesPlugin.PI_RESOURCES, 1, reason, null));
+			throw new ResourceException(new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, 1, reason, null));
 		}
 
 		public String getName() {
@@ -84,21 +80,17 @@ public class ProjectVariableProviderManager {
 
 	public Descriptor[] getDescriptors() {
 		lazyInitialize();
-		return (Descriptor[]) descriptors.values().toArray(
-				new Descriptor[descriptors.size()]);
+		return (Descriptor[]) descriptors.values().toArray(new Descriptor[descriptors.size()]);
 	}
 
 	protected void lazyInitialize() {
 		if (descriptors != null)
 			return;
-		IExtensionPoint point = Platform.getExtensionRegistry()
-				.getExtensionPoint(ResourcesPlugin.PI_RESOURCES,
-						ResourcesPlugin.PT_VARIABLE_PROVIDERS);
+		IExtensionPoint point = Platform.getExtensionRegistry().getExtensionPoint(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PT_VARIABLE_PROVIDERS);
 		IExtension[] extensions = point.getExtensions();
 		descriptors = new HashMap(extensions.length * 2 + 1);
 		for (int i = 0, imax = extensions.length; i < imax; i++) {
-			IConfigurationElement[] elements = extensions[i]
-					.getConfigurationElements();
+			IConfigurationElement[] elements = extensions[i].getConfigurationElements();
 			int count = elements.length;
 			for (int j = 0; j < count; j++) {
 				IConfigurationElement element = elements[j];

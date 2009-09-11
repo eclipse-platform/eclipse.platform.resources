@@ -29,10 +29,9 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * 
+ * Manages path variables for a single project.
  */
-public class ProjectPathVariableManager implements IPathVariableManager,
-		IManager {
+public class ProjectPathVariableManager implements IPathVariableManager, IManager {
 
 	private Set listeners;
 
@@ -45,8 +44,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	public ProjectPathVariableManager(Project project) {
 		this.listeners = Collections.synchronizedSet(new HashSet());
 		this.project = project;
-		variableProviders = ProjectVariableProviderManager.getDefault()
-				.getDescriptors();
+		variableProviders = ProjectVariableProviderManager.getDefault().getDescriptors();
 	}
 
 	/**
@@ -58,8 +56,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	}
 
 	PathVariableManager getWorkspaceManager() {
-		return (PathVariableManager) project.getWorkspace()
-				.getPathVariableManager();
+		return (PathVariableManager) project.getWorkspace().getPathVariableManager();
 	}
 
 	/**
@@ -107,8 +104,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 		// use a separate collection to avoid interference of simultaneous
 		// additions/removals
 		Object[] listenerArray = this.listeners.toArray();
-		final PathVariableChangeEvent pve = new PathVariableChangeEvent(this,
-				name, value, type);
+		final PathVariableChangeEvent pve = new PathVariableChangeEvent(this, name, value, type);
 		for (int i = 0; i < listenerArray.length; ++i) {
 			final IPathVariableChangeListener l = (IPathVariableChangeListener) listenerArray[i];
 			ISafeRunnable job = new ISafeRunnable() {
@@ -140,8 +136,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 		List result = new LinkedList();
 		HashMap map;
 		try {
-			map = ((ProjectDescription) project.getDescription())
-					.getVariables();
+			map = ((ProjectDescription) project.getDescription()).getVariables();
 		} catch (CoreException e) {
 			return new String[0];
 		}
@@ -150,8 +145,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 		}
 		if (map != null)
 			result.addAll(map.keySet());
-		result.addAll(Arrays.asList(getWorkspaceManager()
-				.getPathVariableNames()));
+		result.addAll(Arrays.asList(getWorkspaceManager().getPathVariableNames()));
 		return (String[]) result.toArray(new String[0]);
 	}
 
@@ -168,8 +162,8 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 				// if the path is 'reducible', lets resolve it first.
 				int index = value.indexOf(IPath.SEPARATOR);
 				if (index > 0) { // if its the first character, its an
-									// absolute path on unix, so we don't
-									// resolve it
+					// absolute path on unix, so we don't
+					// resolve it
 					IPath resolved = resolveVariable(value);
 					if (resolved != null)
 						return resolved;
@@ -183,8 +177,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	public String internalGetValue(String varName) {
 		HashMap map;
 		try {
-			map = ((ProjectDescription) project.getDescription())
-					.getVariables();
+			map = ((ProjectDescription) project.getDescription()).getVariables();
 		} catch (CoreException e) {
 			return null;
 		}
@@ -223,8 +216,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 * @see org.eclipse.core.resources.IPathVariableManager#resolvePath(IPath)
 	 */
 	public IPath resolvePath(IPath path) {
-		if (path == null || path.segmentCount() == 0 || path.isAbsolute()
-				|| path.getDevice() != null)
+		if (path == null || path.segmentCount() == 0 || path.isAbsolute() || path.getDevice() != null)
 			return path;
 		IPath value = resolveVariable(path.segment(0));
 		return value == null ? path : value.append(path.removeFirstSegments(1));
@@ -331,8 +323,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 						resolvedMacro = ""; //$NON-NLS-1$
 				}
 				if (value.length() > endIndex)
-					value = value.substring(0, index) + resolvedMacro
-							+ value.substring(endIndex + 1);
+					value = value.substring(0, index) + resolvedMacro + value.substring(endIndex + 1);
 				else
 					value = resolvedMacro;
 			} else
@@ -376,8 +367,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	public void setValue(String varName, IPath newValue) throws CoreException {
 		checkIsValidName(varName);
 		// if the location doesn't have a device, see if the OS will assign one
-		if (newValue != null && newValue.isAbsolute()
-				&& newValue.getDevice() == null)
+		if (newValue != null && newValue.isAbsolute() && newValue.getDevice() == null)
 			newValue = new Path(newValue.toFile().getAbsolutePath());
 		checkIsValidValue(newValue);
 		int eventType = 0;
@@ -411,28 +401,22 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 					project.workspace.prepareOperation(rule, monitor);
 					project.workspace.beginOperation(true);
 					// save the location in the project description
-					ProjectDescription description = project
-							.internalGetDescription();
+					ProjectDescription description = project.internalGetDescription();
 					if (newValue == null) {
 						description.setVariableDescription(varName, null);
 						eventType = IPathVariableChangeEvent.VARIABLE_DELETED;
 					} else {
-						description.setVariableDescription(varName,
-								new VariableDescription(varName, newValue
-										.toPortableString()));
-						eventType = variableExists ? IPathVariableChangeEvent.VARIABLE_CHANGED
-								: IPathVariableChangeEvent.VARIABLE_CREATED;
+						description.setVariableDescription(varName, new VariableDescription(varName, newValue.toPortableString()));
+						eventType = variableExists ? IPathVariableChangeEvent.VARIABLE_CHANGED : IPathVariableChangeEvent.VARIABLE_CREATED;
 					}
 					project.writeDescription(IResource.NONE);
 				} finally {
-					project.workspace.endOperation(rule, true, Policy
-							.subMonitorFor(monitor, Policy.endOpWork));
+					project.workspace.endOperation(rule, true, Policy.subMonitorFor(monitor, Policy.endOpWork));
 				}
 			}
 		}
 		if (!changeWorkspaceValue) {
-			// notify listeners from outside the synchronized block to avoid
-			// deadlocks
+			// notify listeners from outside the synchronized block to avoid deadlocks
 			fireVariableChangeEvent(varName, newValue, eventType);
 		} else
 			getWorkspaceManager().setValue(varName, newValue);
@@ -459,29 +443,22 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 		String message = null;
 		if (name.length() == 0) {
 			message = Messages.pathvar_length;
-			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null,
-					message);
+			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
 
 		char first = name.charAt(0);
 		if (!Character.isLetter(first) && first != '_') {
-			message = NLS.bind(Messages.pathvar_beginLetter, String
-					.valueOf(first));
-			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null,
-					message);
+			message = NLS.bind(Messages.pathvar_beginLetter, String.valueOf(first));
+			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
 
 		for (int i = 1; i < name.length(); i++) {
 			char following = name.charAt(i);
 			if (Character.isWhitespace(following))
-				return new ResourceStatus(IResourceStatus.INVALID_VALUE, null,
-						Messages.pathvar_whitespace);
-			if (!Character.isLetter(following) && !Character.isDigit(following)
-					&& following != '_') {
-				message = NLS.bind(Messages.pathvar_invalidChar, String
-						.valueOf(following));
-				return new ResourceStatus(IResourceStatus.INVALID_VALUE, null,
-						message);
+				return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, Messages.pathvar_whitespace);
+			if (!Character.isLetter(following) && !Character.isDigit(following) && following != '_') {
+				message = NLS.bind(Messages.pathvar_invalidChar, String.valueOf(following));
+				return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 			}
 		}
 		// check
@@ -496,7 +473,6 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 		// accept any format
 		return Status.OK_STATUS;
 	}
-
 
 	/**
 	 * @throws CoreException 
@@ -514,26 +490,24 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 * @return the converted path variable value
 	 */
 	public static String convertToUserEditableFormat(String value) {
-    	StringBuffer buffer = new StringBuffer();
-    	String components[] = splitVariablesAndContent(value);
-    	for (int i = 0; i < components.length; i++) {
-    		String variable = extractVariable(components[i]);
-    		if (PathVariableUtil.isParentVariable(variable)) {
-    			String argument = PathVariableUtil.getParentVariableArgument(variable);
+		StringBuffer buffer = new StringBuffer();
+		String components[] = splitVariablesAndContent(value);
+		for (int i = 0; i < components.length; i++) {
+			String variable = extractVariable(components[i]);
+			if (PathVariableUtil.isParentVariable(variable)) {
+				String argument = PathVariableUtil.getParentVariableArgument(variable);
 				int count = PathVariableUtil.getParentVariableCount(variable);
-    			if (argument != null && count != -1) {
-	    			buffer.append(PathVariableUtil.buildVariableMacro(Path.fromOSString(argument)));
+				if (argument != null && count != -1) {
+					buffer.append(PathVariableUtil.buildVariableMacro(Path.fromOSString(argument)));
 					for (int j = 0; j < count; j++) {
 						buffer.append("/.."); //$NON-NLS-1$
 					}
-    			}
-        		else
-        			buffer.append(components[i]);
-    		}
-    		else
-    			buffer.append(components[i]);
-    	}
-    	return buffer.toString();
+				} else
+					buffer.append(components[i]);
+			} else
+				buffer.append(components[i]);
+		}
+		return buffer.toString();
 	}
 
 	/**
@@ -548,92 +522,90 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 	 */
 	public String convertFromUserEditableFormat(String userFormat) {
 		boolean isAbsolute = (userFormat.length() > 0) && (userFormat.charAt(0) == '/' || userFormat.charAt(0) == '\\');
-    	String components[] = splitPathComponents(userFormat);
-    	for (int i = 0; i < components.length; i++) {
-    		if (components[i] == null)
-    			continue;
-    		if (isDotDot(components[i])) {
-    			int parentCount = 1;
-    			components[i] = null;
-    	    	for (int j = i + 1; j < components.length; j++) {
-    	    		if (components[j] != null) {
-    	    			if (isDotDot(components[j])) {
-	    	    			parentCount++;
-	    	    			components[j] = null;
-    	    			}
-    	    			else
-    	    				break;
-    	    		}
-    	    	}
-    	    	if (i == 0) // this means the value is implicitly relative to the project location
-    	    		components[0] = PathVariableUtil.buildParentPathVariable(ProjectLocationVariableResolver.NAME, parentCount, false);
-    	    	else {
-	    	    	for (int j = i - 1; j >= 0; j--) {
-	    	    		if (parentCount == 0)
-	    	    			break;
-	    	    		if (components[j] == null)
-	    	    			continue;
-	    	    		String variable = extractVariable(components[j]);
-	    				try {
-		    	    		if (variable.length() > 0) {
-		    	    			int indexOfVariable = components[j].indexOf(variable) - "${".length(); //$NON-NLS-1$
-		    	    			String prefix = components[j].substring(0, indexOfVariable);
-		    	    			String suffix = components[j].substring(indexOfVariable + "${".length() + variable.length() + "}".length()); //$NON-NLS-1$ //$NON-NLS-2$
-		    	    			if (suffix.length() != 0) {
-		    	    				// Create an intermediate variable, since a syntax of "${VAR}foo/../"
-		    	    				// can't be converted to a "${PARENT-1-VAR}foo" variable.
-		    	    				// So instead, an intermediate variable "VARFOO" will be created of value 
-		    	    				// "${VAR}foo", and the string "${PARENT-1-VARFOO}" will be inserted.
-		    	    				String intermediateVariable = PathVariableUtil.getValidVariableName(variable + suffix);
-		    	    				IPath intermediateValue = Path.fromPortableString(components[j]);
-		    	    				int intermediateVariableIndex = 1;
-		    	    				String originalIntermediateVariableName = intermediateVariable;
-		    	    				while (isDefined(intermediateVariable)) {
-		    	    					IPath tmpValue = getValue(intermediateVariable);
-		    	    					if (tmpValue.equals(intermediateValue))
-		    	    						break;
-		    	    					intermediateVariable = originalIntermediateVariableName + intermediateVariableIndex;
-		    	    				}
-		    	    				if (!isDefined(intermediateVariable))
-		    	    					setValue(intermediateVariable, intermediateValue);
-		    	    				variable = intermediateVariable;
-		    	    				prefix = new String();
-		    	    			}
-		    	    			String newVariable = variable;
-		    	    			if (PathVariableUtil.isParentVariable(variable)) {
-		    	        			String argument = PathVariableUtil.getParentVariableArgument(variable);
-		    	    				int count = PathVariableUtil.getParentVariableCount(variable);
-		    	    				if (argument != null && count != -1)
-		    	    					newVariable = PathVariableUtil.buildParentPathVariable(argument, count + parentCount, false);
-			    	    			else
-			    	    				newVariable = PathVariableUtil.buildParentPathVariable(variable, parentCount, false);
-		    	    			} 
-		    	    			else
-		    	    				newVariable = PathVariableUtil.buildParentPathVariable(variable, parentCount, false);
-	 	    	    			components[j] = prefix + newVariable;
-		    	    			break;
-		    	    		}
-	    	    			components[j] = null;
-		    	    		parentCount--;
+		String components[] = splitPathComponents(userFormat);
+		for (int i = 0; i < components.length; i++) {
+			if (components[i] == null)
+				continue;
+			if (isDotDot(components[i])) {
+				int parentCount = 1;
+				components[i] = null;
+				for (int j = i + 1; j < components.length; j++) {
+					if (components[j] != null) {
+						if (isDotDot(components[j])) {
+							parentCount++;
+							components[j] = null;
+						} else
+							break;
+					}
+				}
+				if (i == 0) // this means the value is implicitly relative to the project location
+					components[0] = PathVariableUtil.buildParentPathVariable(ProjectLocationVariableResolver.NAME, parentCount, false);
+				else {
+					for (int j = i - 1; j >= 0; j--) {
+						if (parentCount == 0)
+							break;
+						if (components[j] == null)
+							continue;
+						String variable = extractVariable(components[j]);
+						try {
+							if (variable.length() > 0) {
+								int indexOfVariable = components[j].indexOf(variable) - "${".length(); //$NON-NLS-1$
+								String prefix = components[j].substring(0, indexOfVariable);
+								String suffix = components[j].substring(indexOfVariable + "${".length() + variable.length() + "}".length()); //$NON-NLS-1$ //$NON-NLS-2$
+								if (suffix.length() != 0) {
+									// Create an intermediate variable, since a syntax of "${VAR}foo/../"
+									// can't be converted to a "${PARENT-1-VAR}foo" variable.
+									// So instead, an intermediate variable "VARFOO" will be created of value 
+									// "${VAR}foo", and the string "${PARENT-1-VARFOO}" will be inserted.
+									String intermediateVariable = PathVariableUtil.getValidVariableName(variable + suffix);
+									IPath intermediateValue = Path.fromPortableString(components[j]);
+									int intermediateVariableIndex = 1;
+									String originalIntermediateVariableName = intermediateVariable;
+									while (isDefined(intermediateVariable)) {
+										IPath tmpValue = getValue(intermediateVariable);
+										if (tmpValue.equals(intermediateValue))
+											break;
+										intermediateVariable = originalIntermediateVariableName + intermediateVariableIndex;
+									}
+									if (!isDefined(intermediateVariable))
+										setValue(intermediateVariable, intermediateValue);
+									variable = intermediateVariable;
+									prefix = new String();
+								}
+								String newVariable = variable;
+								if (PathVariableUtil.isParentVariable(variable)) {
+									String argument = PathVariableUtil.getParentVariableArgument(variable);
+									int count = PathVariableUtil.getParentVariableCount(variable);
+									if (argument != null && count != -1)
+										newVariable = PathVariableUtil.buildParentPathVariable(argument, count + parentCount, false);
+									else
+										newVariable = PathVariableUtil.buildParentPathVariable(variable, parentCount, false);
+								} else
+									newVariable = PathVariableUtil.buildParentPathVariable(variable, parentCount, false);
+								components[j] = prefix + newVariable;
+								break;
+							}
+							components[j] = null;
+							parentCount--;
 						} catch (CoreException e) {
-	    	    			components[j] = null;
-		    	    		parentCount--;
+							components[j] = null;
+							parentCount--;
 						}
-	    	    	}
-    	    	}
-    		}
-    	}
-    	StringBuffer buffer = new StringBuffer();
-    	if (isAbsolute)
-    		buffer.append('/');
-    	for (int i = 0; i < components.length; i++) {
-    		if (components[i] != null) {
+					}
+				}
+			}
+		}
+		StringBuffer buffer = new StringBuffer();
+		if (isAbsolute)
+			buffer.append('/');
+		for (int i = 0; i < components.length; i++) {
+			if (components[i] != null) {
 				if (i > 0)
 					buffer.append('/');
 				buffer.append(components[i]);
-    		}
-    	}
-    	return buffer.toString();
+			}
+		}
+		return buffer.toString();
 	}
 
 	private static boolean isDotDot(String component) {
@@ -649,7 +621,7 @@ public class ProjectPathVariableManager implements IPathVariableManager,
 				if (buffer.length() > 0)
 					list.add(buffer.toString());
 				buffer = new StringBuffer();
-			}else
+			} else
 				buffer.append(c);
 		}
 		if (buffer.length() > 0)
