@@ -835,12 +835,11 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	URI toURI(IPath path) {
 		if (path.isAbsolute())
 			return URIUtil.toURI(path);
-		else
-			try {
-				return new URI(null, null, path.toPortableString(), null);
-			} catch (URISyntaxException e) {
-				return URIUtil.toURI(path);
-			}
+		try {
+			return new URI(null, null, path.toPortableString(), null);
+		} catch (URISyntaxException e) {
+			return URIUtil.toURI(path);
+		}
 	}
 
 	String copyVariable(IProject source, IProject dest, String variable)
