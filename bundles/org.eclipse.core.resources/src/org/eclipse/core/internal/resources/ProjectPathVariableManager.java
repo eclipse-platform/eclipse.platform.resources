@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008 IBM Corporation and others.
+ * Copyright (c) 2008 Freescale Semiconductor and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,14 +7,9 @@
  * 
  * Contributors:
  *     Serge Beauchamp (Freescale Semiconductor) - initial API and implementation
+ *     IBM Corporation - ongoing development
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
-
-import org.eclipse.core.resources.IPathVariable;
-
-import org.eclipse.core.runtime.CoreException;
-
-import org.eclipse.core.runtime.IPath;
 
 import java.net.URI;
 import java.util.*;
@@ -29,7 +24,8 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * Manages path variables for a single project.
+ * The {@link IPathVariableManager} for a single project
+ * @see IProject#getPathVariableManager()
  */
 public class ProjectPathVariableManager implements IPathVariableManager, IManager {
 

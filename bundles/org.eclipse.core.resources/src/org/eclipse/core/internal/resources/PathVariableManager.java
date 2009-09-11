@@ -11,8 +11,6 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
-import org.eclipse.core.resources.IPathVariable;
-
 import java.net.URI;
 import java.util.*;
 import org.eclipse.core.filesystem.URIUtil;
@@ -24,7 +22,7 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * Core's implementation of {@link IPathVariableManager}.
+ * The {@link IPathVariableManager} for the workspace.
  */
 public class PathVariableManager implements IPathVariableManager, IManager {
 
