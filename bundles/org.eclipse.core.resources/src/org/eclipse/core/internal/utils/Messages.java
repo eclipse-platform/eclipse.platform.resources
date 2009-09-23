@@ -278,6 +278,7 @@ public class Messages extends NLS {
 	public static String resources_settingCharset;
 	public static String resources_settingContents;
 	public static String resources_settingDefaultCharsetContainer;
+	public static String resources_settingDerivedFlag;
 	public static String resources_shutdown;
 	public static String resources_shutdownProblems;
 	public static String resources_snapInit;
