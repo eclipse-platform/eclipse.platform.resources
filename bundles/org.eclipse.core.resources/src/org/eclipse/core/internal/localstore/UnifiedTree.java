@@ -9,6 +9,7 @@
  *     IBM Corporation - initial API and implementation
  *     Martin Oberhuber (Wind River) - [105554] handle cyclic symbolic links
  *     Martin Oberhuber (Wind River) - [232426] shared prefix histories for symlinks
+ *     Martin Oberhuber (Wind River) - [292267] OutOfMemoryError due to leak in UnifiedTree
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
@@ -107,8 +108,14 @@ public class UnifiedTree {
 				addNodeChildrenToQueue(node);
 			else
 				removeNodeChildrenFromQueue(node);
-			//allow reuse of the node
-			freeNodes.add(node);
+			//allow reuse of the node, but don't let the freeNodes list grow infinitely
+			if (freeNodes.size() < 32767) {
+				//free memory-consuming elements of the node for garbage collection
+				node.releaseForGc();
+				freeNodes.add(node);
+			}
+			//else, the whole node will be garbage collected since there is no
+			//reference to it any more.
 		}
 	}
 
@@ -171,7 +178,9 @@ public class UnifiedTree {
 				} else if (comp > 0) {
 					// resource exists only in file system
 					//don't create a node for symbolic links that create a cycle
-					if (!localInfo.getAttribute(EFS.ATTRIBUTE_SYMLINK) || !localInfo.isDirectory() || !isRecursiveLink(node.getStore(), localInfo))
+					if (localInfo.getAttribute(EFS.ATTRIBUTE_SYMLINK) && localInfo.isDirectory() && isRecursiveLink(node.getStore(), localInfo))
+						child = null;
+					else
 						child = createChildNodeFromFileSystem(node, localInfo);
 					localIndex++;
 				} else {
