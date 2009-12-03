@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2007 IBM Corporation and others.
+ * Copyright (c) 2000, 2009 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,6 +20,7 @@
 #include <utime.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "../localfile.h"
 #include <os_custom.h>
 
@@ -258,7 +259,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
   (JNIEnv *env, jclass clazz, jcharArray source, jcharArray destination, jboolean copyLastModified) {
 	// shouldn't ever be called - there is no Unicode-specific calls on *nix
 	return JNI_FALSE;
-}  
+}
 
 /*
  * Class:     org_eclipse_core_internal_filesystem_local_LocalFileNatives
@@ -268,7 +269,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_LocalFileNatives_internalSetFileInfo
   (JNIEnv *env, jclass clazz, jcharArray target, jobject obj) {
 
-    int mask;
+    mode_t mask;
     struct stat info;
     jbyte *name;
     jint code = -1;
@@ -288,7 +289,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
     /* get the current permissions */
     name = getByteArray(env, target);
     code = stat((const char*)name, &info);
-    
+
     /* create the mask */
     mask = S_IRUSR |
 	       S_IWUSR |
@@ -308,7 +309,6 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 	    mask &= ~(S_IWUSR | S_IWGRP | S_IWOTH);
 	else
 	    mask |= (S_IRUSR | S_IWUSR);
-    
     /* write the permissions */
     code = chmod((const char*)name, mask);
 

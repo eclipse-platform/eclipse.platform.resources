@@ -272,74 +272,6 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 
 }
 
-mode_t getumask() {
-	// in case something goes wrong just return 63 which is 0077 in octals
-	mode_t mask = 63;
-
-	int fds[2];
-	if (pipe(fds) == -1) {
-		return mask;
-	}
-
-	pid_t child_pid;
-	child_pid = fork();
-
-	if (child_pid == 0) {
-		// child process
-		ssize_t bytes_written = 0;
-		close(fds[0]);
-		mask = umask(0);
-		while (1) {
-			ssize_t written = write(fds[1], &mask + bytes_written, sizeof(mask) - bytes_written);
-			if (written == -1) {
-				if (errno != EINTR) {
-					break;
-				}
-			} else {
-				bytes_written += written;
-				if (bytes_written == sizeof(mask)) {
-					break;
-				}
-			}
-		}
-		close(fds[1]);
-		_exit(0);
-	} else if (child_pid != -1) {
-		// parent process, fork succeded
-		int stat_loc;
-		ssize_t bytes_read = 0;
-		mode_t buf;
-		close(fds[1]);
-		while (1) {
-			ssize_t b_read = read(fds[0], &buf + bytes_read, sizeof(buf) - bytes_read);
-			if (b_read == -1) {
-				if (errno != EINTR) {
-					break;
-				}
-			} else {
-				if (b_read == 0) {
-					break;
-				}
-				bytes_read += b_read;
-				if (bytes_read == sizeof(mask)) {
-					break;
-				}
-			}
-		}
-		if (bytes_read == sizeof(mask)) {
-			mask = buf;
-		}
-		close(fds[0]);
-		waitpid(child_pid, &stat_loc, 0);
-	} else {
-		// parent process, fork failed
-		close(fds[0]);
-		close(fds[1]);
-	}
-
-	return mask;
-}
-
 /*
  * Class:     org_eclipse_core_internal_filesystem_local_LocalFileNatives
  * Method:    internalSetFileInfoW
@@ -372,7 +304,6 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 
 	/* create the mask for the relevant bits */
 	mode_t mask = info.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
-	mode_t umask = getumask();
 	mode_t oldmask = mask;
 	int flags = info.st_flags;
 			
@@ -384,7 +315,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 #endif
 
 	if (executable)
-		mask |= S_IXUSR | ((S_IXGRP | S_IXOTH) & ~umask);
+		mask |= S_IXUSR;
 	else
 		mask &= ~(S_IXUSR | S_IXGRP | S_IXOTH);	// clear all 'x'
 		
@@ -394,7 +325,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 		flags |= UF_IMMUTABLE;					// set immutable flag for usr
 #endif
 	} else {
-		mask |= S_IRUSR | S_IWUSR | ((S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) & ~umask);
+		mask |= (S_IRUSR | S_IWUSR);
 #if USE_IMMUTABLE_FLAG
 		flags &= ~UF_IMMUTABLE;					// try to clear immutable flags for usr
 #endif
