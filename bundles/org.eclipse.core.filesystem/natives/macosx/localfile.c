@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2009 IBM Corporation and others.
+ * Copyright (c) 2000, 2010 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,6 +25,8 @@
 #define USE_IMMUTABLE_FLAG 1
 #define USE_ARCHIVE_FLAG 0
 #define EFS_SYMLINK_SUPPORT 1
+
+mode_t process_umask;
 
 /*
  * Get a null-terminated byte array from a java char array.
@@ -100,7 +102,7 @@ jboolean convertStatToFileInfo (JNIEnv *env, struct stat info, jobject fileInfo)
     (*env)->CallVoidMethod(env, fileInfo, mid, (jlong)info.st_size);
 
 	// folder or file?
-	if ((info.st_mode & S_IFDIR) == S_IFDIR) {
+	if (S_ISDIR(info.st_mode)) {
 	    mid = (*env)->GetMethodID(env, cls, "setAttribute", "(IZ)V");
 	    if (mid == 0) return JNI_FALSE;
 	    (*env)->CallVoidMethod(env, fileInfo, mid, ATTRIBUTE_DIRECTORY, JNI_TRUE);
@@ -189,7 +191,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 #if defined(EFS_SYMLINK_SUPPORT)
 	//do an lstat first to see if it is a symbolic link
 	code = lstat(name, &info);
-	if (code == 0 && (info.st_mode & S_IFLNK) == S_IFLNK) {
+	if (code == 0 && (S_ISLNK(info.st_mode))) {
 		//symbolic link: read link target
 		char buf[PATH_MAX+1];
 		int len;
@@ -272,6 +274,74 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 
 }
 
+mode_t getumask() {
+	// in case something goes wrong just return 63 which is 0077 in octals
+	mode_t mask = 63;
+
+	int fds[2];
+	if (pipe(fds) == -1) {
+		return mask;
+	}
+
+	pid_t child_pid;
+	child_pid = fork();
+
+	if (child_pid == 0) {
+		// child process
+		ssize_t bytes_written = 0;
+		close(fds[0]);
+		mask = umask(0);
+		while (1) {
+			ssize_t written = write(fds[1], &mask + bytes_written, sizeof(mask) - bytes_written);
+			if (written == -1) {
+				if (errno != EINTR) {
+					break;
+				}
+			} else {
+				bytes_written += written;
+				if (bytes_written == sizeof(mask)) {
+					break;
+				}
+			}
+		}
+		close(fds[1]);
+		_exit(0);
+	} else if (child_pid != -1) {
+		// parent process, fork succeded
+		int stat_loc;
+		ssize_t bytes_read = 0;
+		mode_t buf;
+		close(fds[1]);
+		while (1) {
+			ssize_t b_read = read(fds[0], &buf + bytes_read, sizeof(buf) - bytes_read);
+			if (b_read == -1) {
+				if (errno != EINTR) {
+					break;
+				}
+			} else {
+				if (b_read == 0) {
+					break;
+				}
+				bytes_read += b_read;
+				if (bytes_read == sizeof(mask)) {
+					break;
+				}
+			}
+		}
+		if (bytes_read == sizeof(mask)) {
+			mask = buf;
+		}
+		close(fds[0]);
+		waitpid(child_pid, &stat_loc, 0);
+	} else {
+		// parent process, fork failed
+		close(fds[0]);
+		close(fds[1]);
+	}
+
+	return mask;
+}
+
 /*
  * Class:     org_eclipse_core_internal_filesystem_local_LocalFileNatives
  * Method:    internalSetFileInfoW
@@ -315,7 +385,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 #endif
 
 	if (executable)
-		mask |= S_IXUSR;
+		mask |= S_IXUSR | ((S_IXGRP | S_IXOTH) & ~process_umask);
 	else
 		mask &= ~(S_IXUSR | S_IXGRP | S_IXOTH);	// clear all 'x'
 		
@@ -325,7 +395,7 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 		flags |= UF_IMMUTABLE;					// set immutable flag for usr
 #endif
 	} else {
-		mask |= (S_IRUSR | S_IWUSR);
+		mask |= S_IRUSR | S_IWUSR | ((S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) & ~process_umask);
 #if USE_IMMUTABLE_FLAG
 		flags &= ~UF_IMMUTABLE;					// try to clear immutable flags for usr
 #endif
@@ -347,4 +417,9 @@ JNIEXPORT jboolean JNICALL Java_org_eclipse_core_internal_filesystem_local_Local
 fail:	
 	free(name);
 	return result == 0;
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+	process_umask = getumask();
+	return JNI_VERSION_1_1;
 }
