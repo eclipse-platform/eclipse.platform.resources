@@ -1,13 +1,13 @@
 /*******************************************************************************
-* Copyright (c) 2000, 2005 IBM Corporation and others.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*     IBM Corporation - initial API and implementation
-*******************************************************************************/
+ *  Copyright (c) 2000, 2010 IBM Corporation and others.
+ *  All rights reserved. This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License v1.0
+ *  which accompanies this distribution, and is available at
+ *  http://www.eclipse.org/legal/epl-v10.html
+ * 
+ *  Contributors:
+ *  *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
 #include <jni.h>
 #include <io.h>
 #include <sys/stat.h>
@@ -147,7 +147,7 @@ jboolean convertFindDataToFileInfo(JNIEnv *env, WIN32_FIND_DATA info, jobject fi
     (*env)->CallVoidMethod(env, fileInfo, mid, fileTimeToMillis(info.ftLastWriteTime));
 
 	// file length
-	fileLength =(info.nFileSizeHigh * (MAXDWORD+1)) + info.nFileSizeLow;
+	fileLength =(info.nFileSizeHigh * (((ULONGLONG)MAXDWORD)+1)) + info.nFileSizeLow;
     mid = (*env)->GetMethodID(env, cls, "setLength", "(J)V");
     if (mid == 0) return JNI_FALSE;
     (*env)->CallVoidMethod(env, fileInfo, mid, fileLength);
@@ -214,7 +214,7 @@ jboolean convertFindDataWToFileInfo(JNIEnv *env, WIN32_FIND_DATAW info, jobject 
     (*env)->CallVoidMethod(env, fileInfo, mid, fileTimeToMillis(info.ftLastWriteTime));
 
 	// file length
-	fileLength =(info.nFileSizeHigh * (MAXDWORD+1)) + info.nFileSizeLow;
+	fileLength =(info.nFileSizeHigh * (((ULONGLONG)MAXDWORD)+1)) + info.nFileSizeLow;
     mid = (*env)->GetMethodID(env, cls, "setLength", "(J)V");
     if (mid == 0) return JNI_FALSE;
     (*env)->CallVoidMethod(env, fileInfo, mid, fileLength);
