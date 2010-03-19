@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+ * Copyright (c) 2000, 2010 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -678,6 +678,8 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 	 * description, or if the description was missing.
 	 */
 	public ProjectDescription read(IProject target, boolean creation) throws CoreException {
+		IProgressMonitor monitor = Policy.monitorFor(null);
+		
 		//read the project location if this project is being created
 		URI projectLocation = null;
 		ProjectDescription privateDescription = null;
@@ -702,8 +704,13 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 		ResourceException error = null;
 		InputStream in = null;
 		try {
-			in = new BufferedInputStream(descriptionStore.openInputStream(EFS.NONE, null));
+			in = new BufferedInputStream(descriptionStore.openInputStream(EFS.NONE, monitor));
+			// IFileStore#openInputStream may cancel the monitor, thus the monitor state is checked
+			Policy.checkCanceled(monitor);
 			description = new ProjectDescriptionReader(target).read(new InputSource(in));
+		} catch (OperationCanceledException e) {
+			String msg = NLS.bind(Messages.resources_missingProjectMeta, target.getName());
+			throw new ResourceException(IResourceStatus.FAILED_READ_METADATA, target.getFullPath(), msg, e);
 		} catch (CoreException e) {
 			//try the legacy location in the meta area
 			description = getWorkspace().getMetaArea().readOldDescription(target);
@@ -721,7 +728,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 		if (error == null && description == null) {
 			String msg = NLS.bind(Messages.resources_readProjectMeta, target.getName());
 			error = new ResourceException(IResourceStatus.FAILED_READ_METADATA, target.getFullPath(), msg, null);
-		}
+		}				
 		if (description != null) {
 			//don't trust the project name in the description file
 			description.setName(target.getName());
