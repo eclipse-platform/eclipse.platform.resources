@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2007 IBM Corporation and others.
+ *  Copyright (c) 2000, 2010 IBM Corporation and others.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  * 
  *  Contributors:
  *     IBM Corporation - initial API and implementation
+ *  Martin Oberhuber (Wind River) - [306573] Add tests for import from snapshot
  *******************************************************************************/
 package org.eclipse.core.tests.resources.perf;
 
@@ -245,6 +246,29 @@ public class WorkspacePerformanceTest extends ResourceTest {
 		};
 		runner.setFingerprintName("Refresh Project");
 		runner.run(this, REPEATS, 1);
+	}
+
+	public void testCloseOpenProject() {
+		// 8 minutes total test time, 400 msec test execution time (*3 inner loops)
+		new PerformanceTestRunner() {
+			protected void setUp() {
+				createAndPopulateProject(50000);
+				waitForBackgroundActivity();
+			}
+
+			protected void tearDown() throws CoreException {
+				testProject.delete(IResource.FORCE, null);
+			}
+
+			protected void test() {
+				try {
+					testProject.close(null);
+					testProject.open(null);
+				} catch (CoreException e) {
+					fail("Failed to close/open during testCloseOpenProject", e);
+				}
+			}
+		}.run(this, REPEATS, 3);
 	}
 
 	/**
