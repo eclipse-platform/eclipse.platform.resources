@@ -13,6 +13,12 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.osgi.framework.ServiceRegistration;
+
+import org.osgi.framework.BundleContext;
+
+import org.eclipse.core.resources.IWorkspace;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -76,6 +82,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	public static final boolean caseSensitive = Platform.OS_MACOSX.equals(Platform.getOS()) ? false : new java.io.File("a").compareTo(new java.io.File("A")) != 0; //$NON-NLS-1$ //$NON-NLS-2$
 	// whether the resources plugin is in debug mode.
 	public static boolean DEBUG = false;
+	// the bundle context for the resources plugin
+	public static BundleContext CONTEXT;
 
 	/**
 	 * Work manager should never be accessed directly because accessor
@@ -173,6 +181,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 * The currently installed file modification validator.
 	 */
 	protected IFileModificationValidator validator = null;
+	private ServiceRegistration workspaceRegistration;
 
 	/**
 	 * Deletes all the files and directories from the given root down (inclusive).
@@ -228,9 +237,9 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		return false;
 	}
 
-	public Workspace() {
+	public Workspace(IPath location) {
 		super();
-		localMetaArea = new LocalMetaArea();
+		localMetaArea = new LocalMetaArea(this, location);
 		tree = new ElementTree();
 		/* tree should only be modified during operations */
 		tree.immutable();
@@ -422,6 +431,8 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			monitor.subTask(msg);
 			//this operation will never end because the world is going away
 			try {
+				//unregister the service immediately so clients don't obtain a dying instance
+				workspaceRegistration.unregister();
 				stringPoolJob.cancel();
 				//shutdown save manager now so a last snapshot can be taken before we close
 				//note: you can't call #save() from within a nested operation
@@ -1625,7 +1636,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	 */
 	public IProjectDescription loadProjectDescription(InputStream stream) throws CoreException {
 		IProjectDescription result = null;
-		result = new ProjectDescriptionReader().read(new InputSource(stream));
+		result = new ProjectDescriptionReader(this).read(new InputSource(stream));
 		if (result == null) {
 			String message = NLS.bind(Messages.resources_errorReadProject, stream.toString());
 			IStatus status = new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, IResourceStatus.FAILED_READ_METADATA, message, null);
@@ -1642,7 +1653,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		IProjectDescription result = null;
 		IOException e = null;
 		try {
-			result = new ProjectDescriptionReader().read(path);
+			result = new ProjectDescriptionReader(this).read(path);
 			if (result != null) {
 				// check to see if we are using in the default area or not. use java.io.File for
 				// testing equality because it knows better w.r.t. drives and case sensitivity
@@ -1892,6 +1903,10 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 				return new ResourceStatus(IResourceStatus.INTERNAL_ERROR, Path.ROOT, Messages.resources_errorMultiRefresh, e);
 			}
 		}
+		//register this workspace as an OSGi service
+		Hashtable props = new Hashtable();
+		props.put(IWorkspace.PROP_LOCATION, getRoot().getLocationURI());
+		workspaceRegistration = CONTEXT.registerService(IWorkspace.SERVICE_NAME, this, props);
 		//finally register a string pool participant
 		stringPoolJob = new StringPoolJob();
 		stringPoolJob.addStringPoolParticipant(saveManager, getRoot());
@@ -2118,7 +2133,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			fileSystemManager.startup(monitor);
 			pathVariableManager = new PathVariableManager();
 			pathVariableManager.startup(null);
-			natureManager = new NatureManager();
+			natureManager = new NatureManager(this);
 			natureManager.startup(null);
 			filterManager = new FilterTypeManager();
 			filterManager.startup(null);
@@ -2140,7 +2155,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			propertyManager.startup(monitor);
 			charsetManager = new CharsetManager(this);
 			charsetManager.startup(null);
-			contentDescriptionManager = new ContentDescriptionManager();
+			contentDescriptionManager = new ContentDescriptionManager(this);
 			contentDescriptionManager.startup(null);
 		} finally {	
 			//unlock tree even in case of failure, otherwise shutdown will also fail

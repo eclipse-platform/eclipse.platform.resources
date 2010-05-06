@@ -13,7 +13,6 @@ package org.eclipse.core.internal.resources;
 import org.eclipse.core.internal.utils.Messages;
 import org.eclipse.core.internal.utils.Policy;
 import org.eclipse.core.resources.ISaveContext;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.Job;
 
@@ -28,7 +27,7 @@ public class DelayedSnapshotJob extends Job {
 	public DelayedSnapshotJob(SaveManager manager) {
 		super(MSG_SNAPSHOT);
 		this.saveManager = manager;
-		setRule(ResourcesPlugin.getWorkspace().getRoot());
+		setRule(saveManager.getWorkspace().getRoot());
 		setSystem(true);
 	}
 
@@ -38,7 +37,7 @@ public class DelayedSnapshotJob extends Job {
 	public IStatus run(IProgressMonitor monitor) {
 		if (monitor.isCanceled())
 			return Status.CANCEL_STATUS;
-		if (ResourcesPlugin.getWorkspace() == null)
+		if (saveManager.getWorkspace() == null)
 			return Status.OK_STATUS;
 		try {
 			return saveManager.save(ISaveContext.SNAPSHOT, null, Policy.monitorFor(null));

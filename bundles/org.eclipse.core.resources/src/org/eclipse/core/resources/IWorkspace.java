@@ -11,6 +11,10 @@
  *******************************************************************************/
 package org.eclipse.core.resources;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import org.eclipse.core.runtime.CoreException;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
@@ -94,6 +98,13 @@ public interface IWorkspace extends IAdaptable {
 	 * @since 3.5
 	 */
 	public static final String SERVICE_NAME = IWorkspace.class.getName();
+
+	/**
+	 * A service property on the workspace OSGi service indicating the URI location of the workspace
+	 * instance. This property can be used in a filter to obtain the workspace instance
+	 * corresponding to a given location.
+	 */
+	public static final String PROP_LOCATION = "resources.location"; //$NON-NLS-1$
 
 	/**
 	 * Adds the given listener for resource change events to this workspace. Has
@@ -264,6 +275,32 @@ public interface IWorkspace extends IAdaptable {
 	 * @see IWorkspace#run(IWorkspaceRunnable, ISchedulingRule, int, IProgressMonitor)
 	 */
 	public void checkpoint(boolean build);
+
+	/**
+	 * Closes this workspace; ignored if this workspace is not open.
+	 * The state of this workspace is not saved before the workspace
+	 * is shut down.
+	 * <p> 
+	 * If the workspace was saved immediately prior to closing,
+	 * it will have the same set of projects
+	 * (open or closed) when reopened for a subsequent session.
+	 * Otherwise, closing a workspace may lose some or all of the
+	 * changes made since the last save or snapshot.
+	 * </p>
+	 * <p>
+	 * Note that session properties are discarded when a workspace is closed.
+	 * </p>
+	 * <p>
+	 * This method is long-running; progress and cancellation are provided
+	 * by the given progress monitor.
+	 * </p>
+	 *
+	 * @param monitor a progress monitor, or <code>null</code> if progress
+	 *    reporting and cancellation are not desired
+	 * @exception CoreException if the workspace could not be shutdown.
+	 * @since 4.0
+	 */
+	public void close(IProgressMonitor monitor) throws CoreException;
 
 	/**
 	 * Returns the prerequisite ordering of the given projects. The computation
@@ -723,6 +760,15 @@ public interface IWorkspace extends IAdaptable {
 	 * otherwise
 	 */
 	public boolean isAutoBuilding();
+	
+	/**
+	 * Returns whether this workspace is currently open.
+	 * 
+	 * @return <code>true</code> if the workspace is open, and <code>false</code>
+	 * otherwise.
+	 * @since 4.0
+	 */
+	public boolean isOpen();
 
 	/**
 	 * Returns whether the workspace tree is currently locked. Resource changes
@@ -938,6 +984,37 @@ public interface IWorkspace extends IAdaptable {
 	 * @see IProject#move(IProjectDescription, boolean, IProgressMonitor)
 	 */
 	public IProjectDescription newProjectDescription(String projectName);
+	
+	/**
+	 * Opens this workspace using the data at its location in the local file system.
+	 * This workspace must not be open.
+	 * If the operation succeeds, the result will detail any serious
+	 * (but non-fatal) problems encountered while opening the workspace.
+	 * The status code will be <code>OK</code> if there were no problems.
+	 * An exception is thrown if there are fatal problems opening the workspace,
+	 * in which case the workspace is left closed.
+	 * <p>
+	 * This method is long-running; progress and cancellation are provided
+	 * by the given progress monitor.
+	 * </p>
+	 *
+	 * @param monitor a progress monitor, or <code>null</code> if progress
+	 *    reporting and cancellation are not desired
+	 * @return status with code <code>OK</code> if no problems;
+	 *     otherwise status describing any serious but non-fatal problems.
+	 *     
+	 * @exception CoreException if the workspace could not be opened.
+	 * Reasons include:
+	 * <ul>
+	 * <li> There is no valid workspace structure at the given location
+	 *      in the local file system.</li>
+	 * <li> The workspace structure on disk appears to be hopelessly corrupt.</li>
+	 * </ul>
+	 * @exception OperationCanceledException if the operation is canceled. Cancelation 
+	 * can occur even if no progress monitor is provided.
+	 * @since 4.0
+	 */
+	public IStatus open(IProgressMonitor monitor) throws CoreException;
 
 	/**
 	 * Removes the given resource change listener from this workspace. Has no

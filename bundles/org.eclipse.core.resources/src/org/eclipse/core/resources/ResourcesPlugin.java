@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2009 IBM Corporation and others.
+ *  Copyright (c) 2000, 2010 IBM Corporation and others.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -11,6 +11,8 @@
  *     Serge Beauchamp (Freescale Semiconductor) - [229633] add PT_VARIABLE_PROVIDERS
  *******************************************************************************/
 package org.eclipse.core.resources;
+
+import org.eclipse.core.filesystem.URIUtil;
 
 import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.internal.utils.Messages;
@@ -291,9 +293,14 @@ public final class ResourcesPlugin extends Plugin {
 	 * The workspace managed by the single instance of this
 	 * plug-in runtime class, or <code>null</code> is there is none.
 	 */
-	private static Workspace workspace = null;
-
-	private ServiceRegistration workspaceRegistration;
+	private static IWorkspace workspace = null;
+	
+	/**
+	 * The workspace factory instance.
+	 */
+	private WorkspaceFactory factory = null;
+	
+	private ServiceRegistration factoryRegistration;
 
 	/** 
 	 * Constructs an instance of this plug-in runtime class.
@@ -305,24 +312,6 @@ public final class ResourcesPlugin extends Plugin {
 	 */
 	public ResourcesPlugin() {
 		plugin = this;
-	}
-
-	/**
-	 * Constructs a brand new workspace structure at the location in the local file system
-	 * identified by the given path and returns a new workspace object.
-	 * 
-	 * @exception CoreException if the workspace structure could not be constructed.
-	 * Reasons include:
-	 * <ul>
-	 * <li> There is an existing workspace structure on at the given location
-	 *      in the local file system.
-	 * <li> A file exists at the given location in the local file system.
-	 * <li> A directory could not be created at the given location in the
-	 *      local file system.
-	 * </ul>
-	 */
-	private static void constructWorkspace() throws CoreException {
-		new LocalMetaArea().createMetaArea();
 	}
 
 	/**
@@ -377,15 +366,17 @@ public final class ResourcesPlugin extends Plugin {
 		super.stop(context);
 		if (workspace == null)
 			return;
-		workspaceRegistration.unregister();
+		factoryRegistration.unregister();
 		// save the preferences for this plug-in
 		getPlugin().savePluginPreferences();
 		workspace.close(null);
 
 		// Forget workspace only if successfully closed, to
 		// make it easier to debug cases where close() is failing.
+		factory = null;
+		factoryRegistration = null;
 		workspace = null;
-		workspaceRegistration = null;
+		Workspace.CONTEXT = null;
 	}
 
 	/**
@@ -395,17 +386,17 @@ public final class ResourcesPlugin extends Plugin {
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		if (!new LocalMetaArea().hasSavedWorkspace()) {
-			constructWorkspace();
-		}
-		Workspace.DEBUG = ResourcesPlugin.getPlugin().isDebugging();
+		Workspace.DEBUG = getPlugin().isDebugging();
+		Workspace.CONTEXT = context;
+		factory = new WorkspaceFactory();
+		
 		// Remember workspace before opening, to
 		// make it easier to debug cases where open() is failing.
-		workspace = new Workspace();
+		workspace = factory.constructWorkspace(URIUtil.toURI(getPlugin().getStateLocation()));
 		PlatformURLResourceConnection.startup(workspace.getRoot().getLocation());
 		IStatus result = workspace.open(null);
 		if (!result.isOK())
 			getLog().log(result);
-		workspaceRegistration = context.registerService(IWorkspace.SERVICE_NAME, workspace, null);
+		factoryRegistration = context.registerService(IWorkspaceFactory.SERVICE_NAME, factory, null);
 	}
 }

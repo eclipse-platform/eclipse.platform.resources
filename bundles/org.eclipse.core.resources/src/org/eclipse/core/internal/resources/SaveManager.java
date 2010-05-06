@@ -410,6 +410,10 @@ public class SaveManager implements IElementInfoFlattener, IManager, IStringPool
 			return (String[]) saveParticipants.keySet().toArray(new String[saveParticipants.size()]);
 		}
 	}
+	
+	Workspace getWorkspace() {
+		return workspace;
+	}
 
 	/**
 	 * Hooks the end of a save operation, for debugging and performance

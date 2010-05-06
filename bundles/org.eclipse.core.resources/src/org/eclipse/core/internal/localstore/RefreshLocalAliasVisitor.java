@@ -11,8 +11,7 @@
 package org.eclipse.core.internal.localstore;
 
 import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.core.internal.resources.Container;
-import org.eclipse.core.internal.resources.Resource;
+import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -22,8 +21,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
  * refreshed resource.
  */
 public class RefreshLocalAliasVisitor extends RefreshLocalVisitor {
-	public RefreshLocalAliasVisitor(IProgressMonitor monitor) {
-		super(monitor);
+	public RefreshLocalAliasVisitor(Workspace workspace, IProgressMonitor monitor) {
+		super(workspace, monitor);
 	}
 
 	protected void createResource(UnifiedTreeNode node, Resource target) throws CoreException {

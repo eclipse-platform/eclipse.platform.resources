@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.internal.resources.TestingSupport;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
@@ -827,8 +828,36 @@ public class IWorkspaceTest extends ResourceTest {
 			fail("1.0", errorPointer[0]);
 	}
 
+	public void testOpen() {
+		IFileStore location = getTempStore();
+		IWorkspace newWorkspace = null;
+		try {
+			newWorkspace = getWorkspaceFactory().constructWorkspace(location.toURI());
+			newWorkspace.open(getMonitor());
+		} catch (CoreException e) {
+			fail("0.99", e);
+		}
+
+		//opening a workspace that is already open should fail
+		try {
+			newWorkspace.open(getMonitor());
+			fail("1.0");
+		} catch (RuntimeException e) {
+			//expected
+		} catch (CoreException e) {
+			fail("1.99", e);
+		}
+
+		try {
+			newWorkspace.close(getMonitor());
+		} catch (Exception e) {
+			fail("4.99", e);
+		}
+
+	}
+
 	/**
-	 * Test API method IWorkspace.setDescription.
+	 * Test API method {@link IWorkspace#save(boolean, IProgressMonitor)}.
 	 */
 	public void testSave() {
 		//ensure save returns a warning if a project's .project file is deleted.

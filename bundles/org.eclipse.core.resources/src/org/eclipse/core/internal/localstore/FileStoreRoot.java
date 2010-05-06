@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
+import org.eclipse.core.internal.resources.Workspace;
+
 import java.io.File;
 import java.net.URI;
 import org.eclipse.core.filesystem.*;
@@ -38,6 +40,7 @@ public class FileStoreRoot {
 	private IPath localRoot = null;
 
 	private URI root;
+	private final Workspace workspace;
 
 	/**
 	 * Defines the root of a file system within the workspace tree.
@@ -46,9 +49,10 @@ public class FileStoreRoot {
 	 * @param workspacePath The workspace path at which this file
 	 * system has been mounted
 	 */
-	FileStoreRoot(URI rootURI, IPath workspacePath) {
+	FileStoreRoot(Workspace workspace, URI rootURI, IPath workspacePath) {
 		Assert.isNotNull(rootURI);
 		Assert.isNotNull(workspacePath);
+		this.workspace = workspace;
 		this.root = rootURI;
 		this.chop = workspacePath.segmentCount();
 		this.localRoot = toLocalPath(root);
@@ -56,8 +60,7 @@ public class FileStoreRoot {
 
 	private IPathVariableManager getManager(IPath workspacePath) {
 		if (workspacePath.segmentCount() > 0) {
-			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace()
-					.getRoot();
+			IWorkspaceRoot workspaceRoot = workspace.getRoot();
 			IPath path = (IPath) workspacePath.clone();
 			while (path.segmentCount() > 0) {
 				IResource resource = workspaceRoot.findMember(path);
@@ -69,7 +72,7 @@ public class FileStoreRoot {
 				path = path.removeLastSegments(1);
 			}
 		}
-		return ResourcesPlugin.getWorkspace().getPathVariableManager();
+		return workspace.getPathVariableManager();
 	}
 
 	/**

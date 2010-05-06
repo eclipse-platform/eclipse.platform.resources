@@ -496,7 +496,7 @@ public class ProjectPreferences extends EclipsePreferences {
 			return super.nodeExists(path);
 		if (path.indexOf(IPath.SEPARATOR) != -1)
 			return super.nodeExists(path);
-		// if we are checking existance of a single segment child of /project, base the answer on
+		// if we are checking existence of a single segment child of /project, base the answer on
 		// whether or not it exists in the workspace.
 		return ResourcesPlugin.getWorkspace().getRoot().getProject(path).exists() || super.nodeExists(path);
 	}

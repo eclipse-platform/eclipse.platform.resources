@@ -199,8 +199,12 @@ public class ContentDescriptionManager implements IManager, IRegistryChangeListe
 	private FlushJob flushJob;
 	private ProjectContentTypes projectContentTypes;
 
-	Workspace workspace;
+	final Workspace workspace;
 	protected final Bundle systemBundle = Platform.getBundle("org.eclipse.osgi"); //$NON-NLS-1$
+	
+	public ContentDescriptionManager(Workspace workspace) {
+		this.workspace = workspace;
+	}
 
 	/**
 	 * @see IContentTypeManager.IContentTypeChangeListener#contentTypeChanged(IContentTypeManager.ContentTypeChangeEvent)
@@ -493,7 +497,6 @@ public class ContentDescriptionManager implements IManager, IRegistryChangeListe
 	}
 
 	public void startup(IProgressMonitor monitor) throws CoreException {
-		workspace = (Workspace) ResourcesPlugin.getWorkspace();
 		cache = new Cache(100, 1000, 0.1);
 		projectContentTypes = new ProjectContentTypes(workspace);
 		getCacheState();

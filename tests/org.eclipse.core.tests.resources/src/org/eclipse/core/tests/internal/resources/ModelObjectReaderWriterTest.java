@@ -373,7 +373,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 		try {
 			input = store.openInputStream(EFS.NONE, getMonitor());
 			InputSource in = new InputSource(input);
-			return new ProjectDescriptionReader().read(in);
+			return createReader().read(in);
 		} finally {
 			assertClose(input);
 		}
@@ -426,7 +426,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 
 		IPath root = getWorkspace().getRoot().getLocation();
 		IPath location = root.append("ModelObjectReaderWriterTest.txt");
-		ProjectDescriptionReader reader = new ProjectDescriptionReader();
+		ProjectDescriptionReader reader = createReader();
 		// Write out the project description file
 		ensureDoesNotExistInFileSystem(location.toFile());
 		InputStream stream = new ByteArrayInputStream(invalidProjectDescription.getBytes());
@@ -544,7 +544,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 
 		IPath location = getRandomLocation();
 		try {
-			ProjectDescriptionReader reader = new ProjectDescriptionReader();
+			ProjectDescriptionReader reader = createReader();
 			// Write out the project description file
 			ensureDoesNotExistInFileSystem(location.toFile());
 			InputStream stream = new ByteArrayInputStream(longProjectDescription.getBytes());
@@ -560,6 +560,10 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 		}
 	}
 
+	private ProjectDescriptionReader createReader() {
+		return new ProjectDescriptionReader((Workspace) getWorkspace());
+	}
+
 	/**
 	 * Tests a project description with a very long URI location for linked resource.
 	 */
@@ -567,7 +571,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 		String longProjectDescription = getLongDescriptionURI();
 		IPath location = getRandomLocation();
 		try {
-			ProjectDescriptionReader reader = new ProjectDescriptionReader();
+			ProjectDescriptionReader reader = createReader();
 			// Write out the project description file
 			ensureDoesNotExistInFileSystem(location.toFile());
 			InputStream stream = new ByteArrayInputStream(longProjectDescription.getBytes());
@@ -593,7 +597,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 		IPath root = getWorkspace().getRoot().getLocation();
 		IPath multiLocation = root.append("multiLineTest.txt");
 		IPath singleLocation = root.append("singleLineTest.txt");
-		ProjectDescriptionReader reader = new ProjectDescriptionReader();
+		ProjectDescriptionReader reader = createReader();
 		// Write out the project description file
 		ensureDoesNotExistInFileSystem(multiLocation.toFile());
 		ensureDoesNotExistInFileSystem(singleLocation.toFile());
@@ -615,7 +619,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 		URL whereToLook = Platform.getBundle("org.eclipse.core.tests.resources").getEntry("MultipleProjectTestFiles/");
 		String[] members = {"abc.project", "def.project", "org.apache.lucene.project", "org.eclipse.ant.core.project"};
 		HashMap baselines = buildBaselineDescriptors();
-		ProjectDescriptionReader reader = new ProjectDescriptionReader();
+		ProjectDescriptionReader reader = createReader();
 
 		for (int i = 0; i < members.length; i++) {
 			URL currentURL = null;
@@ -681,7 +685,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 
 		/* initialize common objects */
 		ModelObjectWriter writer = new ModelObjectWriter();
-		ProjectDescriptionReader reader = new ProjectDescriptionReader();
+		ProjectDescriptionReader reader = createReader();
 		IFileStore tempStore = getTempStore();
 		URI location = tempStore.toURI();
 		/* test write */
@@ -873,7 +877,7 @@ public class ModelObjectReaderWriterTest extends ResourceTest {
 
 		IPath root = getWorkspace().getRoot().getLocation();
 		IPath location = root.append("ModelObjectReaderWriterTest.txt");
-		ProjectDescriptionReader reader = new ProjectDescriptionReader();
+		ProjectDescriptionReader reader = createReader();
 		// Write out the project description file
 		ensureDoesNotExistInFileSystem(location.toFile());
 		InputStream stream = new ByteArrayInputStream(projectDescription.getBytes());

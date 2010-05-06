@@ -49,10 +49,12 @@ public class LocalMetaArea implements ICoreConstants {
 	 * The project location is just stored as an optimization, to avoid recomputing it.
 	 */
 	protected final IPath projectMetaLocation;
+	private final Workspace workspace;
 
-	public LocalMetaArea() {
+	public LocalMetaArea(Workspace workspace, IPath location) {
 		super();
-		metaAreaLocation = ResourcesPlugin.getPlugin().getStateLocation();
+		this.workspace = workspace;
+		metaAreaLocation = location;
 		projectMetaLocation = metaAreaLocation.append(F_PROJECTS);
 	}
 
@@ -171,7 +173,7 @@ public class LocalMetaArea implements ICoreConstants {
 		// location
 		if (pluginId.equals(ResourcesPlugin.PI_RESOURCES))
 			return prefix.append(pluginId); // master table
-		int saveNumber = getWorkspace().getSaveManager().getSaveNumber(pluginId);
+		int saveNumber = workspace.getSaveManager().getSaveNumber(pluginId);
 		return prefix.append(pluginId + "." + saveNumber); //$NON-NLS-1$
 	}
 
@@ -207,14 +209,14 @@ public class LocalMetaArea implements ICoreConstants {
 	 */
 	public IPath getTreeLocationFor(IResource target, boolean updateSequenceNumber) {
 		IPath key = target.getFullPath().append(F_TREE);
-		String sequenceNumber = getWorkspace().getSaveManager().getMasterTable().getProperty(key.toString());
+		String sequenceNumber = workspace.getSaveManager().getMasterTable().getProperty(key.toString());
 		if (sequenceNumber == null)
 			sequenceNumber = "0"; //$NON-NLS-1$
 		if (updateSequenceNumber) {
 			int n = new Integer(sequenceNumber).intValue() + 1;
 			n = n < 0 ? 1 : n;
 			sequenceNumber = new Integer(n).toString();
-			getWorkspace().getSaveManager().getMasterTable().setProperty(key.toString(), new Integer(sequenceNumber).toString());
+			workspace.getSaveManager().getMasterTable().setProperty(key.toString(), new Integer(sequenceNumber).toString());
 		}
 		return locationFor(target).append(sequenceNumber + F_TREE);
 	}
@@ -223,17 +225,13 @@ public class LocalMetaArea implements ICoreConstants {
 		return locationFor(resource).append(id);
 	}
 
-	protected Workspace getWorkspace() {
-		return (Workspace) ResourcesPlugin.getWorkspace();
-	}
-
 	public boolean hasSavedProject(IProject project) {
 		//if there is a location file, then the project exists
 		return getOldDescriptionLocationFor(project).toFile().exists() || locationFor(project).append(F_PROJECT_LOCATION).toFile().exists();
 	}
 
 	public boolean hasSavedWorkspace() {
-		return metaAreaLocation.toFile().exists() || getBackupLocationFor(metaAreaLocation).toFile().exists();
+		return metaAreaLocation.toFile().isDirectory() || getBackupLocationFor(metaAreaLocation).toFile().isDirectory();
 	}
 
 	/**
@@ -342,7 +340,7 @@ public class LocalMetaArea implements ICoreConstants {
 				//try to read the dynamic references - will fail for old location files
 				int numRefs = dataIn.readInt();
 				IProject[] references = new IProject[numRefs];
-				IWorkspaceRoot root = getWorkspace().getRoot();
+				IWorkspaceRoot root = workspace.getRoot();
 				for (int i = 0; i < numRefs; i++)
 					references[i] = root.getProject(dataIn.readUTF());
 				description.setDynamicReferences(references);

@@ -52,7 +52,7 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 		final boolean includePhantoms = (memberFlags & IContainer.INCLUDE_PHANTOMS) != 0;
 		checkAccessible(getFlags(getResourceInfo(includePhantoms, false)));
 
-		final ResourceProxy proxy = new ResourceProxy();
+		final ResourceProxy proxy = new ResourceProxy(workspace);
 		IElementContentVisitor elementVisitor = new IElementContentVisitor() {
 			public boolean visitElement(ElementTree tree, IPathRequestor requestor, Object contents) {
 				ResourceInfo info = (ResourceInfo) contents;
@@ -727,7 +727,7 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 	}
 
 	public IResourceProxy createProxy() {
-		ResourceProxy result = new ResourceProxy();
+		ResourceProxy result = new ResourceProxy(workspace);
 		result.info = getResourceInfo(false, false);
 		result.requestor = this;
 		result.resource = this;

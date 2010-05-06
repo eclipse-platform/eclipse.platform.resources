@@ -40,8 +40,8 @@ public class CollectSyncStatusVisitor extends RefreshLocalVisitor {
 	/**
 	 * Creates a new visitor, whose sync status will have the given title.
 	 */
-	public CollectSyncStatusVisitor(String multiStatusTitle, IProgressMonitor monitor) {
-		super(monitor);
+	public CollectSyncStatusVisitor(Workspace workspace, String multiStatusTitle, IProgressMonitor monitor) {
+		super(workspace, monitor);
 		status = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IStatus.INFO, multiStatusTitle, null);
 	}
 

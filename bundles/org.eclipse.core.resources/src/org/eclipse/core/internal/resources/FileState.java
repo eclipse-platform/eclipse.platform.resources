@@ -21,7 +21,6 @@ import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.osgi.util.NLS;
 
 public class FileState extends PlatformObject implements IFileState {
-	private static final IWorkspace workspace = ResourcesPlugin.getWorkspace();
 	protected long lastModified;
 	protected UniversalUniqueIdentifier uuid;
 	protected IHistoryStore store;
@@ -46,7 +45,7 @@ public class FileState extends PlatformObject implements IFileState {
 	 */
 	public String getCharset() throws CoreException {
 		// if there is an existing file at this state's path, use the encoding of that file
-		IResource file = workspace.getRoot().findMember(fullPath);
+		IResource file = store.getWorkspace().getRoot().findMember(fullPath);
 		if (file != null && file.getType() == IResource.FILE)
 			return ((IFile)file).getCharset();
 		

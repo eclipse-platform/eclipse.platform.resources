@@ -20,14 +20,18 @@ import org.eclipse.core.runtime.QualifiedName;
  * info of the resource currently being visited.
  */
 public class ResourceProxy implements IResourceProxy, ICoreConstants {
-	protected final Workspace workspace = (Workspace) ResourcesPlugin.getWorkspace();
 	protected IPathRequestor requestor;
 	protected ResourceInfo info;
 
 	//cached info
 	protected IPath fullPath;
 	protected IResource resource;
+	private final Workspace workspace;
 
+	public ResourceProxy(Workspace workspace) {
+		super();
+		this.workspace= workspace;
+	}
 	/**
 	 * @see org.eclipse.core.resources.IResourceProxy#getModificationStamp()
 	 */

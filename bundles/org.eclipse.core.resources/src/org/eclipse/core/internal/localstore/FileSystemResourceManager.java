@@ -254,7 +254,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 				IProgressMonitor sub = Policy.subMonitorFor(monitor, refreshWork);
 				sub.beginTask("", 1000); //$NON-NLS-1$
 				try {
-					CollectSyncStatusVisitor refreshVisitor = new CollectSyncStatusVisitor(Messages.localstore_deleteProblem, sub);
+					CollectSyncStatusVisitor refreshVisitor = new CollectSyncStatusVisitor(workspace, Messages.localstore_deleteProblem, sub);
 					refreshVisitor.setIgnoreLocalDeletions(true);
 					tree.accept(refreshVisitor, IResource.DEPTH_INFINITE);
 					status.merge(refreshVisitor.getSyncStatus());
@@ -620,7 +620,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 					return true;
 				break;
 		}
-		IsSynchronizedVisitor visitor = new IsSynchronizedVisitor(Policy.monitorFor(null));
+		IsSynchronizedVisitor visitor = new IsSynchronizedVisitor(workspace, Policy.monitorFor(null));
 		UnifiedTree tree = new UnifiedTree(target);
 		try {
 			tree.accept(visitor, depth);
@@ -816,7 +816,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 		String title = NLS.bind(Messages.localstore_refreshing, target.getFullPath());
 		try {
 			monitor.beginTask(title, totalWork);
-			RefreshLocalVisitor visitor = updateAliases ? new RefreshLocalAliasVisitor(monitor) : new RefreshLocalVisitor(monitor);
+			RefreshLocalVisitor visitor = updateAliases ? new RefreshLocalAliasVisitor(workspace, monitor) : new RefreshLocalVisitor(workspace, monitor);
 			IFileStore fileStore = ((Resource) target).getStore();
 			//try to get all info in one shot, if file system supports it
 			IFileTree fileTree = fileStore.getFileSystem().fetchFileTree(fileStore, new SubProgressMonitor(monitor, 0));
@@ -901,7 +901,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager {
 	public void setLocation(IResource target, ResourceInfo info, URI location) {
 		FileStoreRoot oldRoot = info.getFileStoreRoot();
 		if (location != null) {
-			info.setFileStoreRoot(new FileStoreRoot(location, target.getFullPath()));
+			info.setFileStoreRoot(new FileStoreRoot(workspace, location, target.getFullPath()));
 		} else {
 			//project is in default location so clear the store root
 			info.setFileStoreRoot(null);

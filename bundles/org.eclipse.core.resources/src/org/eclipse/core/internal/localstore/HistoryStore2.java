@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
+import org.eclipse.core.internal.resources.Workspace;
+
 import java.io.InputStream;
 import java.util.*;
 import org.eclipse.core.filesystem.*;
@@ -285,6 +287,13 @@ public class HistoryStore2 implements IHistoryStore {
 
 	public BucketTree getTree() {
 		return tree;
+	}
+	
+	/*(non-Javadoc)
+	 * @see org.eclipse.core.internal.localstore.IHistoryStore#getWorkspace()
+	 */
+	public IWorkspace getWorkspace() {
+		return workspace;
 	}
 
 	/**

@@ -15,8 +15,7 @@ import java.util.Set;
 import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.internal.resources.IManager;
-import org.eclipse.core.resources.IFileState;
-import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
 /**
@@ -153,6 +152,12 @@ public interface IHistoryStore extends IManager {
 	 * @return the list of file states
 	 */
 	public IFileState[] getStates(IPath path, IProgressMonitor monitor);
+	
+	/**
+	 * Returns the workspace that this history store is operating on.
+	 * @return the workspace for this history store
+	 */
+	public IWorkspace getWorkspace();
 
 	/**
 	 * Remove all of the file states for the given resource path and

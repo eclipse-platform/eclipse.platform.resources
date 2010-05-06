@@ -11,6 +11,8 @@
 *******************************************************************************/
 package org.eclipse.core.internal.localstore;
 
+import org.eclipse.core.internal.resources.Workspace;
+
 import java.net.URI;
 import java.util.LinkedList;
 import org.eclipse.core.filesystem.EFS;
@@ -133,7 +135,7 @@ public class CopyVisitor implements IUnifiedTreeVisitor {
 	 */
 	protected RefreshLocalVisitor getRefreshLocalVisitor() {
 		if (refreshLocalVisitor == null)
-			refreshLocalVisitor = new RefreshLocalVisitor(Policy.monitorFor(null));
+			refreshLocalVisitor = new RefreshLocalVisitor((Workspace) rootDestination.getWorkspace(), Policy.monitorFor(null));
 		return refreshLocalVisitor;
 	}
 

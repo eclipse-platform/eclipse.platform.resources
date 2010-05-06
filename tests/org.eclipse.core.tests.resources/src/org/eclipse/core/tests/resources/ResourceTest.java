@@ -22,6 +22,8 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.tests.harness.*;
+import org.eclipse.core.tests.internal.resources.TestActivator;
+import org.osgi.framework.ServiceReference;
 
 /**
  * Superclass for tests that use the Eclipse Platform workspace.
@@ -71,6 +73,11 @@ public abstract class ResourceTest extends CoreTest {
 	 * @see #getTempStore
 	 */
 	private final Set storesToDelete = new HashSet();
+
+	/**
+	 * The workspace factory service.
+	 */
+	private IWorkspaceFactory factory;
 
 	/**
 	 * Does some garbage collections to free unused resources
@@ -724,6 +731,16 @@ public abstract class ResourceTest extends CoreTest {
 		IFileStore store = EFS.getLocalFileSystem().getStore(FileSystemHelper.getRandomLocation(getTempDir()));
 		storesToDelete.add(store);
 		return store;
+	}
+
+	public IWorkspaceFactory getWorkspaceFactory() {
+		if (factory == null) {
+			ServiceReference ref = TestActivator.getContext().getServiceReference(IWorkspaceFactory.SERVICE_NAME);
+			assertNotNull(ref);
+			factory = (IWorkspaceFactory) TestActivator.getContext().getService(ref);
+			assertNotNull(factory);
+		}
+		return factory;
 	}
 
 	public String getUniqueString() {

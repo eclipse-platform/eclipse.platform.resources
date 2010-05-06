@@ -94,6 +94,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 	ProjectDescription projectDescription = null;
 
 	protected int state = S_INITIAL;
+	private final Workspace workspace;
 
 
 	/**
@@ -101,7 +102,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 	 * @throws ParserConfigurationException 
 	 * @throws SAXException 
 	 */
-	private static synchronized SAXParser createParser() throws ParserConfigurationException, SAXException{
+	private synchronized SAXParser createParser() throws ParserConfigurationException, SAXException{
 		//the parser can't be used concurrently, so only use singleton when workspace is locked
 		if (!isWorkspaceLocked())
 			return createParserFactory().newSAXParser();
@@ -128,21 +129,23 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 		return singletonParserFactory;
 	}
 	
-	private static boolean isWorkspaceLocked() {
+	private boolean isWorkspaceLocked() {
 		try {
-			return ((Workspace) ResourcesPlugin.getWorkspace()).getWorkManager().isLockAlreadyAcquired();
+			return workspace.getWorkManager().isLockAlreadyAcquired();
 		} catch (CoreException e) {
 			return false;
 		}
 	}
 
 
-	public ProjectDescriptionReader() {
+	public ProjectDescriptionReader(Workspace workspace) {
+		this.workspace = workspace;
 		this.project = null;
 	}
 
 	public ProjectDescriptionReader(IProject project) {
 		this.project = project;
+		this.workspace = (Workspace) project.getWorkspace();
 	}
 
 	/**
@@ -801,7 +804,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 			// Don't bother adding an empty group of referenced projects to the
 			// project descriptor.
 			return;
-		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IWorkspaceRoot root = workspace.getRoot();
 		IProject[] projects = new IProject[referencedProjects.size()];
 		for (int i = 0; i < projects.length; i++) {
 			projects[i] = root.getProject((String) referencedProjects.get(i));

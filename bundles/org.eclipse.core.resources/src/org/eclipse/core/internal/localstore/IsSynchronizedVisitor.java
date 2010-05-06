@@ -11,6 +11,7 @@
 package org.eclipse.core.internal.localstore;
 
 import org.eclipse.core.internal.resources.Resource;
+import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.runtime.IProgressMonitor;
 
 /**
@@ -29,8 +30,8 @@ public class IsSynchronizedVisitor extends CollectSyncStatusVisitor {
 	/**
 	 * Creates a new IsSynchronizedVisitor.
 	 */
-	public IsSynchronizedVisitor(IProgressMonitor monitor) {
-		super("", monitor); //$NON-NLS-1$
+	public IsSynchronizedVisitor(Workspace workspace, IProgressMonitor monitor) {
+		super(workspace, "", monitor); //$NON-NLS-1$
 	}
 
 	/**

@@ -49,9 +49,9 @@ public class RefreshLocalVisitor implements IUnifiedTreeVisitor, ILocalStoreCons
 	protected boolean resourceChanged;
 	protected Workspace workspace;
 
-	public RefreshLocalVisitor(IProgressMonitor monitor) {
+	public RefreshLocalVisitor(Workspace workspace, IProgressMonitor monitor) {
 		this.monitor = monitor;
-		workspace = (Workspace) ResourcesPlugin.getWorkspace();
+		this.workspace = workspace;
 		resourceChanged = false;
 		String msg = Messages.resources_errorMultiRefresh;
 		errors = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.FAILED_READ_LOCAL, msg, null);

@@ -29,7 +29,7 @@ public class ChangeDescription {
 	private IResource createSourceResource(IResourceDelta delta) {
 		IPath sourcePath = delta.getMovedFromPath();
 		IResource resource = delta.getResource();
-		IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IWorkspaceRoot wsRoot = resource.getWorkspace().getRoot();
 		switch (resource.getType()) {
 			case IResource.PROJECT :
 				return wsRoot.getProject(sourcePath.segment(0));

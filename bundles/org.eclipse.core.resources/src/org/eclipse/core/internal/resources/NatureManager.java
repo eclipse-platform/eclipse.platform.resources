@@ -37,8 +37,11 @@ public class NatureManager implements ILifecycleListener, IManager {
 	private static final byte GREY = 1;
 	private static final byte BLACK = 2;
 
-	protected NatureManager() {
+	private final Workspace workspace;
+
+	protected NatureManager(Workspace workspace) {
 		super();
+		this.workspace = workspace;
 	}
 
 	/**
@@ -500,7 +503,7 @@ public class NatureManager implements ILifecycleListener, IManager {
 	}
 
 	public void startup(IProgressMonitor monitor) {
-		((Workspace) ResourcesPlugin.getWorkspace()).addLifecycleListener(this);
+		workspace.addLifecycleListener(this);
 	}
 
 	/**
