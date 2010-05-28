@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2009 IBM Corporation and others.
+ *  Copyright (c) 2000, 2010 IBM Corporation and others.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -838,22 +838,24 @@ public class IWorkspaceTest extends ResourceTest {
 			fail("0.99", e);
 		}
 
+		// the root location should match the workspace location
+		assertEquals("1.0", location.toURI(), newWorkspace.getRoot().getLocationURI());
+
 		//opening a workspace that is already open should fail
 		try {
 			newWorkspace.open(getMonitor());
-			fail("1.0");
+			fail("2.0");
 		} catch (RuntimeException e) {
 			//expected
 		} catch (CoreException e) {
-			fail("1.99", e);
+			fail("2.99", e);
 		}
 
 		try {
 			newWorkspace.close(getMonitor());
 		} catch (Exception e) {
-			fail("4.99", e);
+			fail("3.99", e);
 		}
-
 	}
 
 	/**
