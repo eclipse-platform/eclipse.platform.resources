@@ -54,6 +54,7 @@ public class AllTests extends TestCase {
 		suite.addTest(ResourceURLTest.suite());
 		suite.addTest(TeamPrivateMemberTest.suite());
 		suite.addTest(WorkspaceTest.suite());
+		suite.addTest(MultipleWorkspacesTest.suite());
 		return suite;
 	}
 }
