@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2005 IBM Corporation and others.
+ * Copyright (c) 2000, 2010 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,7 +15,6 @@ import java.util.Properties;
 import java.util.Set;
 import org.eclipse.core.internal.utils.Messages;
 import org.eclipse.core.resources.IResourceStatus;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.*;
 
 /**
@@ -26,8 +25,8 @@ public class SafeFileTable {
 	protected IPath location;
 	protected Properties table;
 
-	public SafeFileTable(String pluginId) throws CoreException {
-		location = getWorkspace().getMetaArea().getSafeTableLocationFor(pluginId);
+	public SafeFileTable(Workspace workspace, String pluginId) throws CoreException {
+		location = workspace.getMetaArea().getSafeTableLocationFor(pluginId);
 		restore();
 	}
 
@@ -38,10 +37,6 @@ public class SafeFileTable {
 		for (int i = 0; i < keys.length; i++)
 			files[i] = new Path(keys[i]);
 		return files;
-	}
-
-	protected Workspace getWorkspace() {
-		return (Workspace) ResourcesPlugin.getWorkspace();
 	}
 
 	public IPath lookup(IPath file) {

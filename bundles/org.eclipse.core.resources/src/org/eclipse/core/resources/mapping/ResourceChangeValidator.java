@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.resources.mapping;
 
+import org.eclipse.core.resources.IWorkspace;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.core.internal.resources.mapping.ChangeDescription;
@@ -46,24 +48,36 @@ import org.eclipse.osgi.util.NLS;
  */
 public final class ResourceChangeValidator {
 
-	private static ResourceChangeValidator instance;
+	private final IWorkspace workspace;
 
 	/**
-	 * Return the singleton change validator.
-	 * @return the singleton change validator
+	 * Return the resource change validator for the default workspace
+	 * 
+	 * @return the  change validator for the default workspace
+	 * @see ResourcesPlugin#getWorkspace()
 	 */
 	public static ResourceChangeValidator getValidator() {
-		if (instance == null)
-			instance = new ResourceChangeValidator();
-		return instance;
+		return getValidator(ResourcesPlugin.getWorkspace());
+	}
+
+	/**
+	 * Returns the resource change validator for the given workspace.
+	 * 
+	 * @param workspace the workspace to return a validator for
+	 * @return the change validator for the given workspace.
+	 * @since 4.0
+	 */
+	public static ResourceChangeValidator getValidator(IWorkspace workspace) {
+		return new ResourceChangeValidator(workspace);
 	}
 
 	/**
 	 * Singleton accessor method should be used instead.
 	 * @see #getValidator()
 	 */
-	private ResourceChangeValidator() {
+	private ResourceChangeValidator(IWorkspace workspace) {
 		super();
+		this.workspace = workspace;
 	}
 
 	private IStatus combineResults(IStatus[] result) {
@@ -90,7 +104,7 @@ public final class ResourceChangeValidator {
 	 * proposed resource delta
 	 */
 	public IResourceChangeDescriptionFactory createDeltaFactory() {
-		return new ResourceChangeDescriptionFactory();
+		return new ResourceChangeDescriptionFactory(workspace);
 	}
 
 	private ModelProvider[] getProviders(IResource[] resources) {

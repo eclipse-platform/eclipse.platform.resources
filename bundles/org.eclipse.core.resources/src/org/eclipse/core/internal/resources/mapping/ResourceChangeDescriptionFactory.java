@@ -21,7 +21,11 @@ import org.eclipse.core.runtime.IPath;
  */
 public class ResourceChangeDescriptionFactory implements IResourceChangeDescriptionFactory {
 
-	private ProposedResourceDelta root = new ProposedResourceDelta(ResourcesPlugin.getWorkspace().getRoot());
+	private final ProposedResourceDelta root;
+
+	public ResourceChangeDescriptionFactory(IWorkspace workspace) {
+		this.root = new ProposedResourceDelta(workspace.getRoot());
+	}
 
 	/**
 	 * Creates and a delta representing a deleted resource, and adds it to the provided
@@ -62,9 +66,7 @@ public class ResourceChangeDescriptionFactory implements IResourceChangeDescript
 		if (delta.getKind() == 0)
 			delta.setKind(IResourceDelta.CHANGED);
 		//the CONTENT flag only applies to the changed and moved from cases
-		if (delta.getKind() == IResourceDelta.CHANGED 
-				|| (delta.getFlags() & IResourceDelta.MOVED_FROM) != 0
-				|| (delta.getFlags() & IResourceDelta.COPIED_FROM) != 0)
+		if (delta.getKind() == IResourceDelta.CHANGED || (delta.getFlags() & IResourceDelta.MOVED_FROM) != 0 || (delta.getFlags() & IResourceDelta.COPIED_FROM) != 0)
 			delta.addFlags(IResourceDelta.CONTENT);
 	}
 
@@ -97,7 +99,7 @@ public class ResourceChangeDescriptionFactory implements IResourceChangeDescript
 	public void delete(IResource resource) {
 		if (resource.getType() == IResource.ROOT) {
 			//the root itself cannot be deleted, so create deletions for each project
-			IProject[] projects = ((IWorkspaceRoot)resource).getProjects(IContainer.INCLUDE_HIDDEN);
+			IProject[] projects = ((IWorkspaceRoot) resource).getProjects(IContainer.INCLUDE_HIDDEN);
 			for (int i = 0; i < projects.length; i++)
 				buildDeleteDelta(root, projects[i]);
 		} else {
@@ -138,7 +140,7 @@ public class ResourceChangeDescriptionFactory implements IResourceChangeDescript
 		IPath relativePath = source.getFullPath().removeFirstSegments(sourcePrefix.segmentCount());
 		IPath destinationPath = destinationPrefix.append(relativePath);
 		IResource destination;
-		IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IWorkspaceRoot wsRoot = source.getWorkspace().getRoot();
 		switch (source.getType()) {
 			case IResource.FILE :
 				destination = wsRoot.getFile(destinationPath);

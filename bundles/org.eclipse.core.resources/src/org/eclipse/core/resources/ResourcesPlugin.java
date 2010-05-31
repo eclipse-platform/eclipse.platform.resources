@@ -392,7 +392,7 @@ public final class ResourcesPlugin extends Plugin {
 		
 		// Remember workspace before opening, to
 		// make it easier to debug cases where open() is failing.
-		workspace = factory.constructWorkspace(URIUtil.toURI(getPlugin().getStateLocation()));
+		workspace = factory.constructWorkspace(URIUtil.toURI(Platform.getLocation()));
 		PlatformURLResourceConnection.startup(workspace.getRoot().getLocation());
 		IStatus result = workspace.open(null);
 		if (!result.isOK())

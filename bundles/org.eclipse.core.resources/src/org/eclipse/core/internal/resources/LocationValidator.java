@@ -320,8 +320,9 @@ public class LocationValidator {
 		// Checks if the new location overlaps the workspace metadata location
 		boolean isMetadataLocation = false;
 
+		URI workspaceLocation = URIUtil.toURI(workspace.getRoot().getLocation().addTrailingSeparator().append(LocalMetaArea.F_METADATA));
 		if (unresolvedLocation != null) {
-			if (URIUtil.equals(unresolvedLocation, URIUtil.toURI(Platform.getLocation().addTrailingSeparator().append(LocalMetaArea.F_METADATA)))) {
+			if (URIUtil.equals(unresolvedLocation, workspaceLocation)) {
 				isMetadataLocation = true;
 			}
 		} else if (context != null && context.getName().equals(LocalMetaArea.F_METADATA)) {
@@ -330,7 +331,7 @@ public class LocationValidator {
 
 		String message;
 		if (isMetadataLocation) {
-			message = NLS.bind(Messages.resources_invalidPath, toString(URIUtil.toURI(Platform.getLocation().addTrailingSeparator().append(LocalMetaArea.F_METADATA))));
+			message = NLS.bind(Messages.resources_invalidPath, toString(workspaceLocation));
 			return new ResourceStatus(IResourceStatus.INVALID_VALUE, null, message);
 		}
 

@@ -52,7 +52,7 @@ public class SavedState implements ISavedState {
 
 	protected SafeFileTable restoreFileTable() throws CoreException {
 		if (fileTable == null)
-			fileTable = new SafeFileTable(pluginId);
+			fileTable = new SafeFileTable(workspace, pluginId);
 		return fileTable;
 	}
 

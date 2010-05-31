@@ -69,7 +69,7 @@ public class ChangeValidationTest extends ResourceTest {
 	}
 
 	private IResourceChangeDescriptionFactory createEmptyChangeDescription() {
-		return ResourceChangeValidator.getValidator().createDeltaFactory();
+		return ResourceChangeValidator.getValidator(getWorkspace()).createDeltaFactory();
 	}
 
 	/*

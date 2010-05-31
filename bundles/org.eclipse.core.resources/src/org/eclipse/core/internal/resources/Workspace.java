@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.core.internal.resources;
 
+import org.eclipse.core.runtime.IPath;
+
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.framework.BundleContext;
@@ -239,13 +241,14 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 
 	public Workspace(IPath location) {
 		super();
-		localMetaArea = new LocalMetaArea(this, location);
+		//preserve the relation between workspace root and metadata locations from previous releases
+		localMetaArea = new LocalMetaArea(this, location.append(".metadata/.plugins/org.eclipse.core.resources")); //$NON-NLS-1$
 		tree = new ElementTree();
 		/* tree should only be modified during operations */
 		tree.immutable();
 		treeLocked = Thread.currentThread();
 		tree.setTreeData(newElement(IResource.ROOT));
-		defaultRoot = new WorkspaceRoot(Path.ROOT, this);
+		defaultRoot = new WorkspaceRoot(Path.ROOT, this, location);
 	}
 
 	/**
@@ -1356,7 +1359,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	public IFilterMatcherDescriptor[] getFilterMatcherDescriptors() {
 		return filterManager.getFilterDescriptors();
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see IWorkspace#getNatureDescriptor(String)
 	 */
@@ -1877,7 +1880,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		Assert.isTrue(!isOpen(), message);
 		if (!getMetaArea().hasSavedWorkspace()) {
 			message = Messages.resources_readWorkspaceMeta;
-			throw new ResourceException(IResourceStatus.FAILED_READ_METADATA, Platform.getLocation(), message, null);
+			throw new ResourceException(IResourceStatus.FAILED_READ_METADATA, getMetaArea().getLocation(), message, null);
 		}
 		description = new WorkspacePreferences();
 

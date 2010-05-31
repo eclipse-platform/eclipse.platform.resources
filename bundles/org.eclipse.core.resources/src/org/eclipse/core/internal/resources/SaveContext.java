@@ -28,7 +28,7 @@ public class SaveContext implements ISaveContext {
 		this.pluginId = pluginId;
 		needDelta = false;
 		needSaveNumber = false;
-		fileTable = new SafeFileTable(pluginId);
+		fileTable = new SafeFileTable(getWorkspace(), pluginId);
 		previousSaveNumber = getWorkspace().getSaveManager().getSaveNumber(pluginId);
 	}
 
@@ -87,7 +87,7 @@ public class SaveContext implements ISaveContext {
 	}
 
 	protected Workspace getWorkspace() {
-		return (Workspace) ResourcesPlugin.getWorkspace();
+		return (Workspace) project.getWorkspace();
 	}
 
 	public boolean isDeltaNeeded() {

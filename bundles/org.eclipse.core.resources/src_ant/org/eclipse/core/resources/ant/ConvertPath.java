@@ -14,10 +14,8 @@ import java.io.File;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.Path;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Platform;
 
 /**
  * An Ant task which allows to switch from a file system path to a resource path, 
@@ -74,10 +72,11 @@ public class ConvertPath extends Task {
 
 	protected void convertFileSystemPathToResourcePath(IPath path) {
 		IResource resource;
-		if (Platform.getLocation().equals(path)) {
-			resource = ResourcesPlugin.getWorkspace().getRoot();
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		if (root.getLocation().equals(path)) {
+			resource = root;
 		} else {
-			resource = ResourcesPlugin.getWorkspace().getRoot().getContainerForLocation(path);
+			resource = root.getContainerForLocation(path);
 			if (resource == null)
 				throw new BuildException(Policy.bind("exception.noProjectMatchThePath", fileSystemPath.toOSString())); //$NON-NLS-1$
 		}

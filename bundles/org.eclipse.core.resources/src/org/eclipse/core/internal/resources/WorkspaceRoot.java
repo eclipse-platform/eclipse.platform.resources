@@ -33,10 +33,10 @@ public class WorkspaceRoot extends Container implements IWorkspaceRoot {
 	 */
 	private final IPath workspaceLocation;
 
-	protected WorkspaceRoot(IPath path, Workspace container) {
+	protected WorkspaceRoot(IPath path, Workspace container, IPath location) {
 		super(path, container);
 		Assert.isTrue(path.equals(Path.ROOT));
-		workspaceLocation = FileUtil.canonicalPath(container.getMetaArea().getLocation());
+		workspaceLocation = FileUtil.canonicalPath(location);
 		Assert.isNotNull(workspaceLocation);
 	}
 

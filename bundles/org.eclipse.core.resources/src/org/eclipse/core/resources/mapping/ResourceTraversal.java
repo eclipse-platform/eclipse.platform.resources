@@ -111,9 +111,10 @@ public class ResourceTraversal {
 	 * may change.
 	 */
 	void doFindMarkers(ArrayList result, String type, boolean includeSubtypes) {
-		MarkerManager markerMan = ((Workspace) ResourcesPlugin.getWorkspace()).getMarkerManager();
-		for (int i = 0; i < resources.length; i++)
+		for (int i = 0; i < resources.length; i++) {
+			MarkerManager markerMan = ((Workspace) resources[i].getWorkspace()).getMarkerManager();
 			markerMan.doFindMarkers(resources[i], result, type, includeSubtypes, depth);
+		}
 	}
 
 	/**
