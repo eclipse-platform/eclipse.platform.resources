@@ -851,11 +851,20 @@ public class IWorkspaceTest extends ResourceTest {
 			fail("2.99", e);
 		}
 
+		//closing workspace should succeed
+		try {
+			newWorkspace.close(getMonitor());
+		} catch (Exception e) {
+			fail("2.99", e);
+		}
+
+		//ignore extra attempt to close workspace
 		try {
 			newWorkspace.close(getMonitor());
 		} catch (Exception e) {
 			fail("3.99", e);
 		}
+
 	}
 
 	/**
@@ -1099,7 +1108,7 @@ public class IWorkspaceTest extends ResourceTest {
 		assertTrue("4.3", !(workspace.validateProjectLocation(project, new Path("c:/abc;*?\"':/def/asdf/sadf")).isOK()));
 
 		// cannot overlap the platform directory
-		IPath platformLocation = Platform.getLocation();
+		IPath platformLocation = workspace.getRoot().getLocation();
 		assertTrue("5.1", !(workspace.validateProjectLocation(project, new Path(platformLocation.getDevice(), "/")).isOK()));
 		assertTrue("5.2", !(workspace.validateProjectLocation(project, new Path(platformLocation.getDevice(), "\\")).isOK()));
 		assertTrue("5.3", !(workspace.validateProjectLocation(project, new Path(platformLocation.getDevice(), "")).isOK()));

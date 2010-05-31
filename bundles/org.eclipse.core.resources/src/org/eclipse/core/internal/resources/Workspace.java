@@ -97,7 +97,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 	protected ContentDescriptionManager contentDescriptionManager;
 	/** indicates if the workspace crashed in a previous session */
 	protected boolean crashed = false;
-	protected final IWorkspaceRoot defaultRoot = new WorkspaceRoot(Path.ROOT, this);
+	protected final IWorkspaceRoot defaultRoot;
 	protected WorkspacePreferences description;
 	protected FileSystemResourceManager fileSystemManager;
 	protected final HashSet lifecycleListeners = new HashSet(10);
@@ -245,6 +245,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		tree.immutable();
 		treeLocked = Thread.currentThread();
 		tree.setTreeData(newElement(IResource.ROOT));
+		defaultRoot = new WorkspaceRoot(Path.ROOT, this);
 	}
 
 	/**
