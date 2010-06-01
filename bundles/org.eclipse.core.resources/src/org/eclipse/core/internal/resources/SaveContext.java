@@ -21,10 +21,12 @@ public class SaveContext implements ISaveContext {
 	protected SafeFileTable fileTable;
 	protected int previousSaveNumber;
 	protected IProject project;
+	protected Workspace workspace;
 
-	protected SaveContext(String pluginId, int kind, IProject project) throws CoreException {
+	protected SaveContext(String pluginId, int kind, IProject project, IWorkspace workspace) throws CoreException {
 		this.kind = kind;
 		this.project = project;
+		this.workspace = (Workspace) workspace;
 		this.pluginId = pluginId;
 		needDelta = false;
 		needSaveNumber = false;
@@ -86,8 +88,8 @@ public class SaveContext implements ISaveContext {
 		return result > 0 ? result : 1;
 	}
 
-	protected Workspace getWorkspace() {
-		return (Workspace) project.getWorkspace();
+	private Workspace getWorkspace() {
+		return workspace;
 	}
 
 	public boolean isDeltaNeeded() {

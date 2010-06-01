@@ -312,7 +312,7 @@ public class SaveManager implements IElementInfoFlattener, IManager, IStringPool
 		for (int i = 0; i < pluginIds.length; i++) {
 			String pluginId = pluginIds[i];
 			try {
-				SaveContext context = new SaveContext(pluginId, kind, project);
+				SaveContext context = new SaveContext(pluginId, kind, project, getWorkspace());
 				result.put(pluginId, context);
 			} catch (CoreException e) {
 				// FIXME: should return a status to the user and not just log it
