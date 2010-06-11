@@ -1211,6 +1211,15 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 			buildManager.endTopLevel(hasTreeChanges);
 	}
 
+	public boolean equals(Object target) {
+		if (this == target)
+			return true;
+		if (!(target instanceof Workspace))
+			return false;
+		Workspace that = (Workspace) target;
+		return this.getRoot().getLocation().equals(that.getRoot().getLocation());
+	}
+	
 	/**
 	 * Flush the build order cache for the workspace.  Only needed if the
 	 * description does not already have a build order.  That is, if this
@@ -1483,6 +1492,9 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		return _workManager;
 	}
 
+	public int hashCode() {
+		return getRoot().getLocation().hashCode();
+	}
 	/**
 	 * A move/delete hook hasn't been initialized. Check the extension point and 
 	 * try to create a new hook if a user has one defined as an extension. Otherwise
