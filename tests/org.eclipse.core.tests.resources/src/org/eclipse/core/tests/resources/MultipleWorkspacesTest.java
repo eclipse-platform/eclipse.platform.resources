@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.IFileStore;
@@ -42,7 +44,6 @@ public class MultipleWorkspacesTest extends ResourceTest {
 	}
 
 	public void testCreateAndListProjects() {
-
 		// create and open a non-default workspace
 		IFileStore workspace1Location = getTempStore().getChild(getUniqueString());
 		IWorkspace newWorkspace1 = null;
@@ -73,5 +74,36 @@ public class MultipleWorkspacesTest extends ResourceTest {
 		} catch (Exception e) {
 			fail("5.99", e);
 		}
+	}
+
+	public void testConstructWorkspace_similarURIs() {
+		// create and open a non-default workspace
+		IFileStore workspace1Location = getTempStore().getChild(getUniqueString());
+		IWorkspace newWorkspace = null;
+		try {
+			newWorkspace = getWorkspaceFactory().constructWorkspace(workspace1Location.toURI());
+		} catch (CoreException e) {
+			fail("1.0", e);
+		}
+
+		// create a non-canonical workspace location URI
+		URI workspace1LocationURI = workspace1Location.toURI();
+		URI workspaceLocationURI_nonCanonical = null;
+		try {
+			workspaceLocationURI_nonCanonical = new URI(workspace1LocationURI.toString() + "/");
+		} catch (URISyntaxException e1) {
+			fail("2.0", e1);
+		}
+
+		// get the workspace using the non-canonical location URI
+		IWorkspace newWorkspace2 = null;
+		try {
+			newWorkspace2 = getWorkspaceFactory().constructWorkspace(workspaceLocationURI_nonCanonical);
+		} catch (CoreException e) {
+			fail("3.0", e);
+		}
+
+		// we should get the same workspace instance
+		assertTrue("4.0", newWorkspace == newWorkspace2);
 	}
 }

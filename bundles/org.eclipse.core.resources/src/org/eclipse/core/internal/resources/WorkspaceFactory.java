@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.eclipse.core.filesystem.URIUtil;
+import org.eclipse.core.internal.utils.FileUtil;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceFactory;
 import org.eclipse.core.runtime.CoreException;
@@ -31,6 +32,8 @@ public class WorkspaceFactory implements IWorkspaceFactory {
 	 * @see org.eclipse.core.resources.IWorkspaceFactory#getWorkspace(java.net.URI)
 	 */
 	public synchronized IWorkspace constructWorkspace(URI location) throws CoreException {
+		// use a canonical form
+		location = FileUtil.canonicalURI(location);
 		Workspace result = (Workspace) workspaces.get(location);
 		if (result == null) {
 			result = new Workspace(URIUtil.toPath(location));
@@ -40,5 +43,4 @@ public class WorkspaceFactory implements IWorkspaceFactory {
 		}
 		return result;
 	}
-
 }
