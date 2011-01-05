@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2010 IBM Corporation and others.
+ * Copyright (c) 2004, 2011 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -476,7 +476,7 @@ public class ProjectPreferences extends EclipsePreferences {
 		if ((segmentCount == 3) && PREFS_REGULAR_QUALIFIER.equals(qualifier) && (project != null)) {
 			if (ProjectPreferences.PREF_SEPARATE_DERIVED_ENCODINGS.equals(key)) {
 				Workspace workspace = ((Workspace) ResourcesPlugin.getWorkspace());
-				if (Boolean.parseBoolean(newValue))
+				if (Boolean.valueOf(newValue).booleanValue())
 					workspace.getCharsetManager().splitEncodingPreferences(project);
 				else
 					workspace.getCharsetManager().mergeEncodingPreferences(project);
