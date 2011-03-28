@@ -1212,7 +1212,6 @@ public class Project extends Container implements IProject {
 				//see if we have an old .prj file
 				if (!hadSavedDescription)
 					hadSavedDescription = workspace.getMetaArea().hasSavedProject(this);
-				workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.PRE_PROJECT_CHANGE, this));
 				workspace.beginOperation(true);
 				MultiStatus status = basicSetDescription(newDescription, updateFlags);
 				if (hadSavedDescription && !status.isOK())
@@ -1230,6 +1229,7 @@ public class Project extends Container implements IProject {
 				if (!status.isOK())
 					throw new CoreException(status);
 			} finally {
+				workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.POST_PROJECT_CHANGE, this));
 				workspace.endOperation(rule, true, Policy.subMonitorFor(monitor, Policy.endOpWork));
 			}
 		} finally {
@@ -1268,13 +1268,13 @@ public class Project extends Container implements IProject {
 			final ISchedulingRule rule = workspace.getRuleFactory().modifyRule(this);
 			try {
 				workspace.prepareOperation(rule, monitor);
-				workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.PRE_PROJECT_CHANGE, this));
 				workspace.beginOperation(true);
 				super.touch(Policy.subMonitorFor(monitor, Policy.opWork));
 			} catch (OperationCanceledException e) {
 				workspace.getWorkManager().operationCanceled();
 				throw e;
 			} finally {
+				workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.POST_PROJECT_CHANGE, this));
 				workspace.endOperation(rule, true, Policy.subMonitorFor(monitor, Policy.endOpWork));
 			}
 		} finally {
@@ -1292,7 +1292,6 @@ public class Project extends Container implements IProject {
 			return;
 		ProjectDescription.isReading = true;
 		try {
-			workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.PRE_PROJECT_CHANGE, this));
 			ProjectDescription description = getLocalManager().read(this, false);
 			//links can only be created if the project is open
 			IStatus result = null;
@@ -1302,6 +1301,7 @@ public class Project extends Container implements IProject {
 			if (result != null && !result.isOK())
 				throw new CoreException(result);
 		} finally {
+			workspace.broadcastEvent(LifecycleEvent.newEvent(LifecycleEvent.POST_PROJECT_CHANGE, this));
 			ProjectDescription.isReading = false;
 		}
 	}
