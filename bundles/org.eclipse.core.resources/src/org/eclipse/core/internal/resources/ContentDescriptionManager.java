@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2010 IBM Corporation and others.
+ * Copyright (c) 2004, 2011 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -456,7 +456,7 @@ public class ContentDescriptionManager implements IManager, IRegistryChangeListe
 	public void handleEvent(LifecycleEvent event) {
 		//TODO are these the only events we care about?
 		switch (event.kind) {
-			case LifecycleEvent.PRE_PROJECT_CHANGE :
+			case LifecycleEvent.POST_PROJECT_CHANGE :
 			// if the project changes, its natures may have changed as well (content types may be associated to natures)
 			case LifecycleEvent.PRE_PROJECT_DELETE :
 			// if the project gets deleted, we may get confused if it is recreated again (content ids might match)

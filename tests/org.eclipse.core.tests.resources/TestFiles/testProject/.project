@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>testProject</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.pde.PluginNature</nature>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>nature1</nature>
+<nature>nature2</nature>
+<nature>nature3</nature>
+<nature>nature4</nature>
+<nature>nature5</nature>
+<nature>nature6</nature>
+<nature>nature7</nature>
+<nature>nature8</nature>
+<nature>nature9</nature>
+<nature>nature10</nature>
+<nature>nature11</nature>
+<nature>nature12</nature>
+<nature>nature13</nature>
+<nature>nature14</nature>
+<nature>nature15</nature>
+<nature>nature16</nature>
+<nature>nature17</nature>
+<nature>nature18</nature>
+<nature>nature19</nature>
+<nature>nature20</nature>
+<nature>nature21</nature>
+<nature>nature22</nature>
+<nature>nature23</nature>
+<nature>nature24</nature>
+<nature>nature25</nature>
+<nature>nature26</nature>
+<nature>nature27</nature>
+<nature>nature28</nature>
+<nature>nature29</nature>
+<nature>nature30</nature>
+<nature>nature31</nature>
+<nature>nature32</nature>
+<nature>nature33</nature>
+<nature>nature34</nature>
+<nature>nature35</nature>
+<nature>nature36</nature>
+<nature>nature37</nature>
+<nature>nature38</nature>
+<nature>nature39</nature>
+<nature>nature40</nature>
+<nature>nature41</nature>
+<nature>nature42</nature>
+<nature>nature43</nature>
+<nature>nature44</nature>
+<nature>nature45</nature>
+<nature>nature46</nature>
+<nature>nature47</nature>
+<nature>nature48</nature>
+<nature>nature49</nature>
+<nature>nature50</nature>
+<nature>nature51</nature>
+<nature>nature52</nature>
+<nature>nature53</nature>
+<nature>nature54</nature>
+<nature>nature55</nature>
+<nature>nature56</nature>
+<nature>nature57</nature>
+<nature>nature58</nature>
+<nature>nature59</nature>
+<nature>nature60</nature>
+<nature>nature61</nature>
+<nature>nature62</nature>
+<nature>nature63</nature>
+<nature>nature64</nature>
+<nature>nature65</nature>
+<nature>nature66</nature>
+<nature>nature67</nature>
+<nature>nature68</nature>
+<nature>nature69</nature>
+<nature>nature70</nature>
+<nature>nature71</nature>
+<nature>nature72</nature>
+<nature>nature73</nature>
+<nature>nature74</nature>
+<nature>nature75</nature>
+<nature>nature76</nature>
+<nature>nature77</nature>
+<nature>nature78</nature>
+<nature>nature79</nature>
+<nature>nature80</nature>
+<nature>nature81</nature>
+<nature>nature82</nature>
+<nature>nature83</nature>
+<nature>nature84</nature>
+<nature>nature85</nature>
+<nature>nature86</nature>
+<nature>nature87</nature>
+<nature>nature88</nature>
+<nature>nature89</nature>
+<nature>nature90</nature>
+<nature>nature91</nature>
+<nature>nature92</nature>
+<nature>nature93</nature>
+<nature>nature94</nature>
+<nature>nature95</nature>
+<nature>nature96</nature>
+<nature>nature97</nature>
+<nature>nature98</nature>
+<nature>nature99</nature>
+<nature>nature100</nature>
+	</natures>
+</projectDescription>
