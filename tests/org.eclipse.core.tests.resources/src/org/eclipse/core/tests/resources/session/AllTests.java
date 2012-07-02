@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2010 IBM Corporation and others.
+ * Copyright (c) 2004, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -50,6 +50,7 @@ public class AllTests extends TestCase {
 		//session tests from other packages  
 		suite.addTest(org.eclipse.core.tests.resources.regression.TestMultipleBuildersOfSameType.suite());
 		suite.addTest(org.eclipse.core.tests.resources.usecase.SnapshotTest.suite());
+		suite.addTest(TestBug294854.suite());
 		return suite;
 	}
 }
