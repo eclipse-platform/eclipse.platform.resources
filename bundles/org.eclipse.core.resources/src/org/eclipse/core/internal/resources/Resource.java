@@ -795,9 +795,12 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 				//note that deletion of a linked resource cannot affect other resources
 				if (!wasLinked)
 					workspace.getAliasManager().updateAliases(this, originalStore, IResource.DEPTH_INFINITE, monitor);
-				//make sure the rule factory is cleared on project deletion
-				if (getType() == PROJECT)
+				if (getType() == PROJECT) {
+					// make sure the rule factory is cleared on project deletion
 					((Rules) workspace.getRuleFactory()).setRuleFactory((IProject) this, null);
+					// make sure project deletion is remembered
+					workspace.getSaveManager().requestSnapshot();
+				}
 			} catch (OperationCanceledException e) {
 				workspace.getWorkManager().operationCanceled();
 				throw e;
@@ -1607,6 +1610,9 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 				}
 				if (!tree.getStatus().isOK())
 					throw new ResourceException(tree.getStatus());
+				// if this is a project, make sure the move operation is remembered
+				if (getType() == PROJECT)
+					workspace.getSaveManager().requestSnapshot();
 			} catch (OperationCanceledException e) {
 				workspace.getWorkManager().operationCanceled();
 				throw e;
