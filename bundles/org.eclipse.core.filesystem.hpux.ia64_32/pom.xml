@@ -21,7 +21,7 @@
   </parent>
   <groupId>eclipse.platform.resources</groupId>
   <artifactId>org.eclipse.core.filesystem.hpux.ia64_32</artifactId>
-  <version>1.0.100-SNAPSHOT</version>
+  <version>1.0.101-SNAPSHOT</version>
   <packaging>eclipse-plugin</packaging>
 
   <build>
