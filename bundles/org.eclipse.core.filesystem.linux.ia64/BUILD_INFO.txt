@@ -1,0 +1,19 @@
+Native Build Info:
+------------------
+
+platform:         ia64-inspurKUX-linux
+built by:         sravankumarl@in.ibm.com
+build date:       14-May-2014
+OS Name:          Inspur K-UX 2.1
+OS Version:       Linux 2.6.28.10-vs2.1 ia64 (glibc-2.5.34)
+Compiler version: gcc version 4.1.2-44
+
+build script:
+-------------
+#!/bin/sh
+rpm -q glibc
+#ensure system gcc
+export PATH=/usr/bin:$PATH
+cd org.eclipse.core.filesystem/natives/unix/linux
+make JAVA_HOME=/opt/java
+cp libunixfile_1_0_0.so ../../../../org.eclipse.core.filesystem.linux.ia64/os/linux/ia64/
