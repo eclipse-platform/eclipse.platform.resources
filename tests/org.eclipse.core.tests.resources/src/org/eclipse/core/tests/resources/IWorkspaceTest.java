@@ -1135,7 +1135,7 @@ public class IWorkspaceTest extends ResourceTest {
 			// A new project cannot overlap the default locations of other projects, but its own location is valid
 			IPath defaultProjectLocation = workspace.getRoot().getLocation();
 			assertTrue("11.1", workspace.validateProjectLocation(project, defaultProjectLocation.append(project.getName())).isOK());
-			assertTrue("11.1", !workspace.validateProjectLocation(project, defaultProjectLocation.append("foo")).isOK());
+			assertTrue("11.2", !workspace.validateProjectLocation(project, defaultProjectLocation.append("foo")).isOK());
 		} catch (CoreException e) {
 			fail("11.99", e);
 		} finally {
