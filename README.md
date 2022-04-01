@@ -1,4 +1,4 @@
 # eclipse.platform.resources
-How to contribute:
+This is a sub-repository of [eclipse-platform](https://github.com/eclipse-platform).
 
-https://github.com/eclipse-platform/eclipse.platform.releng.aggregator/blob/master/DeveloperGuide.md
+Resources provide java interfaces like IResource and implementations of workspace, folders, files and file system abstraction for [Eclipse IDE](https://www.eclipse.org/eclipseide/)
