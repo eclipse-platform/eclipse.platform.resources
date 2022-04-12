@@ -739,7 +739,7 @@ public class BuildManager implements ICoreConstants, IManager, ILifecycleListene
 		autoBuildJob.build(needsBuild);
 	}
 
-	public void waitForBuild() {
+	public void waitForAutoBuild() {
 		autoBuildJob.wakeUp(0);
 		try {
 			Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
