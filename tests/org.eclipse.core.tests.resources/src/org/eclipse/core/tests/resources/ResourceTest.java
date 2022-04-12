@@ -1000,7 +1000,7 @@ public abstract class ResourceTest extends CoreTest {
 	 * Blocks the calling thread until autobuild completes.
 	 */
 	protected void waitForBuild() {
-		((Workspace) getWorkspace()).getBuildManager().waitForBuild();
+		((Workspace) getWorkspace()).getBuildManager().waitForAutoBuild();
 	}
 
 	/**
