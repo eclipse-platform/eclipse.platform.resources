@@ -85,6 +85,8 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
  * 	// do something with the workspace
  * });
  * </pre>
+ *
+ * </li>
  * </ul>
  *
  * <p>
