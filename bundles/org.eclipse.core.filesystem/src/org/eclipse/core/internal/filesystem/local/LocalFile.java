@@ -109,6 +109,22 @@ public class LocalFile extends FileStore {
 		if (destFile instanceof LocalFile) {
 			File source = file;
 			File destination = ((LocalFile) destFile).file;
+			final IFileInfo sourceInfo = fetchInfo(EFS.NONE, null);
+			if (!sourceInfo.isDirectory() && (options & EFS.OVERWRITE) == 0) {
+				// special handling for the most common case:
+				// localfile to localfile without overwrite
+				if ((options & EFS.OVERWRITE) == 0 && destFile.fetchInfo().exists()) {
+					Policy.error(EFS.ERROR_EXISTS, NLS.bind(Messages.fileExists, destination));
+				}
+				try {
+					// does "isSameFile" check internally:
+					Files.copy(source.toPath(), destination.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
+				} catch (IOException e) {
+					String msg = NLS.bind(Messages.couldNotWrite, destination.getAbsolutePath());
+					Policy.error(EFS.ERROR_WRITE, msg, e);
+				}
+				return;
+			}
 			//handle case variants on a case-insensitive OS, or copying between
 			//two equivalent files in an environment that supports symbolic links.
 			//in these nothing needs to be copied (and doing so would likely lose data)
