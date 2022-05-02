@@ -20,6 +20,45 @@ import org.eclipse.core.runtime.*;
  * Test the copy operation.
  */
 public class CopyTest extends LocalStoreTest {
+	public void testCopyResourcePerformance() throws Throwable {
+		/* create common objects */
+		IProject[] testProjects = getWorkspace().getRoot().getProjects();
+
+		/* create folder and file */
+		IFolder folder = testProjects[0].getFolder("folder");
+		IFile file = folder.getFile("file.txt");
+		ensureExistsInWorkspace(folder, true);
+		ensureExistsInFileSystem(folder);
+		ensureExistsInWorkspace(file, true);
+		ensureExistsInFileSystem(file);
+		/* add some properties to file (server, local and session) */
+		QualifiedName[] propNames = new QualifiedName[numberOfProperties];
+		String[] propValues = new String[numberOfProperties];
+		for (int i = 0; i < numberOfProperties; i++) {
+			propNames[i] = new QualifiedName("test", "prop" + i);
+			propValues[i] = "value" + i;
+			file.setPersistentProperty(propNames[i], propValues[i]);
+			file.setSessionProperty(propNames[i], propValues[i]);
+		}
+
+		/* copy to absolute path */
+		int files = 1000;
+		for (int i = 0; i < files; i++) {
+			IResource destination = testProjects[0].getFile("copy of file.txt" + i);
+			ensureDoesNotExistInFileSystem(destination);
+		}
+		long nanoTime = System.nanoTime();
+		for (int i = 0; i < files; i++) {
+			IResource destination = testProjects[0].getFile("copy of file.txt" + i);
+			try {
+				file.copy(destination.getFullPath(), true, null);
+			} catch (CoreException e) {
+				fail("1.0", e);
+			}
+		}
+		long nanoTime2 = System.nanoTime();
+		System.out.println("copy took " + (nanoTime2 - nanoTime) / files + " ns");
+	}
 
 	public void testCopyResource() throws Throwable {
 		/* create common objects */
