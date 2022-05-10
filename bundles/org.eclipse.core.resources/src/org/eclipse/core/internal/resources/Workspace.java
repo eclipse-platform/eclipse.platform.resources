@@ -2232,7 +2232,6 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		if (!localMetaArea.hasSavedProjects()) {
 			setExplicitWorkspaceEncoding();
 		}
-		initializePreferenceLookupOrder();
 
 		// create root location
 		localMetaArea.locationFor(getRoot()).toFile().mkdirs();
@@ -2253,6 +2252,7 @@ public class Workspace extends PlatformObject implements IWorkspace, ICoreConsta
 		//finally register a string pool participant
 		stringPoolJob = new StringPoolJob();
 		stringPoolJob.addStringPoolParticipant(saveManager, getRoot());
+		initializePreferenceLookupOrder();
 		return Status.OK_STATUS;
 	}
 
