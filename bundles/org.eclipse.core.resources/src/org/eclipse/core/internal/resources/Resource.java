@@ -26,6 +26,7 @@ package org.eclipse.core.internal.resources;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.eclipse.core.filesystem.*;
 import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.filesystem.provider.FileInfo;
@@ -1993,6 +1994,15 @@ public abstract class Resource extends PlatformObject implements IResource, ICor
 			}
 			firstSegment = false;
 		} while (relativePath.segmentCount() > 0);
+
+		// filter roots of projects nested within this project
+		Set<String> projectChildren = Arrays.stream(project.getContainedProjects())
+				.map(IProject::getLocation)
+				.filter(c -> c.removeLastSegments(1).equals(getLocation()))
+				.map(IPath::lastSegment).collect(Collectors.toSet());
+		list = Arrays.stream(list)
+				.filter(f -> !projectChildren.contains(f.getName()))
+				.toArray(IFileInfo[]::new);
 
 		if ((currentIncludeFilters.size() > 0) || (currentExcludeFilters.size() > 0)) {
 			try {
