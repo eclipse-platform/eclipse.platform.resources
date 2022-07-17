@@ -12,9 +12,10 @@
  *     IBM - Initial API and implementation
  *     Serge Beauchamp (Freescale Semiconductor) - [252996] add resource filtering
  *     Serge Beauchamp (Freescale Semiconductor) - [229633] Group and Project Path Variable Support
- * Francis Lynch (Wind River) - [301563] Save and load tree snapshots
- * Martin Oberhuber (Wind River) - [306575] Save snapshot location with project
- * Mikael Barbero (Eclipse Foundation) - [286681] handle WAIT_ABANDONED_0 return value
+ *     Francis Lynch (Wind River) - [301563] Save and load tree snapshots
+ *     Martin Oberhuber (Wind River) - [306575] Save snapshot location with project
+ *     Mikael Barbero (Eclipse Foundation) - [286681] handle WAIT_ABANDONED_0 return value
+ *     Ingo Mohr - Issue #166 - Add Preference to Turn Off Warning-Check for Project Specific Encoding
  *******************************************************************************/
 package org.eclipse.core.internal.utils;
 
@@ -334,6 +335,7 @@ public class Messages extends NLS {
 	public static String WM_mutexAbandoned;
 
 	public static String updateUnknownNatureMarkers;
+	public static String updateMissingProjectEncodingMarkers;
 
 	static {
 		// initialize resource bundles

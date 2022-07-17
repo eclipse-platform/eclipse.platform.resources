@@ -25,6 +25,8 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.osgi.framework.Bundle;
 import org.osgi.service.prefs.BackingStoreException;
@@ -250,6 +252,7 @@ public class CharsetManager implements IManager {
 	private CharsetDeltaJob charsetListener;
 	CharsetManagerJob job;
 	private IResourceChangeListener resourceChangeListener;
+	private ProjectEncodingPreferenceChangeListener prefsListener;
 	protected final Bundle systemBundle = Platform.getBundle("org.eclipse.osgi"); //$NON-NLS-1$
 	Workspace workspace;
 
@@ -460,6 +463,7 @@ public class CharsetManager implements IManager {
 
 	@Override
 	public void shutdown(IProgressMonitor monitor) {
+		InstanceScope.INSTANCE.getNode(ResourcesPlugin.PI_RESOURCES).removePreferenceChangeListener(prefsListener);
 		workspace.removeResourceChangeListener(resourceChangeListener);
 		if (charsetListener != null)
 			charsetListener.shutdown();
@@ -509,5 +513,17 @@ public class CharsetManager implements IManager {
 		charsetListener = new CharsetDeltaJob(workspace);
 		charsetListener.startup();
 		ValidateProjectEncoding.scheduleWorkspaceValidation(workspace);
+		prefsListener = new ProjectEncodingPreferenceChangeListener();
+		InstanceScope.INSTANCE.getNode(ResourcesPlugin.PI_RESOURCES).addPreferenceChangeListener(prefsListener);
+	}
+
+	private class ProjectEncodingPreferenceChangeListener implements IPreferenceChangeListener {
+
+		@Override
+		public void preferenceChange(PreferenceChangeEvent event) {
+			if (ResourcesPlugin.PREF_MISSING_ENCODING_MARKER_SEVERITY.equals(event.getKey())) {
+				ValidateProjectEncoding.scheduleWorkspaceValidation(workspace);
+			}
+		}
 	}
 }
