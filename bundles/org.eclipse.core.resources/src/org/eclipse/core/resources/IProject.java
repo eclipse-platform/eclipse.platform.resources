@@ -1056,6 +1056,22 @@ public interface IProject extends IContainer, IAdaptable {
 	void setDescription(IProjectDescription description, int updateFlags, IProgressMonitor monitor) throws CoreException;
 
 	/**
+	 * Get projects contained within this project.
+	 *
+	 * @return an array of all the other projects known to reside within the
+	 *         filesystem tree of this project.
+	 * @exception CoreException if this method fails. Reasons include:
+	 *                          <ul>
+	 *                          <li>This project does not exist.</li>
+	 *                          <li>This project is not open.</li>
+	 *                          </ul>
+	 * @since 3.18
+	 */
+	default IProject[] getContainedProjects() throws CoreException {
+		return new IProject[] {};
+	}
+
+	/**
 	 * Returns line separator appropriate for new files in the given project.
 	 * <p>
 	 * This method uses the following algorithm to determine the line separator to

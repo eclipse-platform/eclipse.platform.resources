@@ -470,6 +470,26 @@ public class Project extends Container implements IProject {
 	}
 
 	@Override
+	public IProject[] getContainedProjects() throws CoreException {
+		checkAccessible(getFlags(getResourceInfo(false, false)));
+		final IPath location = getLocation();
+		if (location != null) {
+			return Arrays.stream(getWorkspace().getRoot().getProjects(IContainer.INCLUDE_HIDDEN))
+					.filter((IProject p) -> {
+						if (p == this) {
+							return false;
+						}
+						IPath pLocation = p.getLocation();
+						if (pLocation != null && location.isPrefixOf(pLocation)) {
+							return true;
+						}
+						return false;
+					}).toArray(IProject[]::new);
+		}
+		return new IProject[] {};
+	}
+
+	@Override
 	public void clearCachedDynamicReferences() {
 		ResourceInfo info = getResourceInfo(false, false);
 		if (info == null) {
